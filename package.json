@@ -43,9 +43,9 @@
     "vinyl-source-stream": "^1.0.0"
   },
   "browser": {
-    "handlebars": "./node_modules/handlebars/runtime.js",
-    "pouchdb": "./node_modules/pouchdb/dist/pouchdb.js",
-    "extend": "./node_modules/lodash/object/extend.js",
-    "omit": "./node_modules/lodash/object/omit.js"
+    "handlebars": "handlebars/runtime.js",
+    "pouchdb": "pouchdb/dist/pouchdb.js",
+    "extend": "lodash/object/extend.js",
+    "omit": "lodash/object/omit.js"
   }
 }
