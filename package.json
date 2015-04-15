@@ -21,7 +21,7 @@
     "moment": "^2.9.0",
     "pouchdb": "^3.3.1",
     "pouchdb-server": "^0.6.4",
-    "promise": "^6.1.0",
+    "promise": "^7.0.0",
     "request": "^2.53.0"
   },
   "devDependencies": {
