@@ -2,11 +2,11 @@ var Hapi = require('hapi');
 var path = require('path');
 
 
-module.exports = function (bonnet, cb) {
+module.exports = function (capot, cb) {
 
-  var config = bonnet.config;
+  var config = capot.config;
 
-  var server = bonnet.www = new Hapi.Server({
+  var server = capot.www = new Hapi.Server({
     connections: {
       routes: {
         payload: {
@@ -70,7 +70,7 @@ module.exports = function (bonnet, cb) {
 
 
   server.start(function () {
-    bonnet.log.info('Web server started on port ' + config.port);
+    capot.log.info('Web server started on port ' + config.port);
     cb();
   });
 

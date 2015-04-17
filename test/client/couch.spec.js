@@ -3,7 +3,7 @@ var Promise = require('promise');
 var Couch = require('../../client/couch');
 
 
-describe('bonnet/cient/couch', function () {
+describe('capot/cient/couch', function () {
 
   it('should be a function', function () {
     assert.equal(typeof Couch, 'function');

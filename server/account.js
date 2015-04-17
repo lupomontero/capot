@@ -1,13 +1,13 @@
 var EventEmitter = require('events').EventEmitter;
 
-module.exports = function (bonnet, cb) {
+module.exports = function (capot, cb) {
 
-  var account = bonnet.account = new EventEmitter();
-  var usersDb = bonnet.couch.db('_users');
+  var account = capot.account = new EventEmitter();
+  var usersDb = capot.couch.db('_users');
 
 
   function handleSignUp(userDoc) {
-    var userDb = bonnet.couch.db(userDoc.database);
+    var userDb = capot.couch.db(userDoc.database);
     var permissionsDdoc = {
       _id: '_design/permissions',
       language: 'javascript',
@@ -15,7 +15,7 @@ module.exports = function (bonnet, cb) {
         'function (newDoc, oldDoc, userCtx) {',
         '  for (var i = 0; i < userCtx.roles.length; i++) {',
         '    var r = userCtx.roles[i];',
-        '    if (r === "bonnet:write:user/' + userDoc.bonnetId + '" || r === "_admin") {',
+        '    if (r === "capot:write:user/' + userDoc.capotId + '" || r === "_admin") {',
         '      return;',
         '    }',
         '  }',
@@ -29,10 +29,10 @@ module.exports = function (bonnet, cb) {
         return console.error('Error adding permissions design doc to user db', userDoc, err);
       }
       userDoc.roles = [
-        userDoc.bonnetId,
+        userDoc.capotId,
         'confirmed',
-        'bonnet:read:user/' + userDoc.bonnetId,
-        'bonnet:write:user/' + userDoc.bonnetId
+        'capot:read:user/' + userDoc.capotId,
+        'capot:write:user/' + userDoc.capotId
       ];
       usersDb.put(userDoc, function (err, data) {
         if (err) {

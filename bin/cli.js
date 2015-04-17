@@ -23,7 +23,7 @@ if (argv.h || argv.help || !cmd || cmd === 'help') {
     '',
     'Commands:',
     '',
-    'start            Start bonnet server.',
+    'start            Start ' + pkg.name + ' server.',
     '',
     'Options:',
     '',

@@ -12,7 +12,7 @@ Backbone.$ = $;
 var Router = require('./router');
 
 
-module.exports = function BonnetUI(options) {
+module.exports = function CapotUI(options) {
 
   return new Router(options);
 

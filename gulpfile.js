@@ -15,13 +15,13 @@ var components = {
   client: {
     files: 'client/*.js',
     main: './client/index.js',
-    dest: 'dist/bonnet.js',
+    dest: 'dist/capot.js',
     tests: 'test/client/**/*.spec.js'
   },
   ui: {
     files: 'client/ui/*.js',
     main: './client/ui/index.js',
-    dest: 'dist/bonnet-ui.js'
+    dest: 'dist/capot-ui.js'
   },
   admin: {
     files: 'admin/**/*.js',
@@ -92,12 +92,12 @@ gulp.task('test', [ 'test:client', 'test:server' ]);
 
 
 gulp.task('build:client', [ 'test:client' ], function () {
-  var bundler = browserify(components.client.main, { standalone: 'Bonnet' });
+  var bundler = browserify(components.client.main, { standalone: 'Capot' });
   return bundle(bundler, components.client.dest);
 });
 
 gulp.task('build:ui', [ 'lint:ui' ], function () {
-  var bundler = browserify(components.ui.main, { standalone: 'BonnetUI' });
+  var bundler = browserify(components.ui.main, { standalone: 'CapotUI' });
   return bundle(bundler, components.ui.dest);
 });
 

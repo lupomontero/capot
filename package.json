@@ -1,11 +1,11 @@
 {
-  "name": "bonnet",
+  "name": "capot",
   "version": "1.0.0",
   "author": "Lupo Montero",
   "license": "MIT",
-  "repository": "lupomontero/bonnet",
+  "repository": "lupomontero/capot",
   "bin": {
-    "bonnet": "./bin/cli.js"
+    "capot": "./bin/cli.js"
   },
   "scripts": {
     "test": "gulp test"

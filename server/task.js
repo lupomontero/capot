@@ -2,13 +2,13 @@ var events = require('events');
 var _ = require('lodash');
 
 
-module.exports = function (bonnet, cb) {
+module.exports = function (capot, cb) {
 
 
-  var changes = bonnet.changes;
-  var couch = bonnet.couch;
-  var log = bonnet.log;
-  var task = bonnet.task = new events.EventEmitter();
+  var changes = capot.changes;
+  var couch = capot.couch;
+  var log = capot.log;
+  var task = capot.task = new events.EventEmitter();
 
 
   task.error = function (dbName, taskDoc, err) {
@@ -34,7 +34,7 @@ module.exports = function (bonnet, cb) {
   };
 
 
-  bonnet.changes.on('change', function (db, data) {
+  capot.changes.on('change', function (db, data) {
     data.results.forEach(function (result) {
       var idParts = result.id.split('/');
       var type = idParts[0];

@@ -1,4 +1,4 @@
-describe('bonnet/client/store', function () {
+describe('capot/client/store', function () {
 
   describe('store.find()', function () {
   

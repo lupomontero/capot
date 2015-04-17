@@ -26,11 +26,11 @@ function toJSON(doc) {
 }
 
 
-module.exports = function (bonnet) {
+module.exports = function (capot) {
 
-  var settings = bonnet.settings;
-  var log = bonnet.log.child({ scope: 'bonnet.store' });
-  var account = bonnet.account;
+  var settings = capot.settings;
+  var log = capot.log.child({ scope: 'capot.store' });
+  var account = capot.account;
   var store = new EventEmitter();
 
   
@@ -53,7 +53,7 @@ module.exports = function (bonnet) {
   store.sync = function (cb) {
     cb = cb || noop;
     if (!store.remoteUrl) { return cb(); }
-    if (bonnet.account.isOffline()) { return cb(); }
+    if (capot.account.isOffline()) { return cb(); }
     store.remote.replicate.sync(store.local, {
       filter: function (doc) {
         return doc._id.indexOf('_design') !== 0;
@@ -148,7 +148,7 @@ module.exports = function (bonnet) {
     }, {});
 
     var doc = extend({}, omit(attrs, [ '_attachments' ]), {
-      _id: type + '/' + bonnet.uid(),
+      _id: type + '/' + capot.uid(),
       createdAt: new Date(),
       type: type
     });
@@ -251,9 +251,9 @@ module.exports = function (bonnet) {
 
     cb = cb || noop;
 
-    var bonnetId = account.id() || '__bonnet_anon';
+    var capotId = account.id() || '__capot_anon';
 
-    store.local = new PouchDB(bonnetId, { auto_compaction: true });
+    store.local = new PouchDB(capotId, { auto_compaction: true });
 
     function listenToLocalChanges() {
       var localChanges = store.local.changes({ 
@@ -291,7 +291,7 @@ module.exports = function (bonnet) {
     }
 
     if (account.isSignedIn()) {
-      store.remoteUrl = settings.remote + '/' + encodeURIComponent('user/' + bonnetId);
+      store.remoteUrl = settings.remote + '/' + encodeURIComponent('user/' + capotId);
       store.remote = new PouchDB(store.remoteUrl);
       store.sync(listenToLocalChanges);
     } else {
@@ -306,13 +306,13 @@ module.exports = function (bonnet) {
 
 
   function logEvent(eventName) {
-    var log = bonnet.log.child({ scope: 'bonnet.store:' + eventName });
+    var log = capot.log.child({ scope: 'capot.store:' + eventName });
     return function () {
       log.debug(Array.prototype.slice.call(arguments, 0));
     };
   }
 
-  if (bonnet.settings.debug === true) {
+  if (capot.settings.debug === true) {
     [ 'add', 'update', 'remove', 'change', 'sync' ].forEach(function (eventName) {
       store.on(eventName, logEvent(eventName));
     });

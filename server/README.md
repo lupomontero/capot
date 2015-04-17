@@ -1,4 +1,4 @@
-# Bonnet Server
+# Capot Server
 
 Configuration
 

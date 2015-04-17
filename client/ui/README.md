@@ -1,15 +1,15 @@
-# BonnetUI
+# CapotUI
 
 Full blown front-end framework (assumes `browserify`, includes `Backbone`, `Handlebars`, `moment`, `async`...).
 
-For a more minimal and less opinionated approach check out the bare-bones client library: [Bonnet](../).
+For a more minimal and less opinionated approach check out the bare-bones client library: [Capot](../).
 
 
 ```js
 // ie: in your `main.js`
-var BonnetUI = require('bonnet/client/ui');
+var CapotUI = require('capot/client/ui');
 
-var app = BonnetUI({
+var app = CapotUI({
   views: {},
   models: {},
   collections: {},
@@ -26,7 +26,7 @@ app.start();
 ## `View`
 
 ```js
-var View = require('bonnet/client/ui/view');
+var View = require('capot/client/ui/view');
 
 module.exports = View.extend({
   className: 'container',
@@ -46,7 +46,7 @@ module.exports = View.extend({
 ## `Model`
 
 ```js
-var Model = require('bonnet/client/ui/model');
+var Model = require('capot/client/ui/model');
 
 module.exports = Model.extend({
   defaults: function () {
@@ -61,7 +61,7 @@ module.exports = Model.extend({
 ## `Collection`
 
 ```js
-var Collection = require('bonnet/client/ui/collection');
+var Collection = require('capot/client/ui/collection');
 var Note = require('../models/note');
 
 module.exports = Collection.extend({

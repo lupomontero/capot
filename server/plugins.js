@@ -3,9 +3,9 @@ var path = require('path');
 var async = require('async');
 
 
-module.exports = function (bonnet, cb) {
+module.exports = function (capot, cb) {
 
-  var config = bonnet.config;
+  var config = capot.config;
 
   function requireExtension(path, cb) {
     var ext;
@@ -13,13 +13,13 @@ module.exports = function (bonnet, cb) {
     if (typeof ext !== 'function') {
       return setTimeout(cb.bind(null, new Error('Could not load ' + path)), 10);
     }
-    ext(bonnet, cb);
+    ext(capot, cb);
   }
 
   function loadUserland(cb) {
     requireExtension(config.cwd, function (err) {
       if (!err) {
-        bonnet.log.info('Extended Bonnet Server with userland');
+        capot.log.info('Extended Capot Server with userland');
       }
       cb();
     });
@@ -32,12 +32,12 @@ module.exports = function (bonnet, cb) {
     if (!pluginsPaths.length) { return cb(); }
 
     async.each(pluginsPaths, function (pluginPath, cb) {
-      bonnet.log.info('Initialising plugin ' + pluginPath);
+      capot.log.info('Initialising plugin ' + pluginPath);
       requireExtension(pluginPath, function (err) {
         if (err) {
-          bonnet.log.warn('Extension not loaded');
+          capot.log.warn('Extension not loaded');
         } else {
-          bonnet.log.info('Loaded!');
+          capot.log.info('Loaded!');
         }
         cb();
       });

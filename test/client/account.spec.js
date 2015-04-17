@@ -1,41 +1,41 @@
 var assert = require('assert');
-var Bonnet = require('../../client');
+var Capot = require('../../client');
 
 
-describe('bonnet/client/account', function () {
+describe('capot/client/account', function () {
 
 
   describe('account.id()', function () {
 
-    var bonnet;
+    var capot;
 
     beforeEach(function (done) {
-      bonnet = Bonnet();
-      bonnet.start(done);
+      capot = Capot();
+      capot.start(done);
     });
 
     afterEach(function (done) {
-      //console.log('after', bonnet);
+      //console.log('after', capot);
       done();
     });
 
     it('should return null when not signed in', function () {
-      assert.equal(bonnet.account.id(), null);
+      assert.equal(capot.account.id(), null);
     });
 
-    it('should return the user\'s bonnetId when signed in', function () {
-      bonnet.account.session = {
+    it('should return the user\'s capotId when signed in', function () {
+      capot.account.session = {
         userCtx: {
           roles: [
             'xxxxxxx',
             'confirmed',
-            'bonnet:read:user/xxxxxxx',
-            'bonnet:write:user/xxxxxxx'
+            'capot:read:user/xxxxxxx',
+            'capot:write:user/xxxxxxx'
           ]
         }
       };
 
-      assert.equal(bonnet.account.id(), 'xxxxxxx');
+      assert.equal(capot.account.id(), 'xxxxxxx');
     });
 
   });
@@ -43,7 +43,7 @@ describe('bonnet/client/account', function () {
 
   describe('account.signUp()', function () {
 
-    var bonnet = Bonnet();
+    var capot = Capot();
 
     it('should...', function () {
       //...
@@ -54,7 +54,7 @@ describe('bonnet/client/account', function () {
 
   describe('account.signIn()', function () {
 
-    var bonnet = Bonnet();
+    var capot = Capot();
 
     it('should...', function () {
       //...
@@ -65,7 +65,7 @@ describe('bonnet/client/account', function () {
 
   describe('account.signOut()', function () {
 
-    var bonnet = Bonnet();
+    var capot = Capot();
 
     it('should...', function () {
       //...

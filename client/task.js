@@ -1,6 +1,6 @@
 var EventEmitter = require('events').EventEmitter;
 
-module.exports = function (bonnet) {
+module.exports = function (capot) {
 
   var task = new EventEmitter();
 

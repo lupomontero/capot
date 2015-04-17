@@ -34,9 +34,9 @@ module.exports = Backbone.Router.extend({
 
   initialize: function (options) {
     var app = this;
-    var bonnet = options.bonnet || require('../')(_.omit(options, optionKeys));
-    var log = bonnet.log.child({ scope: 'BonnetUI' });
-    var bonnetStart = bonnet.start.bind(bonnet);
+    var capot = options.capot || require('../')(_.omit(options, optionKeys));
+    var log = capot.log.child({ scope: 'CapotUI' });
+    var capotStart = capot.start.bind(capot);
 
     log.debug('Dependencies: Lodash: ' + _.VERSION + ', Backbone ' +
       Backbone.VERSION + ', Handlebars: ' + Handlebars.VERSION);
@@ -49,10 +49,10 @@ module.exports = Backbone.Router.extend({
       app[optName] = options[optName];
     });
 
-    _.extend(app, bonnet, {
+    _.extend(app, capot, {
       view: new AppView({ model: app }),
       start: function () {
-        bonnetStart(function (err) {
+        capotStart(function (err) {
           if (err) { throw err; }
           Backbone.history.start({ pushState: true });
         });

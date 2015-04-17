@@ -3,11 +3,11 @@ var async = require('async');
 var noop = function () {};
 
 
-module.exports = function (bonnet, cb) {
+module.exports = function (capot, cb) {
 
-  var couch = bonnet.couch;
+  var couch = capot.couch;
   var changesDb = couch.db('changes');
-  var feed = bonnet.changes = new events.EventEmitter();
+  var feed = capot.changes = new events.EventEmitter();
   var since = {};
   var legacyDbUpdates = false;
 

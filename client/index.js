@@ -23,51 +23,51 @@ var defaults = {
 
 
 //
-// `Bonnet` Front end API
+// `Capot` Front end API
 //
-module.exports = function Bonnet(options) {
+module.exports = function Capot(options) {
 
   var settings = extend({}, defaults, options);
 
 
-  var bonnet = {
+  var capot = {
     settings: settings,
     uid: require('./uid'),
     log: require('./log')(settings)
   };
 
 
-  var account = bonnet.account = require('./account')(bonnet);
-  var store = bonnet.store = require('./store')(bonnet);
-  var task = bonnet.task = require('./task')(bonnet);
+  var account = capot.account = require('./account')(capot);
+  var store = capot.store = require('./store')(capot);
+  var task = capot.task = require('./task')(capot);
 
 
-  var log = bonnet.log.child({ scope: 'Bonnet' });
+  var log = capot.log.child({ scope: 'Capot' });
   log.debug('Dependencies: jQuery ' + jQuery.fn.jquery + ', PouchDB ' +
     require('pouchdb').version);
 
 
-  bonnet.start = function (cb) {
+  capot.start = function (cb) {
     cb = cb || noop;
-    var log = bonnet.log.child({ scope: 'bonnet.start' });
-    log.info('Starting bonnet client...');
+    var log = capot.log.child({ scope: 'capot.start' });
+    log.info('Starting capot client...');
     async.applyEachSeries([
       async.apply(account.init),
       async.apply(store.init),
       //async.apply(task.init),
     ], function (err) {
-      log.info(err || 'Bonnet client successfully started');
+      log.info(err || 'Capot client successfully started');
       cb(err);
     });
   };
 
 
-  bonnet.stop = function (cb) {
+  capot.stop = function (cb) {
     // remove logger listeners...
     // clear account.init interval...
   };
 
-  return bonnet;
+  return capot;
 
 };
 

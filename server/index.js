@@ -8,7 +8,7 @@ module.exports = function (argv) {
   var pkg = require(path.join(config.cwd, 'package.json'));
   var log = require('./log')({ name: pkg.name });
 
-  var bonnet = {
+  var capot = {
     pkg: pkg,
     config: config,
     log: log
@@ -21,13 +21,13 @@ module.exports = function (argv) {
     require('./account'),
     require('./www'),
     require('./plugins')
-  ], bonnet, function (err) {
+  ], capot, function (err) {
     if (err) {
       log.error(err);
       process.exit(1);
     }
-    bonnet.changes.start();
-    log.info('Bonnet back-end has started ;-)');
+    capot.changes.start();
+    log.info('Capot back-end has started ;-)');
   });
 
 };

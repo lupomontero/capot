@@ -1,4 +1,4 @@
-describe('bonnet/client/task', function () {
+describe('capot/client/task', function () {
 
   describe('task.start()', function () {
   

@@ -2,11 +2,11 @@ var assert = require('assert');
 var Task = require('../../server/task');
 
 
-describe('bonnet/server/task', function () {
+describe('capot/server/task', function () {
 
   it('should emit start event when task doc added', function (done) {
     var changeListener;
-    var bonnetMock = {
+    var capotMock = {
       changes: {
         on: function (ev, listener) {
           assert.equal(ev, 'change');
@@ -15,8 +15,8 @@ describe('bonnet/server/task', function () {
       }
     };
 
-    Task(bonnetMock, function () {
-      bonnetMock.task.on('start', function (dbName, taskDoc) {
+    Task(capotMock, function () {
+      capotMock.task.on('start', function (dbName, taskDoc) {
         assert.equal(dbName, 'some/db');
         assert.equal(taskDoc.id, 'xxx');
         assert.equal(taskDoc._rev, '1-aa');

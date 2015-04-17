@@ -31,7 +31,7 @@ BrowserStream.prototype.write = function (rec) {
     '[%s] %s (%s): %s',
     formatDate(rec.time),
     bunyan.nameFromLevel[rec.level].toUpperCase(),
-    rec.scope || 'bonnet',
+    rec.scope || 'capot',
     rec.msg
   );
 };
@@ -43,7 +43,7 @@ IgnoreStream.prototype.write = function () {};
 module.exports = function (options) {
 
   return bunyan.createLogger({
-    name: 'bonnet',
+    name: 'capot',
     streams: [
       {
         level: 'debug',

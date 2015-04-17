@@ -1,20 +1,20 @@
 var assert = require('assert');
-var Bonnet = require('../../client');
+var Capot = require('../../client');
 
 
-describe('bonnet/client', function () {
+describe('capot/client', function () {
 
   it('should be a function', function () {
-    assert.equal(typeof Bonnet, 'function');
+    assert.equal(typeof Capot, 'function');
   });
 
-  describe('bonnet.start()', function () {
+  describe('capot.start()', function () {
 
     it('should...');
 
   });
 
-  describe('bonnet.stop()', function () {
+  describe('capot.stop()', function () {
 
     it('should...');
 

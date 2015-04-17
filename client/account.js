@@ -18,9 +18,9 @@ function setState(data) {
 
 
 
-module.exports = function (bonnet) {
+module.exports = function (capot) {
 
-  var log = bonnet.log.child({ scope: 'bonnet.account' });
+  var log = capot.log.child({ scope: 'capot.account' });
   var account = new EventEmitter();
   var hasInit = false;
 
@@ -28,7 +28,7 @@ module.exports = function (bonnet) {
   account.id = function () {
     var roles = ((account.session || {}).userCtx || {}).roles || [];
     return roles.reduce(function (memo, item) {
-      var matches = /^bonnet:write:user\/([a-z0-9]+)$/.exec(item);
+      var matches = /^capot:write:user\/([a-z0-9]+)$/.exec(item);
       if (matches && matches[1]) { return matches[1]; }
       return memo;
     }, null);
@@ -36,14 +36,14 @@ module.exports = function (bonnet) {
 
 
   account.signUp = function (email, pass) {
-    var bonnetId = bonnet.uid();
+    var capotId = capot.uid();
     var userDoc = {
       name: email,
       password: pass,
       roles: [],
       type: 'user',
-      bonnetId: bonnetId,
-      database: ('user/' + bonnetId)
+      capotId: capotId,
+      database: ('user/' + capotId)
     };
 
     return couch.put(userDocUrl(email), userDoc);
@@ -114,7 +114,7 @@ module.exports = function (bonnet) {
 
 
   account.init = function (cb) {
-    log.info('initializing bonnet.account...');
+    log.info('initializing capot.account...');
 
     cb = cb || noop;
 
@@ -142,7 +142,7 @@ module.exports = function (bonnet) {
 
         resolve();
         cb();
-        log.info('bonnet.account initialized!');
+        log.info('capot.account initialized!');
       }
 
       couch.get('/_session').then(function (data) {
@@ -159,13 +159,13 @@ module.exports = function (bonnet) {
 
 
   function logEvent(eventName) {
-    var log = bonnet.log.child({ scope: 'bonnet.account:' + eventName });
+    var log = capot.log.child({ scope: 'capot.account:' + eventName });
     return function () {
       log.debug(Array.prototype.slice.call(arguments, 0));
     };
   }
 
-  if (bonnet.settings.debug === true) {
+  if (capot.settings.debug === true) {
     [ 'init', 'signin', 'signout', 'offline', 'online' ].forEach(function (eventName) {
       account.on(eventName, logEvent(eventName));
     });

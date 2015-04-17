@@ -7,16 +7,16 @@ var async = require('async');
 var Couch = require('./couch');
 
 
-function ensureDataDir(bonnet, cb) {
-  fs.exists(bonnet.config.data, function (exists) {
+function ensureDataDir(capot, cb) {
+  fs.exists(capot.config.data, function (exists) {
     if (exists) { return cb(); }
-    fs.mkdir(bonnet.config.data, cb);
+    fs.mkdir(capot.config.data, cb);
   });
 }
 
 
-function startPouchDBServer(bonnet, cb) {
-  var config = bonnet.config;
+function startPouchDBServer(capot, cb) {
+  var config = capot.config;
   var bin = path.join(__dirname, '../node_modules/pouchdb-server/bin/pouchdb-server');
   var port = config.port + 1;
   var args = [
@@ -29,7 +29,7 @@ function startPouchDBServer(bonnet, cb) {
 
   function checkIfStarted(chunk) {
     if (/pouchdb-server has started/.test(chunk.toString('utf8'))) {
-      bonnet.log.info('PouchDB Server started on port ' + port);
+      capot.log.info('PouchDB Server started on port ' + port);
       child.stdout.removeListener('data', checkIfStarted);
       config.couchdb.url = 'http://127.0.0.1:' + port;
       cb();
@@ -39,18 +39,18 @@ function startPouchDBServer(bonnet, cb) {
   child.stdout.on('data', checkIfStarted);
 
   child.stderr.on('data', function (chunk) {
-    bonnet.log.error(chunk.toString('utf8'));
+    capot.log.error(chunk.toString('utf8'));
   });
 
   child.on('error', function (err) {
-    bonnet.log.error(err);
+    capot.log.error(err);
   });
 
   function stop(code) {
-    bonnet.log.info('Stopping PouchDB Server...');
+    capot.log.info('Stopping PouchDB Server...');
     process.removeListener('exit', stop);
     child.once('close', function () {
-      bonnet.log.info('PouchDB Server stopped.');
+      capot.log.info('PouchDB Server stopped.');
       process.exit(code);
     });
     child.kill('SIGTERM');
@@ -62,9 +62,9 @@ function startPouchDBServer(bonnet, cb) {
 }
 
 
-function ensureAdminCredentials(bonnet, cb) {
-  var config = bonnet.config;
-  var credentialsPath = path.join(config.data, 'bonnet.json');
+function ensureAdminCredentials(capot, cb) {
+  var config = capot.config;
+  var credentialsPath = path.join(config.data, 'capot.json');
 
   function prompt() {
     var rl = readline.createInterface({
@@ -96,8 +96,8 @@ function ensureAdminCredentials(bonnet, cb) {
 }
 
 
-function ensureAdminUser(bonnet, cb) {
-  var config = bonnet.config;
+function ensureAdminUser(capot, cb) {
+  var config = capot.config;
   var couch = Couch({ url: config.couchdb.url });
 
   function createAdminUser(config, cb) {
@@ -119,8 +119,8 @@ function ensureAdminUser(bonnet, cb) {
 }
 
 
-function checkAdminCredentials(bonnet, cb) {
-  var config = bonnet.config;
+function checkAdminCredentials(capot, cb) {
+  var config = capot.config;
   var couch = Couch({ url: config.couchdb.url });
   couch.post('/_session', {
     name: config.couchdb.user,
@@ -128,29 +128,29 @@ function checkAdminCredentials(bonnet, cb) {
   }, function (err, data) {
     var roles = (data || {}).roles || [];
     if (roles.indexOf('_admin') === -1) {
-      return cb(new Error('Could not authenticate bonnet user on ' + config.couchdb.url));
+      return cb(new Error('Could not authenticate capot user on ' + config.couchdb.url));
     }
     cb();
   });
 }
 
 
-function ensureUsersDesignDoc(bonnet, cb) {
-  var couch = Couch(bonnet.config.couchdb);
+function ensureUsersDesignDoc(capot, cb) {
+  var couch = Couch(capot.config.couchdb);
   var usersDb = couch.db('_users');
 
-  usersDb.addIndex('by_bonnet_id', {
+  usersDb.addIndex('by_capot_id', {
     map: function (doc) {
-      emit(doc.bonnetId, null);
+      emit(doc.capotId, null);
     }
   }, cb);
 }
 
 
-module.exports = function (bonnet, cb) {
+module.exports = function (capot, cb) {
 
-  var config = bonnet.config;
-  var log = bonnet.log;
+  var config = capot.config;
+  var log = capot.log;
   var tasks = [];
 
   if (!config.couchdb.url) {
@@ -167,9 +167,9 @@ module.exports = function (bonnet, cb) {
   tasks.push(checkAdminCredentials);
   tasks.push(ensureUsersDesignDoc);
 
-  async.applyEachSeries(tasks, bonnet, function (err) {
+  async.applyEachSeries(tasks, capot, function (err) {
     if (err) { return cb(err); }
-    bonnet.couch = Couch(bonnet.config.couchdb);
+    capot.couch = Couch(capot.config.couchdb);
     cb();
   });
 

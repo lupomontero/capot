@@ -1,11 +1,11 @@
-# Bonnet Client
+# Capot Client
 
-This is the bare-bones front-end library (for a full blown experience check out [BonnetUI](./ui/)). This assumes you are using `browserify` to bundle your browser scripts.
+This is the bare-bones front-end library (for a full blown experience check out [CapotUI](./ui/)). This assumes you are using `browserify` to bundle your browser scripts.
 
 ```js
 // ie: in your `main.js`
-var Bonnet = require('bonnet/client');
-var bonnet = Bonnet(options);
+var Capot = require('capot/client');
+var capot = Capot(options);
 ```
 
 ## Options
@@ -14,43 +14,43 @@ var bonnet = Bonnet(options);
 
 ***
 
-## `bonnet.account`
+## `capot.account`
 
 ### Methods
 
-#### `bonnet.account.id()`
+#### `capot.account.id()`
 
 Get account `id`. Returns either a `String` or `null`.
 
 ```js
-var id = bonnet.account.id();
+var id = capot.account.id();
 ```
 
-#### `bonnet.account.signUp(email, pass)`
+#### `capot.account.signUp(email, pass)`
 
 Create new user.
 
 ```js
-bonnet.account.signUp(email, pass).then(function () {
+capot.account.signUp(email, pass).then(function () {
   console.log('account created!');
 });
 ```
 
-#### `bonnet.account.signIn(email, id)`
-#### `bonnet.account.signOut()`
-#### `bonnet.account.changePassword(secret, newSecret)`
-#### `bonnet.account.changeUsername(secret, newEmail)`
-#### `bonnet.account.resetPassword(email)`
-#### `bonnet.account.destroy()`
-#### `bonnet.account.isSignedIn()`
-#### `bonnet.account.isOnline()`
-#### `bonnet.account.isOffline()`
+#### `capot.account.signIn(email, id)`
+#### `capot.account.signOut()`
+#### `capot.account.changePassword(secret, newSecret)`
+#### `capot.account.changeUsername(secret, newEmail)`
+#### `capot.account.resetPassword(email)`
+#### `capot.account.destroy()`
+#### `capot.account.isSignedIn()`
+#### `capot.account.isOnline()`
+#### `capot.account.isOffline()`
 
 ### Events
 
 #### `init`
 
-This is emitted only once, when bonnet is started. At this point you can check `account.isSignedIn()`, `account.isOffline()` and so on.
+This is emitted only once, when capot is started. At this point you can check `account.isSignedIn()`, `account.isOffline()` and so on.
 
 #### `signin`
 
@@ -84,8 +84,8 @@ This is triggered when the session changes from offline to online. Note that thi
     "roles": [
       "8mndu5c",
       "confirmed",
-      "bonnet:read:user/8mndu5c",
-      "bonnet:write:user/8mndu5c"
+      "capot:read:user/8mndu5c",
+      "capot:write:user/8mndu5c"
     ]
   },
   "info": {
@@ -99,19 +99,19 @@ This is triggered when the session changes from offline to online. Note that thi
 
 ***
 
-## `bonnet.store`
+## `capot.store`
 
 ### Methods
 
-#### `bonnet.store.find(type, id, options)`
-#### `bonnet.store.findAll(type, options)`
-#### `bonnet.store.add(type, attrs)`
-#### `bonnet.store.update(type, id, attrs)`
-#### `bonnet.store.remove(type, id)`
-#### `bonnet.store.removeAll(type)`
-#### `bonnet.store.attach(type, id, attachments)`
-#### `bonnet.store.getAttachments(type, id)`
-#### `bonnet.store.sync()`
+#### `capot.store.find(type, id, options)`
+#### `capot.store.findAll(type, options)`
+#### `capot.store.add(type, attrs)`
+#### `capot.store.update(type, id, attrs)`
+#### `capot.store.remove(type, id)`
+#### `capot.store.removeAll(type)`
+#### `capot.store.attach(type, id, attachments)`
+#### `capot.store.getAttachments(type, id)`
+#### `capot.store.sync()`
 
 ### Events
 
@@ -128,14 +128,14 @@ This is triggered when the session changes from offline to online. Note that thi
 
 ***
 
-## `bonnet.task`
+## `capot.task`
 
 ### Methods
 
-#### `bonnet.task.start(type, attrs)`
-#### `bonnet.task.abort(type, id)`
-#### `bonnet.task.restart(type, id, extraAttrs)`
-#### `bonnet.task.restartAll()`
+#### `capot.task.start(type, attrs)`
+#### `capot.task.abort(type, id)`
+#### `capot.task.restart(type, id, extraAttrs)`
+#### `capot.task.restartAll()`
 
 ### Events
 
