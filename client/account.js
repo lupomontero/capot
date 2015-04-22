@@ -46,7 +46,21 @@ module.exports = function (capot) {
       database: ('user/' + capotId)
     };
 
-    return couch.put(userDocUrl(email), userDoc);
+    return new Promise(function (resolve, reject) {
+      function waitForUserDb() {
+        var dbUrl = encodeURIComponent(userDoc.database);
+        couch.get(dbUrl).then(resolve, function (err) {
+          if (err.statusCode === 404) {
+            return setTimeout(waitForUserDb, 200);
+          }
+          reject(err);
+        });
+      }
+
+      couch.put(userDocUrl(email), userDoc).then(function (data) {
+        setTimeout(waitForUserDb, 300);
+      }, reject);
+    });
   };
 
 
