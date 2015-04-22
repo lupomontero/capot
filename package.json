@@ -20,7 +20,6 @@
     "minimist": "^1.1.0",
     "moment": "^2.9.0",
     "pouchdb": "^3.3.1",
-    "pouchdb-server": "^0.6.4",
     "promise": "^7.0.0",
     "request": "^2.53.0"
   },
@@ -39,6 +38,7 @@
     "karma-mocha-reporter": "^1.0.0",
     "karma-phantomjs-launcher": "^0.1.4",
     "mocha": "^2.1.0",
+    "pouchdb-server": "^0.6.4",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.0.0"
   },
