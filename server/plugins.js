@@ -27,15 +27,18 @@ module.exports = function (capot, cb) {
 
   function loadPlugins(cb) {
     // read plugins from package.json and add those to pluginsPaths...
-    var pluginsPaths = [];
+    var plugins = (capot.pkg.capot || {}).plugins || [];
 
-    if (!pluginsPaths.length) { return cb(); }
+    if (!plugins.length) { return cb(); }
 
-    async.each(pluginsPaths, function (pluginPath, cb) {
-      capot.log.info('Initialising plugin ' + pluginPath);
-      requireExtension(pluginPath, function (err) {
+    async.each(plugins, function (plugin, cb) {
+      capot.log.info('Initialising plugin ' + plugin);
+      if (plugin.charAt(0) === '.') {
+        plugin = path.join(config.cwd, plugin);
+      }
+      requireExtension(plugin, function (err) {
         if (err) {
-          capot.log.warn('Extension not loaded');
+          capot.log.warn('Plugin not loaded');
         } else {
           capot.log.info('Loaded!');
         }
