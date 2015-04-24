@@ -1,9 +1,10 @@
 var fs = require('fs');
 var path = require('path');
-var cp = require('child_process');
 var readline = require('readline');
 var _ = require('lodash');
 var async = require('async');
+var which = require('which');
+var MultiCouch = require('multicouch');
 var Couch = require('./couch');
 
 
@@ -15,50 +16,56 @@ function ensureDataDir(capot, cb) {
 }
 
 
-function startPouchDBServer(capot, cb) {
+function startCouchDBServer(capot, cb) {
   var config = capot.config;
-  var bin = path.join(__dirname, '../node_modules/pouchdb-server/bin/pouchdb-server');
+  var retries = 10;
   var port = config.port + 1;
-  var args = [
-    '--port', port,
-    '--dir', config.data,
-    '--config', path.join(config.data, 'config.json')
-  ];
-  var options = { cwd: config.data/*, stdio: 'inherit'*/ };
-  var child = cp.spawn(bin, args, options);
+  var couchUrl = 'http://127.0.0.1:' + port;
+  var couch = Couch({ url: couchUrl });
+  var bin = which.sync('couchdb');
+  var server = new MultiCouch({
+    port: port,
+    prefix: config.data,
+    couchdb_path: bin
+  });
 
-  function checkIfStarted(chunk) {
-    if (/pouchdb-server has started/.test(chunk.toString('utf8'))) {
-      capot.log.info('PouchDB Server started on port ' + port);
-      child.stdout.removeListener('data', checkIfStarted);
-      config.couchdb.url = 'http://127.0.0.1:' + port;
+
+  function wait() {
+    couch.get('/', function (err, data) {
+      if (err) {
+        if (!(retries--)) { return cb(err); }
+        return setTimeout(wait, 1000);
+      }
+      var versionParts = data.version.split('.');
+      var major = parseInt(versionParts[0], 10);
+      var minor = parseInt(versionParts[1], 10);
+      if (major !== 1 || minor < 6) {
+        return cb(new Error('CouchDB version must be 1.6 or above'));
+      }
+      capot.log.info('CouchDB Server ' + data.version + ' started on port ' + port);
+      config.couchdb.url = couchUrl;
       cb();
-    }
+    });
   }
 
-  child.stdout.on('data', checkIfStarted);
-
-  child.stderr.on('data', function (chunk) {
-    capot.log.error(chunk.toString('utf8'));
-  });
-
-  child.on('error', function (err) {
-    capot.log.error(err);
-  });
+  server.on('start', wait);
+  server.on('error', function (err) { capot.log.error(err); });
 
   function stop(code) {
-    capot.log.info('Stopping PouchDB Server...');
+    capot.log.info('Stopping CouchDB Server...');
     process.removeListener('exit', stop);
-    child.once('close', function () {
-      capot.log.info('PouchDB Server stopped.');
+    server.once('stop', function () {
+      capot.log.info('CouchDB Server stopped.');
       process.exit(code);
     });
-    child.kill('SIGTERM');
+    server.stop();
   }
 
   [ 'exit', 'SIGINT', 'SIGTERM' ].forEach(function (eventName) {
     process.once(eventName, stop);
   });
+
+  server.start();
 }
 
 
@@ -154,10 +161,10 @@ module.exports = function (capot, cb) {
   var tasks = [];
 
   if (!config.couchdb.url) {
-    log.info('No CouchDB url in config so will start local PouchDB server');
+    log.info('No CouchDB url in config so will start local CouchDB server');
     config.couchdb.run = true;
     tasks.push(ensureDataDir);
-    tasks.push(startPouchDBServer);
+    tasks.push(startCouchDBServer);
     tasks.push(ensureAdminCredentials);
   } else {
     log.info('Using remote CouchDB: ' + config.couchdb.url);
