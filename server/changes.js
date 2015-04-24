@@ -9,7 +9,6 @@ module.exports = function (capot, cb) {
   var changesDb = couch.db('changes');
   var feed = capot.changes = new events.EventEmitter();
   var since = {};
-  var legacyDbUpdates = false;
 
 
   feed.start = function () {
@@ -55,22 +54,7 @@ module.exports = function (capot, cb) {
 
 
   function listen() {
-    // PouchDB and old CouchDB dont support /_db_updates.
-    if (legacyDbUpdates) {
-      return getAllChanges(function () {
-        setTimeout(listen, 10 * 1000);
-      });
-    }
-
     couch.get('/_db_updates', function (err, data) {
-      if (err && err.statusCode === 400) {
-        legacyDbUpdates = true;
-        setTimeout(listen, 10 * 1000);
-        return;
-      } else if (err) {
-        console.error(err);
-      }
-
       // Immediately listen for more changes.
       listen();
 
