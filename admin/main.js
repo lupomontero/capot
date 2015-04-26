@@ -1,6 +1,9 @@
+var Couch = require('../client/couch');
 var CapotUI = require('../client/ui');
+
+
 var app = window.app = CapotUI({
-  debug: true,
+  //debug: true,
   routePrefix: '_admin/',
   views: {
     index: require('./views/index'),
@@ -13,20 +16,7 @@ var app = window.app = CapotUI({
 });
 
 
-app.couch = require('../client/couch')('/_api');
-
-
-var session;
-
-
-function requireAdmin(fn) {
-  return function () {
-    if (session.userCtx.roles.indexOf('_admin') === -1) {
-      return app.navigate('signin', { trigger: true });
-    }
-    fn.apply(this, Array.prototype.slice.call(arguments, 0));
-  };
-}
+app.couch = Couch('/_api');
 
 
 app.addRegion('header', {
@@ -37,30 +27,28 @@ app.addRegion('header', {
 });
 
 
-app.route('', requireAdmin(function () {
+app.route('', app.requireAdmin(function () {
   app.showView('index');
 }));
 
-
-app.route('users', requireAdmin(function () {
+app.route('users', app.requireAdmin(function () {
   app.showView('users');
 }));
 
-
-app.route('config', requireAdmin(function () {
+app.route('config', app.requireAdmin(function () {
   app.showView('config');
 }));
 
-
 app.route('signin', function () {
-  app.showView('signin');
+  if (app.account.isSignedIn() && !app.account.isAdmin()) {
+    window.location.href = '/';
+  } else if (app.account.isSignedIn()) {
+    app.navigate('', { trigger: true });
+  } else {
+    app.showView('signin');
+  }
 });
 
 
-app.couch.get('/_session').then(function (data) {
-  session = data || { userCtx: { name: null, roles: [] } };
-  app.start();
-}, function (err) {
-  console.error(err);
-});
+app.start();
 

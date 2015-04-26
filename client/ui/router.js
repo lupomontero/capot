@@ -116,24 +116,47 @@ module.exports = Backbone.Router.extend({
     view.render();
   },
 
-  requireSignIn: function (fn) {
+  requireCondition: function (condition, redirectTo, fn) {
     var app = this;
     return function () {
-      if (!app.account.isSignedIn()) {
-        return app.navigate('signin', { trigger: true });
+      if (!condition()) {
+        return app.navigate(redirectTo, { trigger: true });
       }
       fn.apply(this, Array.prototype.slice.call(arguments, 0));
     };
   },
 
-  requireSignOut: function (fn) {
+  requireSignIn: function (redirectTo, fn) {
     var app = this;
-    return function () {
-      if (app.account.isSignedIn()) {
-        return app.navigate('dashboard', { trigger: true });
-      }
-      fn.apply(this, Array.prototype.slice.call(arguments, 0));
-    };
+    if (arguments.length === 1) {
+      fn = redirectTo;
+      redirectTo = 'signin';
+    }
+    return app.requireCondition(function () {
+      return app.account.isSignedIn();
+    }, redirectTo, fn);
+  },
+
+  requireSignOut: function (redirectTo, fn) {
+    var app = this;
+    if (arguments.length === 1) {
+      fn = redirectTo;
+      redirectTo = 'dashboard';
+    }
+    return app.requireCondition(function () {
+      return app.account.isSignedIn() !== true;
+    }, redirectTo, fn);
+  },
+
+  requireAdmin: function (redirectTo, fn) {
+    var app = this;
+    if (arguments.length === 1) {
+      fn = redirectTo;
+      redirectTo = 'signin';
+    }
+    return app.requireCondition(function () {
+      return app.account.isAdmin();
+    }, redirectTo, fn);
   },
 
   createView: function (name, options) {

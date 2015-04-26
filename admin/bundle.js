@@ -1,7 +1,10 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var Couch = require('../client/couch');
 var CapotUI = require('../client/ui');
+
+
 var app = window.app = CapotUI({
-  debug: true,
+  //debug: true,
   routePrefix: '_admin/',
   views: {
     index: require('./views/index'),
@@ -14,20 +17,7 @@ var app = window.app = CapotUI({
 });
 
 
-app.couch = require('../client/couch')('/_api');
-
-
-var session;
-
-
-function requireAdmin(fn) {
-  return function () {
-    if (session.userCtx.roles.indexOf('_admin') === -1) {
-      return app.navigate('signin', { trigger: true });
-    }
-    fn.apply(this, Array.prototype.slice.call(arguments, 0));
-  };
-}
+app.couch = Couch('/_api');
 
 
 app.addRegion('header', {
@@ -38,32 +28,30 @@ app.addRegion('header', {
 });
 
 
-app.route('', requireAdmin(function () {
+app.route('', app.requireAdmin(function () {
   app.showView('index');
 }));
 
-
-app.route('users', requireAdmin(function () {
+app.route('users', app.requireAdmin(function () {
   app.showView('users');
 }));
 
-
-app.route('config', requireAdmin(function () {
+app.route('config', app.requireAdmin(function () {
   app.showView('config');
 }));
 
-
 app.route('signin', function () {
-  app.showView('signin');
+  if (app.account.isSignedIn() && !app.account.isAdmin()) {
+    window.location.href = '/';
+  } else if (app.account.isSignedIn()) {
+    app.navigate('', { trigger: true });
+  } else {
+    app.showView('signin');
+  }
 });
 
 
-app.couch.get('/_session').then(function (data) {
-  session = data || { userCtx: { name: null, roles: [] } };
-  app.start();
-}, function (err) {
-  console.error(err);
-});
+app.start();
 
 
 },{"../client/couch":9,"../client/ui":17,"./templates":2,"./views/_header":3,"./views/config":4,"./views/index":5,"./views/signin":6,"./views/users":7}],2:[function(require,module,exports){
@@ -88,9 +76,11 @@ this["templates"]["config"] = Handlebars.template({"compiler":[6,">= 2.0.0-beta.
     + "\">\n      </div>\n      <button type=\"submit\" class=\"btn btn-primary\">Update</button>\n    </form>\n  </div>\n</div>\n\n";
 },"useData":true});
 this["templates"]["header"] = Handlebars.template({"1":function(depth0,helpers,partials,data) {
+    return "  <button type=\"button\" class=\"navbar-toggle collapsed\" data-toggle=\"collapse\" data-target=\"#main-menu\">\n    <span class=\"sr-only\">Toggle navigation</span>\n    <span class=\"icon-bar\"></span>\n    <span class=\"icon-bar\"></span>\n    <span class=\"icon-bar\"></span>\n  </button>\n";
+},"3":function(depth0,helpers,partials,data) {
     var alias1=helpers.helperMissing, alias2=this.escapeExpression;
 
-  return "<div class=\"collapse navbar-collapse\" id=\"bs-example-navbar-collapse-1\">\n  <ul class=\"nav navbar-nav\">\n    <li class=\"active\"><a href=\"/users\">"
+  return "<div class=\"collapse navbar-collapse\" id=\"main-menu\">\n  <ul class=\"nav navbar-nav\">\n    <li class=\"active\"><a href=\"/users\">"
     + alias2((helpers.glyphicon || (depth0 && depth0.glyphicon) || alias1).call(depth0,"user",{"name":"glyphicon","hash":{},"data":data}))
     + " Users</a></li>\n    <li><a href=\"/config\">"
     + alias2((helpers.glyphicon || (depth0 && depth0.glyphicon) || alias1).call(depth0,"cog",{"name":"glyphicon","hash":{},"data":data}))
@@ -100,8 +90,10 @@ this["templates"]["header"] = Handlebars.template({"1":function(depth0,helpers,p
 },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
     var stack1;
 
-  return "<div class=\"navbar-header\">\n  <button type=\"button\" class=\"navbar-toggle collapsed\" data-toggle=\"collapse\" data-target=\"#bs-example-navbar-collapse-1\">\n    <span class=\"sr-only\">Toggle navigation</span>\n    <span class=\"icon-bar\"></span>\n    <span class=\"icon-bar\"></span>\n    <span class=\"icon-bar\"></span>\n  </button>\n  <a class=\"navbar-brand\" href=\"/\">Capot Admin</a>\n</div>\n\n"
+  return "<div class=\"navbar-header\">\n"
     + ((stack1 = helpers['if'].call(depth0,((stack1 = (depth0 != null ? depth0.userCtx : depth0)) != null ? stack1.name : stack1),{"name":"if","hash":{},"fn":this.program(1, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "  <a class=\"navbar-brand\" href=\"/\">Capot Admin</a>\n</div>\n\n"
+    + ((stack1 = helpers['if'].call(depth0,((stack1 = (depth0 != null ? depth0.userCtx : depth0)) != null ? stack1.name : stack1),{"name":"if","hash":{},"fn":this.program(3, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
     + "\n";
 },"useData":true});
 this["templates"]["index"] = Handlebars.template({"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
@@ -392,15 +384,12 @@ module.exports = function (capot) {
 
 
   account.resetPassword = function (email) {
-    return new Promise(function () {
-      console.log('resetting password', request);
+    return new Promise(function (resolve, reject) {
       request({ url: window.location.origin })('POST', '/_reset', {
         email: email
-      }).then(function () {
-        console.log(arguments);
-      }, function () {
-        console.error(arguments);
-      });
+      }).then(function (data) {
+        console.log(data);
+      }, reject);
     });
   };
 
@@ -1385,24 +1374,47 @@ module.exports = Backbone.Router.extend({
     view.render();
   },
 
-  requireSignIn: function (fn) {
+  requireCondition: function (condition, redirectTo, fn) {
     var app = this;
     return function () {
-      if (!app.account.isSignedIn()) {
-        return app.navigate('signin', { trigger: true });
+      if (!condition()) {
+        return app.navigate(redirectTo, { trigger: true });
       }
       fn.apply(this, Array.prototype.slice.call(arguments, 0));
     };
   },
 
-  requireSignOut: function (fn) {
+  requireSignIn: function (redirectTo, fn) {
     var app = this;
-    return function () {
-      if (app.account.isSignedIn()) {
-        return app.navigate('dashboard', { trigger: true });
-      }
-      fn.apply(this, Array.prototype.slice.call(arguments, 0));
-    };
+    if (arguments.length === 1) {
+      fn = redirectTo;
+      redirectTo = 'signin';
+    }
+    return app.requireCondition(function () {
+      return app.account.isSignedIn();
+    }, redirectTo, fn);
+  },
+
+  requireSignOut: function (redirectTo, fn) {
+    var app = this;
+    if (arguments.length === 1) {
+      fn = redirectTo;
+      redirectTo = 'dashboard';
+    }
+    return app.requireCondition(function () {
+      return app.account.isSignedIn() !== true;
+    }, redirectTo, fn);
+  },
+
+  requireAdmin: function (redirectTo, fn) {
+    var app = this;
+    if (arguments.length === 1) {
+      fn = redirectTo;
+      redirectTo = 'signin';
+    }
+    return app.requireCondition(function () {
+      return app.account.isAdmin();
+    }, redirectTo, fn);
   },
 
   createView: function (name, options) {

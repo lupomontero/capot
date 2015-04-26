@@ -160,6 +160,26 @@ gulp.task('build:admin', [ 'lint:admin', 'hbs:admin' ], function () {
 gulp.task('build', [ 'build:client', 'build:ui', 'build:admin' ]);
 
 
+gulp.task('favicons', function (done) {
+  favicons({
+    files: {
+      src: 'admin/icon.png',
+      dest: 'admin/favicons',
+      html: 'admin/index.html'
+    },
+    settings: {
+      appName: pkg.name,
+      appDescription: pkg.description,
+      version: pkg.version,
+      developer: 'Lupo Montero',
+      developerURL: 'http://lupomontero.com',
+      index: '/',
+      url: 'http://lupomontero.github.io/capot/'
+    }
+  }, done);
+});
+
+
 gulp.task('watch', function () {
   gulp.watch([ components.client.files, components.client.tests ], [ 'build:client' ]);
   gulp.watch(components.ui.files, [ 'build:ui' ]);
