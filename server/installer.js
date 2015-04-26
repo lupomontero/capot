@@ -154,6 +154,33 @@ function ensureUsersDesignDoc(capot, cb) {
 }
 
 
+function ensureAppDb(capot, cb) {
+  var couch = Couch(capot.config.couchdb);
+  couch.get('app', function (err) {
+    if (err && err.statusCode !== 404) {
+      return cb(err);
+    } else if (!err) {
+      return cb();
+    }
+    couch.put('app', cb);
+  });
+}
+
+
+function ensureAppConfigDoc(capot, cb) {
+  var couch = Couch(capot.config.couchdb);
+  var db = couch.db('app');
+  db.get('config', function (err) {
+    if (err && err.status !== 404) {
+      return cb(err);
+    } else if (!err) {
+      return cb();
+    }
+    db.put({ _id: 'config' }, cb);
+  });
+}
+
+
 module.exports = function (capot, cb) {
 
   var config = capot.config;
@@ -173,6 +200,8 @@ module.exports = function (capot, cb) {
   tasks.push(ensureAdminUser);
   tasks.push(checkAdminCredentials);
   tasks.push(ensureUsersDesignDoc);
+  tasks.push(ensureAppDb);
+  tasks.push(ensureAppConfigDoc);
 
   async.applyEachSeries(tasks, capot, function (err) {
     if (err) { return cb(err); }

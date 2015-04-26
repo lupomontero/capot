@@ -1,0 +1,8 @@
+body {
+  padding-top: 50px;
+}
+
+#signin-form {
+  max-width: 300px;
+  margin: 80px auto;
+}

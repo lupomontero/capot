@@ -1,4 +1,5 @@
 var Hapi = require('hapi');
+var Boom = require('hapi/node_modules/boom');
 var path = require('path');
 
 
@@ -34,6 +35,30 @@ module.exports = function (capot, cb) {
     server.route({ method: method, path: '/_api/{p*}', handler: apiHandler });
   });
 
+  
+  server.route({
+    method: 'POST',
+    path: '/_reset',
+    handler: function (req, reply) {
+      var userDocId = 'org.couchdb.user:' + req.payload.email;
+      var userDocUrl = '/_users/' + encodeURIComponent(userDocId);
+      capot.couch.get(userDocUrl, function (err, userDoc) {
+        if (err) { return reply(Boom.notFound()); }
+        console.log(userDoc);
+        reply(userDoc);
+      });
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/_admin/{p*}',
+    handler: {
+      directory: {
+        path: path.join(config.cwd, 'node_modules', 'capot', 'admin')
+      }
+    }
+  });
 
   server.route({
     method: 'GET',

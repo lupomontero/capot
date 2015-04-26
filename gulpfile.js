@@ -1,14 +1,27 @@
+var path = require('path');
 var gulp = require('gulp');
-var gutil = require('gulp-util');
+var concat = require('gulp-concat');
+var declare = require('gulp-declare');
+var favicons = require('favicons');
+var handlebars = require('gulp-handlebars');
+var imagemin = require('gulp-imagemin');
 var jshint = require('gulp-jshint');
+var manifest = require('gulp-manifest');
 var mocha = require('gulp-mocha');
-var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
+var replace = require('gulp-replace');
+var uglify = require('gulp-uglify');
+var gutil = require('gulp-util');
+var wrap = require('gulp-wrap');
+var merge = require('merge-stream');
+var browserify = require('browserify');
 var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
-var browserify = require('browserify');
 var karma = require('karma').server;
 var _ = require('lodash');
+
+
+var pkg = require('./package.json');
 
 
 var components = {
@@ -91,6 +104,44 @@ gulp.task('test:server', [ 'lint:server' ], function () {
 gulp.task('test', [ 'test:client', 'test:server' ]);
 
 
+gulp.task('hbs:admin', function () {
+  var partialsWrapper = [
+    'Handlebars.registerPartial(',
+    '<%= processPartialName(file.relative) %>, ',
+    'Handlebars.template(<%= contents %>)',
+    ');'
+  ].join('');
+
+  var partials = gulp.src('admin/templates/_*.hbs')
+    .pipe(handlebars({ handlebars: require('handlebars') }))
+    .pipe(wrap(partialsWrapper, {}, {
+      imports: {
+        processPartialName: function(fileName) {
+          // Strip the extension and the underscore
+          // Escape the output with JSON.stringify
+          return JSON.stringify(path.basename(fileName, '.js').substr(1));
+        }
+      }
+    }));
+
+  var templates = gulp.src('admin/templates/**/[^_]*.hbs')
+    .pipe(handlebars({ handlebars: require('handlebars') }))
+    .pipe(wrap('Handlebars.template(<%= contents %>)'))
+    .pipe(declare({
+      namespace: 'templates',
+      noRedeclare: true, // Avoid duplicate declarations
+      processName: function (filePath) {
+        return declare.processNameByPath(filePath.replace('admin/templates/', ''));
+      }
+    }));
+
+  return merge(partials, templates)
+    .pipe(concat('templates.js'))
+    .pipe(gulp.dest('admin'));
+});
+
+
+
 gulp.task('build:client', [ 'test:client' ], function () {
   var bundler = browserify(components.client.main, { standalone: 'Capot' });
   return bundle(bundler, components.client.dest);
@@ -101,7 +152,7 @@ gulp.task('build:ui', [ 'lint:ui' ], function () {
   return bundle(bundler, components.ui.dest);
 });
 
-gulp.task('build:admin', [ 'lint:admin' ], function () {
+gulp.task('build:admin', [ 'lint:admin', 'hbs:admin' ], function () {
   var bundler = browserify(components.admin.main);
   return bundle(bundler, components.admin.dest);
 });
@@ -112,8 +163,15 @@ gulp.task('build', [ 'build:client', 'build:ui', 'build:admin' ]);
 gulp.task('watch', function () {
   gulp.watch([ components.client.files, components.client.tests ], [ 'build:client' ]);
   gulp.watch(components.ui.files, [ 'build:ui' ]);
-  gulp.watch(components.admin.files, [ 'build:admin' ]);
   gulp.watch([ components.server.files, components.server.tests ], [ 'test:server' ]);
+  gulp.watch([
+    'admin/main.js',
+    'admin/collections/**/*.js',
+    'admin/models/**/*.js',
+    'admin/util/**/*.js',
+    'admin/views/**/*.js',
+    'admin/templates/**/*.hbs'
+  ], [ 'build:admin' ]);
 });
 
 

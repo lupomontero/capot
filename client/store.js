@@ -290,7 +290,7 @@ module.exports = function (capot) {
       cb();
     }
 
-    if (account.isSignedIn()) {
+    if (account.isSignedIn() && !account.isAdmin()) {
       store.remoteUrl = settings.remote + '/' + encodeURIComponent('user/' + capotId);
       store.remote = new PouchDB(store.remoteUrl);
       store.sync(listenToLocalChanges);

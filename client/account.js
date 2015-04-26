@@ -1,6 +1,7 @@
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('promise');
 var couch = require('./couch')('/_api');
+var request = require('./request');
 var noop = function () {};
 
 
@@ -92,7 +93,13 @@ module.exports = function (capot) {
 
 
   account.resetPassword = function (email) {
-    throw new Error('FIXME: Unimplented!');
+    return new Promise(function (resolve, reject) {
+      request({ url: window.location.origin })('POST', '/_reset', {
+        email: email
+      }).then(function (data) {
+        console.log(data);
+      }, reject);
+    });
   };
 
 
@@ -114,6 +121,12 @@ module.exports = function (capot) {
   account.isSignedIn = function () {
     var userCtx = (account.session || {}).userCtx || {};
     return (typeof userCtx.name === 'string' && userCtx.name.length > 0);
+  };
+
+
+  account.isAdmin = function () {
+    var userCtx = (account.session || {}).userCtx || {};
+    return userCtx.roles && userCtx.roles.indexOf('_admin') >= 0;
   };
 
 
