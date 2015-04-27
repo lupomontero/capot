@@ -142,6 +142,17 @@ function checkAdminCredentials(capot, cb) {
 }
 
 
+function ensureNoDelayedCommits(capot, cb) {
+  var couch = Couch(capot.config.couchdb);
+  var url = '/_config/couchdb/delayed_commits';
+  couch.get(url, function (err, data) {
+    if (err) { return cb(err); }
+    if (data === 'false') { return cb(); }
+    couch.put(url, 'false', cb);
+  });
+}
+
+
 function ensureUsersDesignDoc(capot, cb) {
   var couch = Couch(capot.config.couchdb);
   var usersDb = couch.db('_users');
@@ -212,6 +223,7 @@ module.exports = function (capot, cb) {
 
   tasks.push(ensureAdminUser);
   tasks.push(checkAdminCredentials);
+  tasks.push(ensureNoDelayedCommits);
   tasks.push(ensureUsersDesignDoc);
   tasks.push(ensureAppDb);
   tasks.push(ensureAppConfigDoc);
