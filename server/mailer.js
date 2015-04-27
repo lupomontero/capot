@@ -11,18 +11,26 @@ module.exports = function (capot, cb) {
 
 
   appDb.get('config').then(function (configDoc) {
-    log.info('Using service: ' + configDoc.mailer.service);
+    var mailerConf = configDoc.mailer || {};
+    var service = mailerConf.service;
+
+    if (!service) {
+      log.info('No mailer service configured!');
+      return cb();
+    }
+
+    log.info('Using service: ' + service);
 
     var transporter = nodemailer.createTransport({
-      service: configDoc.mailer.service,
+      service: service,
       auth: {
-        user: configDoc.mailer.user,
-        pass: configDoc.mailer.pass
+        user: mailerConf.user,
+        pass: mailerConf.pass
       }
     });
 
     capot.sendMail = function (msg, cb) {
-      msg.from = configDoc.mailer.from;
+      msg.from = mailerConf.from;
       return transporter.sendMail(msg, cb);
     };
 

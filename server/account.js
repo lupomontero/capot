@@ -1,74 +1,119 @@
 var EventEmitter = require('events').EventEmitter;
+var async = require('async');
 var moment = require('moment');
 var Boom = require('hapi/node_modules/boom');
 var uid = require('../client/uid');
+
+
+function permissionsDdoc(capotId) {
+  return {
+    _id: '_design/permissions',
+    language: 'javascript',
+    validate_doc_update: [
+      'function (newDoc, oldDoc, userCtx) {',
+      '  for (var i = 0; i < userCtx.roles.length; i++) {',
+      '    var r = userCtx.roles[i];',
+      '    if (r === "capot:write:user/' + capotId + '" || r === "_admin") {',
+      '      return;',
+      '    }',
+      '  }',
+      '  throw {unauthorized: "You are not authorized to write to this database"};',
+      '}'
+    ].join('\n')
+  };
+}
+
+
+function securityDoc(capotId) {
+  return {
+    admins: { names: [], roles: [] },
+    members: {
+      admins: [],
+      roles: [
+        'capot:read:user/' + capotId,
+        'capot:write:user/' + capotId
+      ]
+    }
+  };
+}
+
+
+function roles(capotId) {
+  return [
+    capotId,
+    'confirmed',
+    'capot:read:user/' + capotId,
+    'capot:write:user/' + capotId
+  ];
+}
 
 
 module.exports = function (capot, cb) {
 
   var couch = capot.couch;
   var www = capot.www;
+  var changes = capot.changes;
+  var log = capot.log.child({ scope: 'capot.account' });
   var account = capot.account = new EventEmitter();
   var usersDb = couch.db('_users');
+  var appDb = couch.db('app');
 
 
   function handleSignUp(userDoc) {
     var userDb = couch.db(userDoc.database);
-    var permissionsDdoc = {
-      _id: '_design/permissions',
-      language: 'javascript',
-      validate_doc_update: [
-        'function (newDoc, oldDoc, userCtx) {',
-        '  for (var i = 0; i < userCtx.roles.length; i++) {',
-        '    var r = userCtx.roles[i];',
-        '    if (r === "capot:write:user/' + userDoc.capotId + '" || r === "_admin") {',
-        '      return;',
-        '    }',
-        '  }',
-        '  throw {unauthorized: "You are not authorized to write to this database"};',
-        '}'
-      ].join('\n')
-    };
+    var capotId = userDoc.capotId;
 
-    userDb.put(permissionsDdoc, function (err) {
-      if (err) {
-        return console.error('Error adding permissions design doc to user db', userDoc, err);
+    async.series([
+      function (cb) {
+        userDb.put(permissionsDdoc(capotId), cb);
+      },
+      function (cb) {
+        userDb.addSecurity(securityDoc(capotId), cb);
+      },
+      function (cb) {
+        appDb.put({
+          _id: 'db/' + userDoc._id,
+          type: 'db',
+          database: userDoc.database,
+          createdAt: new Date()
+        }, cb);
+      },
+      function (cb) {
+        userDoc.roles = roles(capotId);
+        usersDb.put(userDoc, function (err, data) {
+          if (err) { return cb(err); }
+          userDoc._rev = data.rev;
+          cb();
+        });
       }
-      userDoc.roles = [
-        userDoc.capotId,
-        'confirmed',
-        'capot:read:user/' + userDoc.capotId,
-        'capot:write:user/' + userDoc.capotId
-      ];
-      usersDb.put(userDoc, function (err, data) {
-        if (err) {
-          console.error('Error updating user roles', userDoc, err);
-        }
-        userDoc._rev = data.rev;
-        account.emit('add', userDoc);
-      });
+    ], function (err) {
+      if (err) { return log.error(err); }
+      account.emit('add', userDoc);
     });
   }
 
 
   function handleAccountDeletion(userDoc) {
-    console.log('delete account', userDoc);
-    account.emit('remove', userDoc);
+    appDb.get('db/' + userDoc._id, function (err, dbDoc) {
+      if (err) { return log.error(err); }
+      couch.del(encodeURIComponent(dbDoc.database), function (err) {
+        if (err) { return log.error(err); }
+        appDb.remove(dbDoc, function (err) {
+          if (err) { return log.error(err); }
+          account.emit('remove', userDoc);
+        });
+      });
+    });
   }
 
 
-  var changes = usersDb.changes({
-    include_docs: true,
-    live: true
-  });
+  changes.on('change', function (db, change) {
+    console.log('change', change);
 
-  changes.on('change', function (change) {
-    // Ignore design docs.
-    if (/^_design\//.test(change.id)) { return; }
+    // We only care about user docs..
+    if (db !== '_users' || !/^org\.couchdb\.user:/.test(change.id)) { return; }
 
     var userDoc = change.doc;
-
-    if (userDoc.type !== 'user') { return; }
 
     if (change.deleted) {
       handleAccountDeletion(userDoc);

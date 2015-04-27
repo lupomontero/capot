@@ -69,6 +69,7 @@ module.exports = function (opt) {
     del: req.bind(null, 'DELETE'),
 
     db: function (name) {
+      var couch = this;
       var dbUrl = opt.url + '/' + encodeURIComponent(name);
       var db = new PouchDB(dbUrl, {
         auth: {
@@ -142,6 +143,20 @@ module.exports = function (opt) {
 
           db.put(ddoc, cb);
         });
+      };
+      
+      db.addSecurity = function (securityDoc, cb) {
+        db.get('_security', function (err, data) {
+          if (err) { return cb(err); }
+          if (_.isEqual(data, securityDoc)) { return cb(); }
+          // Use `couch` to update the security object as `db` is a PouchDB
+          // client, and doesn't allow this.
+          couch.put(encodeURIComponent(name) + '/_security', securityDoc, cb);
+        });
+      };
+
+      db.removeSecurity = function (cb) {
+        couch.put(encodeURIComponent(name) + '/_security', {}, cb);
       };
 
       return db;

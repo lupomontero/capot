@@ -5,6 +5,7 @@ var noop = function () {};
 
 module.exports = function (capot, cb) {
 
+  var log = capot.log.child({ scope: 'capot.changes' });
   var couch = capot.couch;
   var changesDb = couch.db('changes');
   var feed = capot.changes = new events.EventEmitter();
@@ -18,11 +19,21 @@ module.exports = function (capot, cb) {
 
   function getAllChanges(cb) {
     couch.get('/_all_dbs', function (err, dbs) {
-      if (err) { return console.error(err); }
+      if (err) { return log.error(err); }
       async.eachLimit(dbs, 10, getChanges, cb);
     });
   }
 
+
+  function emitChange(db, data) {
+    data.results.forEach(function (result) {
+      feed.emit('change', db, result);
+      feed.emit('change:' + db, result);
+      if (result.doc.type) {
+        feed.emit('change:' + db + ':' + result.doc.type, result);
+      }
+    });
+  }
 
   function getChanges(db, cb) {
     cb = cb || noop;
@@ -33,19 +44,16 @@ module.exports = function (capot, cb) {
 
     couch.db(db).changes(params)
       .on('error', function (err) {
-        console.error('changes:error', err);
-        //err.db = db;
-        //feed.emit('error', err);
+        log.error('changes:error', err);
         cb();
       })
       .on('complete', function (data) {
-        //console.log('changes:complete', data);
+        //log.info('changes:complete', data);
         if (data.last_seq > params.since) {
           // Keep track of last seq for this db, so future requests only get
           // updates since this last sequence number.
           since[db] = data.last_seq;
-          feed.emit('change', db, data);
-          feed.emit('change:' + db, data);
+          emitChange(db, data);
           return updateSince(db, data.last_seq, cb);
         }
         cb();
@@ -88,6 +96,14 @@ module.exports = function (capot, cb) {
   }
 
 
+  function ensureChangesDbSecurity(cb) {
+    changesDb.addSecurity({
+      admins: { roles: [ '_admin' ] },
+      members: { roles: [ '_admin' ] }
+    }, cb);
+  }
+
+
   function loadSince(cb) {
     changesDb.allDocs({
       startkey: 'since/',
@@ -108,7 +124,7 @@ module.exports = function (capot, cb) {
     var sinceDoc = { _id: 'since/' + db, type: 'since', seq: seq };
     changesDb.get(sinceDoc._id, function (err, data) {
       if (err && err.status !== 404) {
-        return console.error(err);
+        return log.error(err);
       } else if (err) { // not found
 
       } else if (seq === data.seq) {
@@ -121,8 +137,10 @@ module.exports = function (capot, cb) {
     });
   }
 
+
   async.series([
     ensureChangesDb,
+    ensureChangesDbSecurity,
     loadSince
   ], cb);
 

@@ -198,13 +198,7 @@ function ensureAppDbSecurity(capot, cb) {
     admins: { roles: [ '_admin' ] },
     members: { roles: [ '_admin' ] }
   };
-  db.get('_security', function (err, data) {
-    if (err) { return cb(err); }
-    if (_.isEqual(data, securityDoc)) { return cb(); }
-    // Use `couch` to update the security object as `db` is a PouchDB client,
-    // and doesn't allow this.
-    couch.put('/app/_security', securityDoc, cb);
-  });
+  db.addSecurity(securityDoc, cb);
 }
 
 
