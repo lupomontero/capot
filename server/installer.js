@@ -191,6 +191,23 @@ function ensureAppDb(capot, cb) {
 }
 
 
+function ensureAppDbSecurity(capot, cb) {
+  var couch = Couch(capot.config.couchdb);
+  var db = couch.db('app');
+  var securityDoc = {
+    admins: { roles: [ '_admin' ] },
+    members: { roles: [ '_admin' ] }
+  };
+  db.get('_security', function (err, data) {
+    if (err) { return cb(err); }
+    if (_.isEqual(data, securityDoc)) { return cb(); }
+    // Use `couch` to update the security object as `db` is a PouchDB client,
+    // and doesn't allow this.
+    couch.put('/app/_security', securityDoc, cb);
+  });
+}
+
+
 function ensureAppConfigDoc(capot, cb) {
   var couch = Couch(capot.config.couchdb);
   var db = couch.db('app');
@@ -226,6 +243,7 @@ module.exports = function (capot, cb) {
   tasks.push(ensureNoDelayedCommits);
   tasks.push(ensureUsersDesignDoc);
   tasks.push(ensureAppDb);
+  tasks.push(ensureAppDbSecurity);
   tasks.push(ensureAppConfigDoc);
 
   async.applyEachSeries(tasks, capot, function (err) {
