@@ -199,7 +199,7 @@ module.exports = function (capot, cb) {
           });
         });
       });
-    })
+    });
   }
 
   www.route({

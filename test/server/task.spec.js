@@ -26,9 +26,8 @@ describe('capot/server/task', function () {
 
       process.nextTick(function () {
         changeListener('some/db', {
-          results: [
-            { id: '$foo/xxx', doc: { _id: '$foo/xxx', _rev: '1-aa', type: '$foo' } }
-          ]
+          id: '$foo/xxx',
+          doc: { _id: '$foo/xxx', _rev: '1-aa', type: '$foo' }
         });
       });
     });
