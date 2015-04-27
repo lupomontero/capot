@@ -47,18 +47,18 @@ module.exports = function (capot) {
     };
 
     return new Promise(function (resolve, reject) {
-      function waitForUserDb() {
-        var dbUrl = encodeURIComponent(userDoc.database);
-        couch.get(dbUrl).then(resolve, function (err) {
-          if (err.statusCode === 404) {
-            return setTimeout(waitForUserDb, 200);
-          }
-          reject(err);
-        });
+      function waitForUserReady() {
+        couch.post('/_session', {
+          name: email,
+          password: pass
+        }).then(function (data) {
+          if (!data.roles.length) { return setTimeout(waitForUserReady, 200); }
+          account.init().then(resolve, reject);
+        }, reject);
       }
 
       couch.put(userDocUrl(email), userDoc).then(function (data) {
-        setTimeout(waitForUserDb, 300);
+        setTimeout(waitForUserReady, 300);
       }, reject);
     });
   };
@@ -106,16 +106,15 @@ module.exports = function (capot) {
 
   account.destroy = function () {
     var email = account.session.userCtx.name;
-    //couch.get(userDocUrl(email)).then(function () {
-    //  console.log(arguments);
-    //}, function () {
-    //  console.error(arguments);
-    //});
-    //return;
-    throw new Error('FIXME: Unimplented!');
-    // Destroy local db
-    // Delete user from remote db
-    // Server should remove user db
+    var url = userDocUrl(email);
+    return new Promise(function (resolve, reject) {
+      couch.get(url).then(function (userDoc) {
+        userDoc._deleted = true;
+        couch.put(url, userDoc).then(function (data) {
+          account.init(resolve, reject);
+        }, reject);
+      }, reject);
+    });
   };
 
 

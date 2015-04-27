@@ -108,8 +108,6 @@ module.exports = function (capot, cb) {
 
 
   changes.on('change', function (db, change) {
-    console.log('change', change);
-
     // We only care about user docs..
     if (db !== '_users' || !/^org\.couchdb\.user:/.test(change.id)) { return; }
 
