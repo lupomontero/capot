@@ -16,7 +16,7 @@ function ensureDataDir(capot, cb) {
 }
 
 
-function startCouchDBServer(capot, cb) {
+function startCouchDBServer(log, capot, cb) {
   var config = capot.config;
   var retries = 10;
   var port = config.port + 1;
@@ -42,20 +42,20 @@ function startCouchDBServer(capot, cb) {
       if (major !== 1 || minor < 6) {
         return cb(new Error('CouchDB version must be 1.6 or above'));
       }
-      capot.log.info('CouchDB Server ' + data.version + ' started on port ' + port);
+      log.info('CouchDB Server ' + data.version + ' started on port ' + port);
       config.couchdb.url = couchUrl;
       cb();
     });
   }
 
   server.on('start', wait);
-  server.on('error', function (err) { capot.log.error(err); });
+  server.on('error', function (err) { log.error(err); });
 
   function stop(code) {
-    capot.log.info('Stopping CouchDB Server...');
+    log.info('Stopping CouchDB Server...');
     process.removeListener('exit', stop);
     server.once('stop', function () {
-      capot.log.info('CouchDB Server stopped.');
+      log.info('CouchDB Server stopped.');
       process.exit(code);
     });
     server.stop();
@@ -146,11 +146,24 @@ function ensureUsersDesignDoc(capot, cb) {
   var couch = Couch(capot.config.couchdb);
   var usersDb = couch.db('_users');
 
-  usersDb.addIndex('by_capot_id', {
-    map: function (doc) {
-      emit(doc.capotId, null);
+  async.series([
+    function (cb) {
+      usersDb.addIndex('by_capot_id', {
+        map: function (doc) {
+          emit(doc.capotId, null);
+        }
+      }, cb);
+    },
+    function (cb) {
+      usersDb.addIndex('by_reset_token', {
+        map: function (doc) {
+          if (doc.$reset && doc.$reset.token) {
+            emit(doc.$reset.token, null);
+          }
+        }
+      }, cb);
     }
-  }, cb);
+  ], cb);
 }
 
 
@@ -184,14 +197,14 @@ function ensureAppConfigDoc(capot, cb) {
 module.exports = function (capot, cb) {
 
   var config = capot.config;
-  var log = capot.log;
+  var log = capot.log.child({ scope: 'capot.installer' });
   var tasks = [];
 
   if (!config.couchdb.url) {
-    log.info('No CouchDB url in config so will start local CouchDB server');
+    log.info('No CouchDB url in env, starting local CouchDB...');
     config.couchdb.run = true;
     tasks.push(ensureDataDir);
-    tasks.push(startCouchDBServer);
+    tasks.push(startCouchDBServer.bind(null, log));
     tasks.push(ensureAdminCredentials);
   } else {
     log.info('Using remote CouchDB: ' + config.couchdb.url);

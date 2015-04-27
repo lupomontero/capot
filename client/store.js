@@ -287,6 +287,7 @@ module.exports = function (capot) {
       });
 
       log.info('init ok');
+      store.emit('init');
       cb();
     }
 
@@ -313,7 +314,7 @@ module.exports = function (capot) {
   }
 
   if (capot.settings.debug === true) {
-    [ 'add', 'update', 'remove', 'change', 'sync' ].forEach(function (eventName) {
+    [ 'init', 'add', 'update', 'remove', 'change', 'sync' ].forEach(function (eventName) {
       store.on(eventName, logEvent(eventName));
     });
   }

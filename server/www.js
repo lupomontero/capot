@@ -1,11 +1,11 @@
 var Hapi = require('hapi');
-var Boom = require('hapi/node_modules/boom');
 var path = require('path');
 
 
 module.exports = function (capot, cb) {
 
   var config = capot.config;
+  var log = capot.log.child({ scope: 'capot.www' });
 
   var server = capot.www = new Hapi.Server({
     connections: {
@@ -36,20 +36,6 @@ module.exports = function (capot, cb) {
   });
 
   
-  server.route({
-    method: 'POST',
-    path: '/_reset',
-    handler: function (req, reply) {
-      var userDocId = 'org.couchdb.user:' + req.payload.email;
-      var userDocUrl = '/_users/' + encodeURIComponent(userDocId);
-      capot.couch.get(userDocUrl, function (err, userDoc) {
-        if (err) { return reply(Boom.notFound()); }
-        console.log(userDoc);
-        reply(userDoc);
-      });
-    }
-  });
-
   server.route({
     method: 'GET',
     path: '/_admin/{p*}',
@@ -95,7 +81,7 @@ module.exports = function (capot, cb) {
 
 
   server.start(function () {
-    capot.log.info('Web server started on port ' + config.port);
+    log.info('Web server started on port ' + config.port);
     cb();
   });
 

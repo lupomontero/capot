@@ -17,9 +17,10 @@ module.exports = function (argv) {
   async.applyEachSeries([
     require('./installer'),
     require('./changes'),
+    require('./mailer'),
+    require('./www'),
     require('./task'),
     require('./account'),
-    require('./www'),
     require('./plugins')
   ], capot, function (err) {
     if (err) {

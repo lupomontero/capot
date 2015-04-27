@@ -2,8 +2,8 @@ var View = require('../../client/ui/view');
 var Handlebars = window.Handlebars;
 
 
-Handlebars.registerHelper('smtpServicePicker', function (selected) {
-  var str = '<select name="smtp-service" id="smtp-service" class="form-control">';
+Handlebars.registerHelper('mailerServicePicker', function (selected) {
+  var str = '<select name="mailer-service" id="mailer-service" class="form-control">';
   [ 'Gmail', 'Mailgun', 'Mandrill', 'Postmark', 'SendGrid' ].forEach(function (service) {
     str += '<option name="' + service + '"';
     if (service === selected) {
@@ -36,22 +36,23 @@ module.exports = View.extend({
   },
 
   events: {
-    'submit #smtp-form': 'updateSmtp'
+    'submit #mailer-form': 'updateMailerConfig'
   },
 
-  updateSmtp: function (e) {
+  updateMailerConfig: function (e) {
     e.preventDefault();
     var view = this;
     var db = view.db;
 
-    var smtp = {
-      service: view.$('#smtp-service').val(),
-      user: view.$('#smtp-user').val(),
-      pass: view.$('#smtp-pass').val()
+    var mailer = {
+      from: view.$('#mailer-from').val(),
+      service: view.$('#mailer-service').val(),
+      user: view.$('#mailer-user').val(),
+      pass: view.$('#mailer-pass').val()
     };
 
     db.get('config').then(function (configDoc) {
-      configDoc.smtp = smtp;
+      configDoc.mailer = mailer;
       db.put('config', configDoc).then(function (data) {
         alert('Config updated!');
       }, function (err) {

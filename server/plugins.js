@@ -6,6 +6,7 @@ var async = require('async');
 module.exports = function (capot, cb) {
 
   var config = capot.config;
+  var log = capot.log.child({ scope: 'plugins' });
 
   function requireExtension(path, cb) {
     var ext;
@@ -19,7 +20,7 @@ module.exports = function (capot, cb) {
   function loadUserland(cb) {
     requireExtension(config.cwd, function (err) {
       if (!err) {
-        capot.log.info('Extended Capot Server with userland');
+        log.info('Extended Capot Server with userland');
       }
       cb();
     });
@@ -32,15 +33,13 @@ module.exports = function (capot, cb) {
     if (!plugins.length) { return cb(); }
 
     async.each(plugins, function (plugin, cb) {
-      capot.log.info('Initialising plugin ' + plugin);
-      if (plugin.charAt(0) === '.') {
-        plugin = path.join(config.cwd, plugin);
-      }
-      requireExtension(plugin, function (err) {
+      log.info('Initialising plugin ' + plugin);
+      var abs = (plugin.charAt(0) === '.') ? path.join(config.cwd, plugin) : plugin;
+      requireExtension(abs, function (err) {
         if (err) {
-          capot.log.warn('Plugin not loaded');
+          log.warn('Plugin ' + plugin + ' not loaded');
         } else {
-          capot.log.info('Loaded!');
+          log.info('Plugin ' + plugin + ' loaded!');
         }
         cb();
       });

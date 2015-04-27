@@ -61,14 +61,16 @@ this["templates"]["config"] = Handlebars.template({"compiler":[6,">= 2.0.0-beta.
 
   return "<h1 class=\"page-header\">"
     + alias2((helpers.glyphicon || (depth0 && depth0.glyphicon) || alias1).call(depth0,"cog",{"name":"glyphicon","hash":{},"data":data}))
-    + " Configuration</h1>\n\n<div class=\"panel panel-default smtp-config\">\n  <div class=\"panel-heading\">\n    <h3 class=\"panel-title\">"
+    + " Configuration</h1>\n\n<div class=\"panel panel-default mailer-config\">\n  <div class=\"panel-heading\">\n    <h3 class=\"panel-title\">"
     + alias2((helpers.glyphicon || (depth0 && depth0.glyphicon) || alias1).call(depth0,"send",{"name":"glyphicon","hash":{},"data":data}))
-    + " Outgoing Mail</h3>\n  </div>\n  <div class=\"panel-body\">\n    <form role=\"form\" id=\"smtp-form\">\n      <div class=\"form-group\">\n        <label for=\"smtp-service\">Service</label>\n        "
-    + alias2((helpers.smtpServicePicker || (depth0 && depth0.smtpServicePicker) || alias1).call(depth0,((stack1 = (depth0 != null ? depth0.smtp : depth0)) != null ? stack1.service : stack1),{"name":"smtpServicePicker","hash":{},"data":data}))
-    + "\n      </div>\n      <div class=\"form-group\">\n        <label for=\"smtp-user\">Username</label>\n        <input type=\"text\" class=\"form-control\" name=\"smtp-user\"\n          id=\"smtp-user\" value=\""
-    + alias2(alias3(((stack1 = (depth0 != null ? depth0.smtp : depth0)) != null ? stack1.user : stack1), depth0))
-    + "\">\n      </div>\n      <div class=\"form-group\">\n        <label for=\"smtp-pass\">Password</label>\n        <input type=\"password\" class=\"form-control\" name=\"smtp-pass\"\n          id=\"smtp-pass\" value=\""
-    + alias2(alias3(((stack1 = (depth0 != null ? depth0.smtp : depth0)) != null ? stack1.pass : stack1), depth0))
+    + " Outgoing Mail</h3>\n  </div>\n  <div class=\"panel-body\">\n    <form role=\"form\" id=\"mailer-form\">\n      <div class=\"form-group\">\n        <label for=\"mailer-from\">From</label>\n        <input type=\"text\" class=\"form-control\" name=\"mailer-from\"\n          id=\"mailer-from\" value=\""
+    + alias2(alias3(((stack1 = (depth0 != null ? depth0.mailer : depth0)) != null ? stack1.from : stack1), depth0))
+    + "\">\n      </div>\n      <div class=\"form-group\">\n        <label for=\"mailer-service\">Service</label>\n        "
+    + alias2((helpers.mailerServicePicker || (depth0 && depth0.mailerServicePicker) || alias1).call(depth0,((stack1 = (depth0 != null ? depth0.mailer : depth0)) != null ? stack1.service : stack1),{"name":"mailerServicePicker","hash":{},"data":data}))
+    + "\n      </div>\n      <div class=\"form-group\">\n        <label for=\"mailer-user\">Username</label>\n        <input type=\"text\" class=\"form-control\" name=\"mailer-user\"\n          id=\"mailer-user\" value=\""
+    + alias2(alias3(((stack1 = (depth0 != null ? depth0.mailer : depth0)) != null ? stack1.user : stack1), depth0))
+    + "\">\n      </div>\n      <div class=\"form-group\">\n        <label for=\"mailer-pass\">Password</label>\n        <input type=\"password\" class=\"form-control\" name=\"mailer-pass\"\n          id=\"mailer-pass\" value=\""
+    + alias2(alias3(((stack1 = (depth0 != null ? depth0.mailer : depth0)) != null ? stack1.pass : stack1), depth0))
     + "\">\n      </div>\n      <button type=\"submit\" class=\"btn btn-primary\">Update</button>\n    </form>\n  </div>\n</div>\n\n<div class=\"panel panel-default analytics-config\">\n  <div class=\"panel-heading\">\n    <h3 class=\"panel-title\">"
     + alias2((helpers.glyphicon || (depth0 && depth0.glyphicon) || alias1).call(depth0,"stats",{"name":"glyphicon","hash":{},"data":data}))
     + " Analytics</h3>\n  </div>\n  <div class=\"panel-body\">\n    <form role=\"form\" id=\"analytics-config-form\">\n      <div class=\"form-group\">\n        <label for=\"analytics-google-tracking-id\">Google Analytics Tracking ID</label>\n        <input type=\"text\" class=\"form-control\"\n          name=\"analytics-google-tracking-id\" id=\"analytics-google-tracking-id\"\n          value=\""
@@ -92,7 +94,7 @@ this["templates"]["header"] = Handlebars.template({"1":function(depth0,helpers,p
 
   return "<div class=\"navbar-header\">\n"
     + ((stack1 = helpers['if'].call(depth0,((stack1 = (depth0 != null ? depth0.userCtx : depth0)) != null ? stack1.name : stack1),{"name":"if","hash":{},"fn":this.program(1, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
-    + "  <a class=\"navbar-brand\" href=\"/\">Capot Admin</a>\n</div>\n\n"
+    + "  <a class=\"navbar-brand\" href=\"/\">\n    <img src=\"favicons/favicon-32x32.png\" width=\"24\" />\n    Capot Admin\n  </a>\n</div>\n\n"
     + ((stack1 = helpers['if'].call(depth0,((stack1 = (depth0 != null ? depth0.userCtx : depth0)) != null ? stack1.name : stack1),{"name":"if","hash":{},"fn":this.program(3, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
     + "\n";
 },"useData":true});
@@ -154,8 +156,8 @@ var View = require('../../client/ui/view');
 var Handlebars = window.Handlebars;
 
 
-Handlebars.registerHelper('smtpServicePicker', function (selected) {
-  var str = '<select name="smtp-service" id="smtp-service" class="form-control">';
+Handlebars.registerHelper('mailerServicePicker', function (selected) {
+  var str = '<select name="mailer-service" id="mailer-service" class="form-control">';
   [ 'Gmail', 'Mailgun', 'Mandrill', 'Postmark', 'SendGrid' ].forEach(function (service) {
     str += '<option name="' + service + '"';
     if (service === selected) {
@@ -188,22 +190,23 @@ module.exports = View.extend({
   },
 
   events: {
-    'submit #smtp-form': 'updateSmtp'
+    'submit #mailer-form': 'updateMailerConfig'
   },
 
-  updateSmtp: function (e) {
+  updateMailerConfig: function (e) {
     e.preventDefault();
     var view = this;
     var db = view.db;
 
-    var smtp = {
-      service: view.$('#smtp-service').val(),
-      user: view.$('#smtp-user').val(),
-      pass: view.$('#smtp-pass').val()
+    var mailer = {
+      from: view.$('#mailer-from').val(),
+      service: view.$('#mailer-service').val(),
+      user: view.$('#mailer-user').val(),
+      pass: view.$('#mailer-pass').val()
     };
 
     db.get('config').then(function (configDoc) {
-      configDoc.smtp = smtp;
+      configDoc.mailer = mailer;
       db.put('config', configDoc).then(function (data) {
         alert('Config updated!');
       }, function (err) {
@@ -301,13 +304,12 @@ function userDocUrl(email) {
 }
 
 function getState() {
-  return JSON.parse(window.localStorage.getItem('__bonet_session'));
+  return JSON.parse(window.localStorage.getItem('__capot_session'));
 }
 
 function setState(data) {
-  window.localStorage.setItem('__bonet_session', JSON.stringify(data));
+  window.localStorage.setItem('__capot_session', JSON.stringify(data));
 }
-
 
 
 module.exports = function (capot) {
@@ -385,8 +387,10 @@ module.exports = function (capot) {
 
   account.resetPassword = function (email) {
     return new Promise(function (resolve, reject) {
-      request({ url: window.location.origin })('POST', '/_reset', {
-        email: email
+      var baseurl = window.location.origin;
+      request({ url: baseurl })('POST', '/_reset', {
+        email: email,
+        baseurl: baseurl
       }).then(function (data) {
         console.log(data);
       }, reject);
@@ -432,7 +436,11 @@ module.exports = function (capot) {
 
 
   account.init = function (cb) {
-    log.info('initializing capot.account...');
+    if (!hasInit) {
+      log.info('initializing...');
+    } else {
+      log.info('refreshing...');
+    }
 
     cb = cb || noop;
 
@@ -460,7 +468,6 @@ module.exports = function (capot) {
 
         resolve();
         cb();
-        log.info('capot.account initialized!');
       }
 
       couch.get('/_session').then(function (data) {
@@ -1049,6 +1056,7 @@ module.exports = function (capot) {
       });
 
       log.info('init ok');
+      store.emit('init');
       cb();
     }
 
@@ -1075,7 +1083,7 @@ module.exports = function (capot) {
   }
 
   if (capot.settings.debug === true) {
-    [ 'add', 'update', 'remove', 'change', 'sync' ].forEach(function (eventName) {
+    [ 'init', 'add', 'update', 'remove', 'change', 'sync' ].forEach(function (eventName) {
       store.on(eventName, logEvent(eventName));
     });
   }

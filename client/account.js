@@ -10,13 +10,12 @@ function userDocUrl(email) {
 }
 
 function getState() {
-  return JSON.parse(window.localStorage.getItem('__bonet_session'));
+  return JSON.parse(window.localStorage.getItem('__capot_session'));
 }
 
 function setState(data) {
-  window.localStorage.setItem('__bonet_session', JSON.stringify(data));
+  window.localStorage.setItem('__capot_session', JSON.stringify(data));
 }
-
 
 
 module.exports = function (capot) {
@@ -94,8 +93,10 @@ module.exports = function (capot) {
 
   account.resetPassword = function (email) {
     return new Promise(function (resolve, reject) {
-      request({ url: window.location.origin })('POST', '/_reset', {
-        email: email
+      var baseurl = window.location.origin;
+      request({ url: baseurl })('POST', '/_reset', {
+        email: email,
+        baseurl: baseurl
       }).then(function (data) {
         console.log(data);
       }, reject);
@@ -141,7 +142,11 @@ module.exports = function (capot) {
 
 
   account.init = function (cb) {
-    log.info('initializing capot.account...');
+    if (!hasInit) {
+      log.info('initializing...');
+    } else {
+      log.info('refreshing...');
+    }
 
     cb = cb || noop;
 
@@ -169,7 +174,6 @@ module.exports = function (capot) {
 
         resolve();
         cb();
-        log.info('capot.account initialized!');
       }
 
       couch.get('/_session').then(function (data) {

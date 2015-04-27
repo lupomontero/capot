@@ -2,7 +2,13 @@ body {
   padding-top: 50px;
 }
 
+.navbar-brand img {
+  display: inline-block;
+}
+
 #signin-form {
   max-width: 300px;
   margin: 80px auto;
 }
+
+
