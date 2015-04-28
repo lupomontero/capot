@@ -102,6 +102,9 @@ module.exports = function (capot) {
       .then(function (userDoc) {
         userDoc.password = newPass;
         return couch.put(url, userDoc);
+      })
+      .then(function () {
+        return account.signIn(email, newPass);
       });
   };
 
