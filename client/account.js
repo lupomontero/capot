@@ -57,6 +57,10 @@ module.exports = function (capot) {
         }, reject);
       }
 
+      if (pass.length < 8) {
+        return reject(new Error('Password must be at least 8 chars long'));
+      }
+
       couch.put(userDocUrl(email), userDoc).then(function (data) {
         setTimeout(waitForUserReady, 300);
       }, reject);
@@ -81,8 +85,24 @@ module.exports = function (capot) {
   };
 
 
-  account.changePassword = function (secret, newSecret) {
-    throw new Error('FIXME: Unimplented!');
+  account.changePassword = function (pass, newPass) {
+    var email = account.session.userCtx.name;
+    var url = userDocUrl(email);
+
+    if (newPass.length < 8) {
+      return new Promise(function (resolve, reject) {
+        reject(new Error('Password must be at least 8 chars long'));
+      });
+    }
+
+    return couch.post('/_session', { name: email, password: pass })
+      .then(function () {
+        return couch.get(url)
+      })
+      .then(function (userDoc) {
+        userDoc.password = newPass;
+        return couch.put(url, userDoc);
+      });
   };
 
 
@@ -107,14 +127,15 @@ module.exports = function (capot) {
   account.destroy = function () {
     var email = account.session.userCtx.name;
     var url = userDocUrl(email);
-    return new Promise(function (resolve, reject) {
-      couch.get(url).then(function (userDoc) {
+
+    return couch.get(url)
+      .then(function (userDoc) {
         userDoc._deleted = true;
-        couch.put(url, userDoc).then(function (data) {
-          account.init(resolve, reject);
-        }, reject);
-      }, reject);
-    });
+        return couch.put(url, userDoc);
+      })
+      .then(function () {
+        return account.init();
+      });
   };
 
 
