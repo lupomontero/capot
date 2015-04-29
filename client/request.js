@@ -21,7 +21,7 @@ module.exports = function (opt) {
         error: function (xhr) { 
           var msg, reason;
           if (xhr.status === 0) { // UNSENT
-            msg = 'Could not connect to host';
+            msg = 'Request timed out';
           } else if (xhr.responseJSON && xhr.responseJSON.error) {
             msg = xhr.responseJSON.error;
             reason = xhr.responseJSON.reason;
@@ -54,6 +54,7 @@ module.exports = function (opt) {
         var paramsKeys = Object.keys(params);
         reqOpt.url += paramsKeys.reduce(function (memo, k) {
           var v = JSON.stringify(params[k]);
+          if (memo) { memo += '&'; }
           return memo += encodeURIComponent(k) + '=' + encodeURIComponent(v);
         }, '?');
       }

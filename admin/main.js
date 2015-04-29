@@ -10,7 +10,14 @@ var app = window.app = CapotUI({
     signin: require('./views/signin'),
     users: require('./views/users'),
     config: require('./views/config'),
+    emails: require('./views/emails'),
     header: require('./views/_header')
+  },
+  models: {
+    email: require('./models/email')
+  },
+  collections: {
+    emails: require('./collections/emails')
   },
   templates: require('./templates').templates
 });
@@ -37,6 +44,10 @@ app.route('users', app.requireAdmin(function () {
 
 app.route('config', app.requireAdmin(function () {
   app.showView('config');
+}));
+
+app.route('emails', app.requireAdmin(function () {
+  app.showView('emails');
 }));
 
 app.route('signin', function () {

@@ -3,6 +3,28 @@ var Model = require('./model');
 var noop = function () {};
 
 
+function remoteSync(collection, model, type) {
+  return app.couch.db(model.database).allDocs({
+    include_docs: true,
+    startkey: type + '/',
+    endkey: type + '0'
+  }).then(function (data) {
+    return _.pluck(data.rows, 'doc').map(function (doc) {
+      var idParts = doc._id.split('/');
+      doc.id = idParts[1];
+      delete doc._id;
+      return doc;
+    });
+  });
+}
+
+
+function localSync(collection, model, type) {
+  return collection.app.store.findAll(type);
+}
+
+
+
 module.exports = Backbone.Collection.extend({
 
   model: Model,
@@ -28,16 +50,18 @@ module.exports = Backbone.Collection.extend({
   sync: function (method, collection, options) {
     var success = options.success || noop;
     var error = options.error || noop;
-    var type = (new collection.model()).get('type');
-    var store = this.app.store;
+    var model = new collection.model();
+    var type = model.get('type');
 
-    if (method === 'read') {
-      store.findAll(type, options).then(function (data) {
-        success(data);
-      }, function (err) {
-        error(null, null, err);
-      });
+    if (method !== 'read') {
+      error(null, null, new Error('Sync method not supported'));
     }
+
+    var syncFn = (model.database) ? remoteSync : localSync;
+
+    syncFn(collection, model, type).then(success, function (err) {
+      err(null, null, err);
+    });
   }
 
 });

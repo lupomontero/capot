@@ -131,12 +131,8 @@ module.exports = function (capot, cb) {
     function sendResetLink(userDoc) {
       capot.sendMail({
         to: userDoc.name,
-        subject: 'Password reset',
-        text: [
-          'Hi there,',
-          '',
-          baseurl + '/_reset/' + userDoc.$reset.token
-        ].join('\n')
+        template: 'password-reset',
+        context: { resetLink: baseurl + '/_reset/' + userDoc.$reset.token }
       }, function (mailerErr, mailerResp) {
         userDoc.$reset.attempts.push({
           error: mailerErr,
@@ -145,7 +141,7 @@ module.exports = function (capot, cb) {
         userDoc.$reset.updatedAt = new Date();
         usersDb.put(userDoc, function (err, data) {
           if (err) { return reply(err); }
-          reply(mailerErr || data);
+          reply(mailerErr || { ok: true });
         });
       });
     }
@@ -176,7 +172,8 @@ module.exports = function (capot, cb) {
       });
     });
   }
-  
+
+
   function handlePassResetConfirm(req, reply) {
     var token = req.params.token;
     usersDb.query('views/by_reset_token', { key: token }, function (err, data) {
@@ -191,8 +188,8 @@ module.exports = function (capot, cb) {
 
         capot.sendMail({
           to: userDoc.name,
-          subject: 'New password',
-          text: userDoc.password
+          template: 'password-new',
+          context: { newPass: userDoc.password }
         }, function (mailerErr, mailerResp) {
           usersDb.put(userDoc, function (err, data) {
             reply(arguments);

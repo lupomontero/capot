@@ -10,6 +10,56 @@ function isISODateString(str) {
 }
 
 
+function remoteSync(method, model) {
+  var type = model.get('type');
+  var app = this.app || this.collection.app;
+  var db = app.couch.db('app');
+  var json = model.toJSON();
+  var doc = _.omit(json, [ 'id' ]);
+  doc._id = json.type + '/' + json.id;
+
+  if (method === 'create') {
+    return db.put(doc).then(function (data) {
+      json._rev = data.rev;
+      return json;
+    });
+  } else if (method === 'read') {
+    return db.get(doc._id).then(function (data) {
+      data.id = data._id.split('/')[1];
+      delete data._id;
+      return data;
+    });
+  } else if (method === 'update') {
+    return db.put(doc).then(function (data) {
+      json._rev = data.rev;
+      return json;
+    });
+  } else if (method === 'delete') {
+    return db.remove(doc);
+  } else {
+    throw new Error('Unsupported model sync method');
+  }
+}
+
+
+function localSync(method, model) {
+  var type = model.get('type');
+  var store = (this.app || this.collection.app).store;
+
+  if (method === 'create') {
+    return store.add(type, model.toJSON());
+  } else if (method === 'read') {
+    return store.find(type, model.id, options);
+  } else if (method === 'update') {
+    //...
+  } else if (method === 'delete') {
+    return store.remove(type, model.id);
+  } else {
+    throw new Error('Unsupported model sync method');
+  }
+}
+
+
 module.exports = Backbone.Model.extend({
 
   initialize: function (attrs, options) {
@@ -37,36 +87,12 @@ module.exports = Backbone.Model.extend({
   sync: function (method, model, options) {
     var success = options.success || noop;
     var error = options.error || noop;
-    var type = model.get('type');
-    var store = (this.app || this.collection.app).store;
 
-    switch (method) {
-      case 'create':
-        store.add(type, model.toJSON()).then(function (data) {
-          success(data);
-        }, function (err) {
-          error(null, null, err);
-        });
-        break;
-      case 'read':
-        store.find(type, model.id, options).then(function (data) {
-          success(data);
-        }, function (err) {
-          error(null, null, err);
-        });
-        break;
-      case 'update':
-        break;
-      case 'delete':
-        store.remove(type, model.id).then(function () {
-          success();
-        }, function (err) {
-          error(null, null, err);
-        });
-        break;
-      default:
-        throw new Error('Unsupported model sync method');
-    }
+    var syncFn = (this.database) ? remoteSync : localSync;
+
+    syncFn(method, model).then(success, function (err) {
+      error(null, null, err);
+    });
   }
 
 });

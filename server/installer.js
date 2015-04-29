@@ -1,3 +1,4 @@
+var os = require('os');
 var fs = require('fs');
 var path = require('path');
 var readline = require('readline');
@@ -203,7 +204,9 @@ function ensureAppDbSecurity(capot, cb) {
 
 
 function ensureAppConfigDoc(capot, cb) {
-  var couch = Couch(capot.config.couchdb);
+  var config = capot.config;
+  var pkg = require(path.join(config.cwd, 'package.json'));
+  var couch = Couch(config.couchdb);
   var db = couch.db('app');
   db.get('config', function (err) {
     if (err && err.status !== 404) {
@@ -211,7 +214,13 @@ function ensureAppConfigDoc(capot, cb) {
     } else if (!err) {
       return cb();
     }
-    db.put({ _id: 'config' }, cb);
+    db.put({
+      _id: 'config',
+      app: {
+        name: pkg.name,
+        url: 'http://' + os.hostname() + ':' + config.port
+      }
+    }, cb);
   });
 }
 

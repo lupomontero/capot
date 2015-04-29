@@ -7,6 +7,7 @@
 
 var extend = require('extend');
 var Promise = require('promise');
+var PouchDB = require('pouchdb');
 var request = require('./request');
 
 
@@ -30,16 +31,15 @@ module.exports = function (opt) {
     opt = { url: opt };
   }
 
+  if (!/^https?:\/\//.test(opt.url)) {
+    if (opt.url.charAt(0) === '/') { opt.url = opt.url.slice(1); }
+    opt.url = window.location.origin + '/' + opt.url;
+  }
+
   var api = createApi(opt);
 
   api.db = function (dbName) {
-    var db = createApi(extend({}, opt, {
-      url: opt.url + '/' + encodeURIComponent(dbName)
-    }));
-
-    db.view = function () {};
-
-    return db;
+    return new PouchDB(opt.url + '/' + encodeURIComponent(dbName));
   };
 
   api.isAdminParty = function (cb) {

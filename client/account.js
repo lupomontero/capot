@@ -115,14 +115,10 @@ module.exports = function (capot) {
 
 
   account.resetPassword = function (email) {
-    return new Promise(function (resolve, reject) {
-      var baseurl = window.location.origin;
-      request({ url: baseurl })('POST', '/_reset', {
-        email: email,
-        baseurl: baseurl
-      }).then(function (data) {
-        console.log(data);
-      }, reject);
+    var baseurl = window.location.origin;
+    return request({ url: baseurl })('POST', '/_reset', {
+      email: email,
+      baseurl: baseurl
     });
   };
 

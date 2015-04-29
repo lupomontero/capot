@@ -36,7 +36,14 @@ module.exports = View.extend({
   },
 
   events: {
+    'submit #app-form': 'updateAppConfig',
     'submit #mailer-form': 'updateMailerConfig'
+  },
+
+  updateAppConfig: function (e) {
+    e.preventDefault();
+  
+    return false;
   },
 
   updateMailerConfig: function (e) {
@@ -53,7 +60,7 @@ module.exports = View.extend({
 
     db.get('config').then(function (configDoc) {
       configDoc.mailer = mailer;
-      db.put('config', configDoc).then(function (data) {
+      db.put(configDoc).then(function (data) {
         alert('Config updated!');
       }, function (err) {
         alert(err.reason || err.message);

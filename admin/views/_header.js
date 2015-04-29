@@ -7,7 +7,8 @@ module.exports = View.extend({
 
   initialize: function (opt) {
     var view = this;
-    var account = opt.app.account;
+    var app = opt.app;
+    var account = app.account;
 
     View.prototype.initialize.call(view, opt);
 
@@ -21,6 +22,20 @@ module.exports = View.extend({
     account.on('signout', update);
     account.on('online', update);
     account.on('offline', update);
+
+    // Set active menu item...
+    app.on('route', function (route) {
+      view.$('#main-menu a').each(function () {
+        var $a = $(this);
+        var href = $a.attr('href');
+        if (href.charAt(0) === '/') { href = href.slice(1); }
+        if (href === route) {
+          $a.parents('li').addClass('active');
+        } else {
+          $a.parents('li').removeClass('active');
+        }
+      });
+    });
   },
 
   events: {
