@@ -97,7 +97,7 @@ module.exports = function (capot) {
 
     return couch.post('/_session', { name: email, password: pass })
       .then(function () {
-        return couch.get(url)
+        return couch.get(url);
       })
       .then(function (userDoc) {
         userDoc.password = newPass;
