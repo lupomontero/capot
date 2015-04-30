@@ -1,7 +1,7 @@
 var os = require('os');
 var fs = require('fs');
 var path = require('path');
-var readline = require('readline');
+var read = require('read');
 var _ = require('lodash');
 var async = require('async');
 var which = require('which');
@@ -72,34 +72,48 @@ function startCouchDBServer(log, capot, cb) {
 
 function ensureAdminCredentials(capot, cb) {
   var config = capot.config;
+  var log = capot.log.child({ scope: 'capot.installer' });
   var credentialsPath = path.join(config.data, 'capot.json');
 
-  function prompt() {
-    var rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-
-    rl.question('New password for "admin" user:', function (answer) {
-      var credentials = { user: 'admin', pass: answer };
-      var json = JSON.stringify(credentials, null, 2);
-      rl.close();
-      fs.writeFile(credentialsPath, json, function (err) {
-        if (err) { return cb(err); }
-        setConfig(credentials);
-      });
-    });
-  }
-
-  function setConfig(credentials) {
+  function setCredentials(credentials) {
     _.extend(config.couchdb, _.pick(credentials, [ 'user', 'pass' ]));
     cb();
   }
 
+  function saveCredentials() {
+    var credentials = _.pick(config.couchdb, [ 'user', 'pass' ]);
+    var json = JSON.stringify(credentials, null, 2);
+    fs.writeFile(credentialsPath, json, function (err) {
+      if (err) { return cb(err); }
+      setCredentials(credentials);
+    });
+  }
+
+  function prompt() {
+    read({
+      prompt: 'New password for "admin" user:',
+      silent: true,
+      timeout: 10 * 1000
+    }, function (err, answer) {
+      if (err) { return cb(err); }
+      config.couchdb.pass = answer;
+      saveCredentials();
+    });
+  }
+
+  function getCredentials() {
+    if (!config.couchdb.pass) {
+      return prompt();
+    }
+    log.info('Using CouchDB credentials passed in environment');
+    saveCredentials();
+  }
+
   try {
-    setConfig(require(credentialsPath));
+    setCredentials(require(credentialsPath));
+    log.info('Loaded CouchDB credentials from ' + credentialsPath);
   } catch (err) {
-    return prompt();
+    getCredentials();
   }
 }
 

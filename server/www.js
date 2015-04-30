@@ -35,7 +35,7 @@ module.exports = function (capot, cb) {
     server.route({ method: method, path: '/_api/{p*}', handler: apiHandler });
   });
 
-  
+
   server.route({
     method: 'GET',
     path: '/_admin/{p*}',

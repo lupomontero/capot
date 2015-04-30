@@ -10,9 +10,9 @@ module.exports = function (argv) {
     cwd: process.cwd(),
     data: path.join(process.cwd(), 'data'),
     couchdb: {
-      url: env.BONNET_COUCHDB_URL,
-      user: env.BONNET_COUCHDB_USER,
-      pass: env.BONNET_COUCHDB_PASS
+      url: env.COUCHDB_URL,
+      user: env.COUCHDB_USER || 'admin',
+      pass: env.COUCHDB_PASS
     }
   }, _.omit(argv, [ '_' ]));
 
