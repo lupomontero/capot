@@ -562,7 +562,7 @@ module.exports = function (capot) {
 
     return couch.post('/_session', { name: email, password: pass })
       .then(function () {
-        return couch.get(url)
+        return couch.get(url);
       })
       .then(function (userDoc) {
         userDoc.password = newPass;
@@ -8717,32 +8717,64 @@ exports.EOL = '\n';
 var process = module.exports = {};
 var queue = [];
 var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
 
 function drainQueue() {
     if (draining) {
         return;
     }
+    var timeout = setTimeout(cleanUpNextTick);
     draining = true;
-    var currentQueue;
+
     var len = queue.length;
     while(len) {
         currentQueue = queue;
         queue = [];
-        var i = -1;
-        while (++i < len) {
-            currentQueue[i]();
+        while (++queueIndex < len) {
+            currentQueue[queueIndex].run();
         }
+        queueIndex = -1;
         len = queue.length;
     }
+    currentQueue = null;
     draining = false;
+    clearTimeout(timeout);
 }
+
 process.nextTick = function (fun) {
-    queue.push(fun);
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
     if (!draining) {
         setTimeout(drainQueue, 0);
     }
 };
 
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
 process.title = 'browser';
 process.browser = true;
 process.env = {};
@@ -42358,7 +42390,7 @@ module.exports={
     "async": "^0.9.0",
     "backbone": "^1.1.2",
     "bunyan": "^1.3.4",
-    "handlebars": "^3.0.0",
+    "handlebars": "^3.0.3",
     "hapi": "^8.2.0",
     "lodash": "^3.2.0",
     "minimist": "^1.1.0",
@@ -42366,11 +42398,12 @@ module.exports={
     "nodemailer": "^1.3.4",
     "pouchdb": "^3.3.1",
     "promise": "^7.0.0",
+    "read": "^1.0.5",
     "request": "^2.53.0",
     "which": "^1.0.9"
   },
   "devDependencies": {
-    "browserify": "^9.0.3",
+    "browserify": "^10.0.0",
     "favicons": "^3.1.1",
     "gulp": "^3.8.11",
     "gulp-concat": "^2.5.2",
