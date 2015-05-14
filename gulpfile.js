@@ -52,6 +52,7 @@ function bundle(bundler, dest) {
   var parts = dest.split('/');
   var name = parts.pop();
   var dir = parts.join('/');
+  bundler.ignore('jquery');
   return bundler.bundle()
     .on('error', gutil.log.bind(gutil, 'Browserify Error'))
     .pipe(source(name))
