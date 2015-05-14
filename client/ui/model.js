@@ -49,7 +49,7 @@ function localSync(method, model) {
   if (method === 'create') {
     return store.add(type, model.toJSON());
   } else if (method === 'read') {
-    return store.find(type, model.id, options);
+    return store.find(type, model.id);
   } else if (method === 'update') {
     //...
   } else if (method === 'delete') {

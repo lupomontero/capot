@@ -60,7 +60,7 @@ module.exports = Backbone.Collection.extend({
     var syncFn = (model.database) ? remoteSync : localSync;
 
     syncFn(collection, model, type).then(success, function (err) {
-      err(null, null, err);
+      error(null, null, err);
     });
   }
 
