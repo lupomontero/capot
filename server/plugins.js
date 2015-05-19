@@ -10,7 +10,7 @@ module.exports = function (capot, cb) {
 
   function requireExtension(path, cb) {
     var ext;
-    try { ext = require(path); } catch (ex) {}
+    try { ext = require(path); } catch (ex) { log.error(ex); }
     if (typeof ext !== 'function') {
       return setTimeout(cb.bind(null, new Error('Could not load ' + path)), 10);
     }
@@ -19,6 +19,9 @@ module.exports = function (capot, cb) {
 
   function loadUserland(cb) {
     requireExtension(config.cwd, function (err) {
+      if (err) {
+        log.error(err.stack || err);
+      }
       if (!err) {
         log.info('Extended Capot Server with userland');
       }
@@ -46,7 +49,7 @@ module.exports = function (capot, cb) {
     }, cb);
   }
 
-  async.series([ loadUserland, loadPlugins ], cb);
+  async.series([ loadPlugins, loadUserland ], cb);
 
 };
 
