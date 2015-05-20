@@ -61,7 +61,7 @@ module.exports = function (opt) {
   // Public API
   //
 
-  return {
+  var couch = {
 
     get: req.bind(null, 'GET'),
     post: req.bind(null, 'POST'),
@@ -162,6 +162,23 @@ module.exports = function (opt) {
       return db;
     },
 
+    config: {
+      get: function (key, cb) {
+        return couch.get('/_config/' + key, cb);
+      },
+      set: function (key, val, cb) {
+        var url = '/_config/' + key;
+        couch.get(url, function (err, data) {
+          if (err) { return cb(err); }
+          if (data === val) { return cb(); }
+          couch.put(url, val, cb);
+        });
+      },
+      all: function (cb) {
+        return couch.get('/_config', cb);
+      }
+    },
+
     isAdminParty: function (cb) {
       this.get('/_users/_all_docs', function (err, data) {
         if (err && [ 401, 403 ].indexOf(err.statusCode) >= 0) {
@@ -175,6 +192,8 @@ module.exports = function (opt) {
     }
 
   };
+
+  return couch;
 
 };
 
