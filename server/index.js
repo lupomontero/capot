@@ -8,6 +8,13 @@ module.exports = function (argv) {
   var pkg = require(path.join(config.cwd, 'package.json'));
   var log = require('./log')({ name: pkg.name });
 
+  // TODO: We should use cluser module to spin one instance per cpu and then
+  // manage killing and spinning children properly. 
+  process.on('uncaughtException', function (err) {
+    log.error(err);
+    process.exit(1);
+  });
+
   var capot = {
     pkg: pkg,
     config: config,
@@ -32,4 +39,6 @@ module.exports = function (argv) {
   });
 
 };
+
+
 
