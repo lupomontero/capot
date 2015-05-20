@@ -24,7 +24,7 @@ function createFakeCapot() {
       }
     }
   };
-};
+}
 
 
 describe('capot/server/www', function () {
