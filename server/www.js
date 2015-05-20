@@ -1,5 +1,7 @@
 var Hapi = require('hapi');
+var Boom = require('boom');
 var path = require('path');
+var request = require('request');
 
 
 module.exports = function (capot, cb) {
@@ -18,6 +20,32 @@ module.exports = function (capot, cb) {
   });
 
   server.connection({ port: config.port });
+
+
+  server.auth.scheme('couchdb', function (server, options) {
+    return {
+      authenticate: function (req, reply) {
+        request({
+          method: 'GET',
+          url: config.couchdb.url + '/_session',
+          headers: { cookie: req.headers.cookie },
+          json: true
+        }, function (err, resp) {
+          if (err) { return reply(err); }
+          if (resp.statusCode !== 200) {
+            return reply(Boom.create(resp.statusCode));
+          }
+          reply.continue({ credentials: resp.body });
+        });
+      }
+    };
+  });
+
+  server.auth.strategy('capot', 'couchdb', {
+    validateFunc: function (user, pass, cb) {
+      console.log(user, pass, cb);
+    }
+  });
 
 
   var apiHandler = {
