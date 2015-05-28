@@ -1,7 +1,7 @@
 var EventEmitter = require('events').EventEmitter;
 var async = require('async');
 var moment = require('moment');
-var Boom = require('hapi/node_modules/boom');
+var Boom = require('boom');
 var uid = require('../client/uid');
 
 
@@ -80,6 +80,7 @@ module.exports = function (capot, cb) {
       },
       function (cb) {
         userDoc.roles = roles(capotId);
+        //userDoc.createdAt = new Date();
         usersDb.put(userDoc, function (err, data) {
           if (err) { return cb(err); }
           userDoc._rev = data.rev;
