@@ -37,7 +37,7 @@
     "gulp-handlebars": "^4.0.0",
     "gulp-imagemin": "^2.3.0",
     "gulp-jshint": "^1.11.2",
-    "gulp-manifest": "0.0.6",
+    "gulp-manifest": "0.0.7",
     "gulp-mocha": "^2.1.3",
     "gulp-rename": "^1.2.0",
     "gulp-replace": "^0.5.3",
