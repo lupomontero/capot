@@ -17,7 +17,7 @@ var merge = require('merge-stream');
 var browserify = require('browserify');
 var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
-var karma = require('karma').server;
+var karma = require('karma');
 var _ = require('lodash');
 
 
@@ -92,10 +92,11 @@ gulp.task('lint', [ 'lint:client', 'lint:ui', 'lint:admin', 'lint:server' ]);
 
 
 gulp.task('test:client', [ 'lint:client' ], function (done) {
-  karma.start({
+  var server = new karma.Server({
     configFile: __dirname + '/karma.conf.js',
     singleRun: true
   }, done);
+  server.start();
 });
 
 gulp.task('test:server', [ 'lint:server' ], function () {

@@ -42,10 +42,10 @@ describe('capot/cient/couch', function () {
 
   describe('couch.db()', function () {
 
-    it('should...', function () {
-      var db = couch.db('_users');
+    it.skip('should...', function () {
+      //var db = couch.db('_users');
       // TODO: Should this be an instance of PouchDB?
-      console.log(db);
+      //console.log(db);
     });
 
   });
