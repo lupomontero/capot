@@ -1,6 +1,6 @@
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('promise');
-var couch = require('./couch')('/_api');
+var couch = require('./couch')('/_couch');
 var request = require('./request');
 var noop = function () {};
 

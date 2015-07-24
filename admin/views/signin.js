@@ -21,7 +21,7 @@ module.exports = View.extend({
     var app = this.app;
     var credentials = { name: 'admin', password: $('#pass').val() };
 
-    Couch('/_api').post('/_session', credentials).then(function (data) {
+    Couch('/_couch').post('/_session', credentials).then(function (data) {
       //app.navigate('', { trigger: true });
       window.location.href = '/_admin/';
     }, function (err) {

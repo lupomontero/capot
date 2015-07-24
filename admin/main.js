@@ -23,7 +23,7 @@ var app = window.app = CapotUI({
 });
 
 
-app.couch = Couch('/_api');
+app.couch = Couch('/_couch');
 
 
 app.addRegion('header', {

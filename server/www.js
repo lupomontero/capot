@@ -52,15 +52,15 @@ module.exports = function (capot, cb) {
     proxy: {
       passThrough: true,
       mapUri: function (req, cb) {
-        cb(null, config.couchdb.url + req.url.path.substr(5), req.headers);
+        cb(null, config.couchdb.url + req.url.path.substr(7), req.headers);
       }
     }
   };
 
-  // Register `_api` methods as individual routes, otherwise proxy doesn't seem
+  // Register `_couch` methods as individual routes, otherwise proxy doesn't seem
   // to work as expected.
   [ 'GET', 'POST', 'PUT', 'DELETE' ].forEach(function (method) {
-    server.route({ method: method, path: '/_api/{p*}', handler: apiHandler });
+    server.route({ method: method, path: '/_couch/{p*}', handler: apiHandler });
   });
 
 

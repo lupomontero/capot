@@ -18,7 +18,7 @@ var noop = function () {};
 // Default settings.
 //
 var defaults = { 
-  remote: window.location.origin + '/_api'
+  remote: window.location.origin + '/_couch'
 };
 
 
@@ -32,6 +32,7 @@ module.exports = function Capot(options) {
 
   var capot = {
     settings: settings,
+    request: require('./request')({ url: window.location.origin }),
     uid: require('./uid'),
     log: require('./log')(settings)
   };

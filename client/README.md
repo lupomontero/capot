@@ -10,7 +10,7 @@ var capot = Capot(options);
 
 ## Options
 
-* `remote`: URL to backend HTTP API. Default is `/_api`.
+* `remote`: URL to backend HTTP API. Default is `/_couch`.
 
 ***
 

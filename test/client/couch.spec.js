@@ -9,7 +9,7 @@ describe('capot/cient/couch', function () {
     assert.equal(typeof Couch, 'function');
   });
 
-  var couch = Couch({ url: '/_api' });
+  var couch = Couch({ url: '/_couch' });
 
 
   describe('couch.get()', function () {
@@ -23,7 +23,7 @@ describe('capot/cient/couch', function () {
       };
 
       $.mockjax({
-        url: '/_api/',
+        url: '/_couch/',
         type: 'GET',
         responseText: resp
       });
