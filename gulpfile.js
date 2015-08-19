@@ -197,5 +197,5 @@ gulp.task('watch', function () {
 });
 
 
-gulp.task('default', [ 'test:server', 'build' ]);
+gulp.task('default', [ 'build' ]);
 

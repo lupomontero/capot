@@ -1,18 +1,48 @@
 # Capot Server
 
-Configuration
+## HTTP API
 
-```json
-{
-  "port": 3001,
-  "cwd": ".",
-  "www": "./www",
-  "data": "./data",
-  "couchdb": {
-    "url": "http://127.0.0.1:3002",
-    "user": "admin",
-    "pass": "secret",
-    "run": true
-  }
-}
-```
+### Authentication
+
+These routes are proxied directly to CouchDB's `/_session` API.
+
+#### Create session (cookie sign in)
+
+`POST /session`
+
+#### Close user session
+
+`DELETE /session`
+
+#### Get session
+
+`GET /session`
+
+### API info
+
+`GET /info`
+
+### Accounts API
+
+#### List users (admin only)
+
+`GET /users`
+
+#### Get single user (users can get their own profile and admins any)
+
+`GET /users/:id`
+
+`GET /users/:email`
+
+#### Create (sign up) or update user 
+
+`PUT /users/:email`
+
+#### Request password reset
+
+`POST /users/:id/_reset`
+
+#### Confirm password request
+
+`GET /users/:id/_reset/:token`
+

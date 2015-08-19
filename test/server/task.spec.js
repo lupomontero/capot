@@ -6,17 +6,19 @@ describe('capot/server/task', function () {
 
   it('should emit start event when task doc added', function (done) {
     var changeListener;
-    var capotMock = {
-      changes: {
-        on: function (ev, listener) {
-          assert.equal(ev, 'change');
-          changeListener = listener;
+    var serverMock = {
+      app: {
+        changes: {
+          on: function (ev, listener) {
+            assert.equal(ev, 'change');
+            changeListener = listener;
+          }
         }
       }
     };
 
-    Task(capotMock, function () {
-      capotMock.task.on('start', function (dbName, taskDoc) {
+    Task.register(serverMock, {}, function () {
+      serverMock.app.task.on('start', function (dbName, taskDoc) {
         assert.equal(dbName, 'some/db');
         assert.equal(taskDoc.id, 'xxx');
         assert.equal(taskDoc._rev, '1-aa');
