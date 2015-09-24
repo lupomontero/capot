@@ -63,15 +63,22 @@ internals.roles = function (uid) {
 };
 
 
-internals.handleSignUp = function (app, userDoc) {
+internals.handleSignUp = function (server, userDoc) {
 
-  var userDb = app.couch.db(userDoc.database);
-  var usersDb = app.couch.db('_users');
-  var appDb = app.couch.db('app');
+  var config = server.settings.app.config;
+  var app = server.app;
   var log = app.log.child({ scope: 'account' });
+  var couch = Couch(config.couchdb);
+  var userDb = couch.db(userDoc.database);
+  var usersDb = couch.db('_users');
+  var appDb = couch.db('app');
   var uid = userDoc.uid;
 
   Async.series([
+    function (cb) {
+    
+      userDb.createIfNotExists(cb);
+    },
     function (cb) {
 
       var doc = internals.permissionsDdoc(uid);
@@ -113,21 +120,29 @@ internals.handleSignUp = function (app, userDoc) {
 };
 
 
-internals.handleAccountDeletion = function (app, userDoc) {
+internals.handleAccountDeletion = function (server, userDoc) {
 
-  var appDb = app.couch.db('app');
+  var config = server.settings.app.config;
+  var app = server.app;
   var log = app.log.child({ scope: 'account' });
+  var couch = Couch(config.couchdb);
+  var appDb = couch.db('app');
+
+  function done(err) {
+    if (err) { log.warn(err); }
+    app.account.emit('remove', userDoc);
+  }
 
   appDb.get('db/' + userDoc._id, function (err, dbDoc) {
 
-    if (err) { return log.error(err); }
-    app.couch.del(encodeURIComponent(dbDoc.database), function (err) {
+    if (err) { return done(err); }
+    couch.del(encodeURIComponent(dbDoc.database), function (err) {
 
-      if (err) { return log.error(err); }
+      if (err) { return done(err); }
       appDb.remove(dbDoc, function (err) {
 
-        if (err) { return log.error(err); }
-        app.account.emit('remove', userDoc);
+        if (err) { return done(err); }
+        done();
       });
     });
   });
@@ -251,10 +266,6 @@ exports.add = {
     var email = req.payload.email;
     var pass = req.payload.password;
 
-    if (req.params.email !== email) {
-      return reply(Boom.badRequest('Email mismatch'));
-    }
-
     var uid = Uid();
     var config = req.server.settings.app.config;
     var userDocUrl = config.couchdb.url + '/_users/org.couchdb.user:' +
@@ -274,9 +285,9 @@ exports.add = {
       }
     }, function (err, resp) {
 
-      if (err) { return cb(err); }
+      if (err) { return reply(err); }
       if (resp.statusCode > 201) {
-        return cb(Boom.create(resp.statusCode));
+        return reply(Boom.create(resp.statusCode));
       }
 
       reply({
@@ -333,9 +344,16 @@ exports.update = {
 exports.remove = {
   description: 'Delete user',
   auth: 'user',
-  handler: function (req, reply) {
-  
-    reply({ok:false});
+  handler: {
+    proxy: {
+      passThrough: true,
+      mapUri: function (req, cb) {
+
+        console.log(req.url);
+        var couchUrl = req.server.settings.app.config.couchdb.url;
+        //cb(null, couchUrl + '/_users', req.headers);
+      }
+    }
   }
 };
 
@@ -343,31 +361,36 @@ exports.remove = {
 exports.register = function (server, options, next) {
 
   var config = server.settings.app.config;
-  var apiPrefix = config.apiPrefix;
   var app = server.app;
-  var couch = app.couch;
-  var changes = app.changes;
   var log = app.log.child({ scope: 'account' });
+  var couch = Couch(config.couchdb);
   var account = app.account = new EventEmitter();
   var usersDb = couch.db('_users');
+  var changes = usersDb.changes();
 
   // Listen for change events so that we can take action on user creation and
   // deletion.
-  changes.on('change', function (db, change) {
+  changes.on('change', function (change) {
 
     // We only care about user docs..
-    if (db !== '_users' || !/^org\.couchdb\.user:/.test(change.id)) { return; }
+    if (!/^org\.couchdb\.user:/.test(change.id)) { return; }
 
     var userDoc = change.doc;
 
     if (change.deleted) {
-      internals.handleAccountDeletion(app, userDoc);
+      internals.handleAccountDeletion(server, userDoc);
     } else if (!userDoc.roles.length) {
-      internals.handleSignUp(app, userDoc);
+      internals.handleSignUp(server, userDoc);
     } else {
       account.emit('update', userDoc);
     }
   });
+
+  changes.on('error', function (err) {
+    console.error(err);
+  });
+
+  changes.follow();
 
   next();
 };

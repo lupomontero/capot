@@ -1,6 +1,22 @@
 # Capot Server
 
+* Static files (`/`)
+* HTTP API (`/_api`)
+* Admin interface (`/_admin`)
+* CouchDB proxy (`/_couch`)
+
 ## HTTP API
+
+* `POST /session`
+* `DELETE /session`
+* `GET /session`
+* `GET /info`
+* `GET /users`
+* `GET /users/:id_or_email`
+* `PUT /users/:email`
+* `POST /users/:id/_reset`
+* `GET /users/:id/_reset/:token`
+* `DELETE /users/:id_or_email`
 
 ### Authentication
 
@@ -34,7 +50,7 @@ These routes are proxied directly to CouchDB's `/_session` API.
 
 `GET /users/:email`
 
-#### Create (sign up) or update user 
+#### Create (sign up) or update user
 
 `PUT /users/:email`
 
@@ -45,4 +61,3 @@ These routes are proxied directly to CouchDB's `/_session` API.
 #### Confirm password request
 
 `GET /users/:id/_reset/:token`
-

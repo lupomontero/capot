@@ -153,7 +153,7 @@ module.exports = function (argv) {
       require('./www'),
       //require('./changes'),
       //require('./task'),
-      //require('./account')
+      require('./account')
     ], function (err) {
 
       if (err) { return onError(err); }

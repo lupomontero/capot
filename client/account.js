@@ -1,7 +1,6 @@
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('promise');
 var couch = require('./couch')('/_couch');
-var request = require('./request');
 var noop = function () {};
 
 
@@ -36,23 +35,13 @@ module.exports = function (capot) {
 
 
   account.signUp = function (email, pass) {
-    var capotId = capot.uid();
-    var userDoc = {
-      name: email,
-      password: pass,
-      roles: [],
-      type: 'user',
-      capotId: capotId,
-      database: ('user/' + capotId)
-    };
-
     return new Promise(function (resolve, reject) {
       function waitForUserReady() {
-        couch.post('/_session', {
+        capot.request('POST', '/_session', {
           name: email,
           password: pass
         }).then(function (data) {
-          if (!data.roles.length) { return setTimeout(waitForUserReady, 200); }
+          if (!data.roles.length) { return setTimeout(waitForUserReady, 1000); }
           account.init().then(resolve, reject);
         }, reject);
       }
@@ -61,7 +50,10 @@ module.exports = function (capot) {
         return reject(new Error('Password must be at least 8 chars long'));
       }
 
-      couch.put(userDocUrl(email), userDoc).then(function (data) {
+      capot.request('POST', '/_users', {
+        email: email,
+        password: pass
+      }).then(function () {
         setTimeout(waitForUserReady, 300);
       }, reject);
     });
@@ -115,10 +107,9 @@ module.exports = function (capot) {
 
 
   account.resetPassword = function (email) {
-    var baseurl = window.location.origin;
-    return request({ url: baseurl })('POST', '/_reset', {
+    return capot.request('POST', '/_reset', {
       email: email,
-      baseurl: baseurl
+      baseurl: window.location.origin
     });
   };
 
@@ -127,14 +118,9 @@ module.exports = function (capot) {
     var email = account.session.userCtx.name;
     var url = userDocUrl(email);
 
-    return couch.get(url)
-      .then(function (userDoc) {
-        userDoc._deleted = true;
-        return couch.put(url, userDoc);
-      })
-      .then(function () {
-        return account.init();
-      });
+    return capot.request.del(url).then(function () {
+      return account.init();
+    });
   };
 
 

@@ -60,6 +60,10 @@ module.exports = Backbone.Router.extend({
     });
 
     if (!app.routes) { app.routes = {}; }
+
+    app.view.on('region:view', function (region) {
+      $('html').attr('class', region.view.templateName);
+    });
   },
 
   route: function (route, name, cb) {

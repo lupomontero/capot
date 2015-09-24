@@ -1,5 +1,7 @@
+var Url = require('url');
 var _ = require('lodash');
 var Request = require('request');
+var Follow = require('follow');
 
 
 var internals = {};
@@ -26,7 +28,7 @@ internals.wrapError = function (err) {
 
 internals.createError = function (resp) {
 
-  var body = resp.body = {};
+  var body = resp.body || {};
   var message = 'Internal server error';
   var error = message;
 
@@ -43,6 +45,11 @@ internals.createError = function (resp) {
   var err = new Error(message);
   err.statusCode = resp.statusCode || 500;
   err.error = error;
+  err.req = {
+    method: resp.request.method,
+    href: resp.request.href,
+    headers: resp.request.headers
+  };
   return err;
 };
 
@@ -106,13 +113,53 @@ internals.scopedRequest = function (opt) {
 module.exports = function (opt) {
 
   var couch = internals.scopedRequest(opt);
-  
+  var baseUrl = opt.url;
+  var uriObj = Url.parse(baseUrl);
+
+  if (opt.user && opt.pass) {
+    baseUrl = uriObj.protocol + '//' + opt.user + ':' + opt.pass + '@' + uriObj.host + uriObj.path;
+  }
 
   couch.db = function (name) {
 
-    var db = internals.scopedRequest(_.extend({}, opt, {
-      url: opt.url + '/' + encodeURIComponent(name)
-    }));
+    var dbUrl = opt.url + '/' + encodeURIComponent(name);
+    var db = internals.scopedRequest(_.extend({}, opt, { url: dbUrl }));
+
+    
+    db.exists = function (cb) {
+      couch.get(encodeURIComponent(name), function (err, data) {
+        if (err && err.statusCode === 404) {
+          cb(null, false);
+        } else if (err) {
+          cb(err);
+        } else {
+          cb(null, true);
+        }
+      });
+    };
+
+
+    db.create = function (cb) {
+      couch.put(encodeURIComponent(name), cb);
+    };
+
+    db.createIfNotExists = function (cb) {
+      db.exists(function (err, exists) {
+        if (err) { return cb(err); }
+        if (exists) { return cb(); }
+        db.create(cb);
+      });
+    };
+
+    db.changes = function (opt) {
+
+      return new Follow.Feed({
+        db: baseUrl + '/' + encodeURIComponent(name),
+        since: 'now',
+        include_docs: true
+      });
+    };
+
 
     //
     // Creates new design doc with CouchDB view on db.
