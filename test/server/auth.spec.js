@@ -13,12 +13,12 @@ describe('capot/server/auth', function () {
     server.stop(done);
   });
 
-  describe('GET /session', function () {
+  describe('GET /_session', function () {
 
     it('should get empty session when no auth', function (done) {
       server.req({
         method: 'GET',
-        url: '/_api/session'
+        url: '/_session'
       }, function (err, resp) {
         assert.ok(!err);
         assert.equal(resp.body.ok, true);
@@ -30,12 +30,12 @@ describe('capot/server/auth', function () {
 
   });
 
-  describe('POST /session', function () {
+  describe('POST /_session', function () {
 
     it('should authticate admin user', function (done) {
       server.req({
         method: 'POST',
-        url: '/_api/session',
+        url: '/_session',
         body: { name: 'admin', password: 'secret' }
       }, function (err, resp) {
         assert.ok(!err);

@@ -22,7 +22,7 @@ internals.wrapError = function (err) {
 
   err.statusCode = 0;
   err.error = 'Internal Server Error';
-  return err
+  return err;
 };
 
 
@@ -125,7 +125,7 @@ module.exports = function (opt) {
     var dbUrl = opt.url + '/' + encodeURIComponent(name);
     var db = internals.scopedRequest(_.extend({}, opt, { url: dbUrl }));
 
-    
+
     db.exists = function (cb) {
       couch.get(encodeURIComponent(name), function (err, data) {
         if (err && err.statusCode === 404) {

@@ -13,15 +13,14 @@ describe('capot/server/account', function () {
     Server.stop(done);
   });
 
-  describe('GET /users', function () {
+  describe('GET /_users', function () {
 
     it('should not allow unauthenticated access', function (done) {
       Server.req({
         method: 'GET',
-        url: '/_api/users'
+        url: '/_users'
       }, function (err, resp) {
         Assert.ok(!err);
-        console.log(resp.body);
         Assert.equal(resp.statusCode, 401);
         Assert.equal(resp.body.statusCode, 401);
         Assert.equal(resp.body.error, 'Unauthorized');
@@ -32,34 +31,31 @@ describe('capot/server/account', function () {
     it('should not allow access to non admin users', function (done) {
       Server.req({
         method: 'GET',
-        url: '/_api/users',
+        url: '/_users',
         auth: { user: 'testuser1', pass: 'secret1' }
       }, function (err, resp) {
         Assert.ok(!err);
-        console.log(resp.body);
-        //Assert.equal(resp.statusCode, 401);
-        //Assert.equal(resp.body.statusCode, 401);
-        //Assert.equal(resp.body.error, 'Unauthorized');
+        Assert.equal(resp.statusCode, 401);
+        Assert.equal(resp.body.statusCode, 401);
+        Assert.equal(resp.body.error, 'Unauthorized');
         done();
       });
     });
 
   });
 
-  describe('POST /users', function () {
+  describe('POST /_users', function () {
 
     it('should ...', function (done) {
       Server.req({
         method: 'POST',
-        url: '/_api/users',
-        body: { name: 'admin', password: 'secret' }
+        url: '/_users',
+        body: { email: 'test@localhost', password: 'secret' }
       }, function (err, resp) {
         Assert.ok(!err);
-        //var cookie = resp.headers['set-cookie'][0];
-        //Assert.ok(/^AuthSession=/.test(cookie));
-        //Assert.equal(resp.body.ok, true);
-        //Assert.equal(resp.body.name, null);
-        //Assert.deepEqual(resp.body.roles, [ '_admin' ]);
+        Assert.equal(resp.body.ok, true);
+        Assert.equal(resp.body.email, 'test@localhost');
+        Assert.equal(typeof resp.body.uid, 'string');
         done();
       });
     });
