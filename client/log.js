@@ -15,7 +15,7 @@ internals.pad = function (n, digits, padding) {
   }
 
   return str;
-}
+};
 
 
 internals.formatDate = function (d) {
@@ -26,7 +26,7 @@ internals.formatDate = function (d) {
     internals.pad(d.getSeconds()),
     internals.pad(d.getMilliseconds(), 3)
   ].join(':');
-}
+};
 
 
 module.exports = function (options) {

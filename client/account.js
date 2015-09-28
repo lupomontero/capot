@@ -1,20 +1,29 @@
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('promise');
-var couch = require('./couch')('/_couch');
-var noop = function () {};
 
 
-function userDocUrl(email) {
+var internals = {};
+
+
+internals.couch = require('./couch')('/_couch');
+
+
+internals.userDocUrl = function (email) {
+
   return '/_users/' + encodeURIComponent('org.couchdb.user:' + email);
-}
+};
 
-function getState() {
+
+internals.getState = function () {
+
   return JSON.parse(window.localStorage.getItem('__capot_session'));
-}
+};
 
-function setState(data) {
+
+internals.setState = function (data) {
+
   window.localStorage.setItem('__capot_session', JSON.stringify(data));
-}
+};
 
 
 module.exports = function (capot) {
@@ -24,8 +33,11 @@ module.exports = function (capot) {
 
 
   account.id = function () {
+
     var roles = ((account.session || {}).userCtx || {}).roles || [];
+
     return roles.reduce(function (memo, item) {
+
       var matches = /^capot:write:user\/([a-z0-9]+)$/.exec(item);
       if (matches && matches[1]) { return matches[1]; }
       return memo;
@@ -34,12 +46,16 @@ module.exports = function (capot) {
 
 
   account.signUp = function (email, pass) {
+
     return new Promise(function (resolve, reject) {
+
       function waitForUserReady() {
+
         capot.request('POST', '/_session', {
           name: email,
           password: pass
         }).then(function (data) {
+
           if (!data.roles.length) { return setTimeout(waitForUserReady, 1000); }
           account.init().then(resolve, reject);
         }, reject);
@@ -53,6 +69,7 @@ module.exports = function (capot) {
         email: email,
         password: pass
       }).then(function () {
+
         setTimeout(waitForUserReady, 300);
       }, reject);
     });
@@ -60,17 +77,21 @@ module.exports = function (capot) {
 
 
   account.signIn = function (email, pass) {
-    return couch.post('/_session', {
+
+    return internals.couch.post('/_session', {
       name: email,
       password: pass
     }).then(function () {
+
       return account.init();
     });
   };
 
 
   account.signOut = function () {
-    return couch.del('/_session').then(function () {
+
+    return internals.couch.del('/_session').then(function () {
+
       return account.init();
     });
   };
@@ -78,34 +99,40 @@ module.exports = function (capot) {
 
   account.changePassword = function (pass, newPass) {
     var email = account.session.userCtx.name;
-    var url = userDocUrl(email);
+    var url = internals.userDocUrl(email);
 
     if (newPass.length < 8) {
       return new Promise(function (resolve, reject) {
+
         reject(new Error('Password must be at least 8 chars long'));
       });
     }
 
-    return couch.post('/_session', { name: email, password: pass })
+    return internals.couch.post('/_session', { name: email, password: pass })
       .then(function () {
-        return couch.get(url);
+
+        return internals.couch.get(url);
       })
       .then(function (userDoc) {
+
         userDoc.password = newPass;
-        return couch.put(url, userDoc);
+        return internals.couch.put(url, userDoc);
       })
       .then(function () {
+
         return account.signIn(email, newPass);
       });
   };
 
 
   account.changeUsername = function (secret, newEmail) {
+
     throw new Error('FIXME: Unimplented!');
   };
 
 
   account.resetPassword = function (email) {
+
     return capot.request('POST', '/_reset', {
       email: email,
       baseurl: window.location.origin
@@ -114,52 +141,61 @@ module.exports = function (capot) {
 
 
   account.destroy = function () {
+
     var email = account.session.userCtx.name;
-    var url = userDocUrl(email);
+    var url = internals.userDocUrl(email);
 
     return capot.request.del(url).then(function () {
+
       return account.init();
     });
   };
 
 
   account.isSignedIn = function () {
+
     var userCtx = (account.session || {}).userCtx || {};
     return (typeof userCtx.name === 'string' && userCtx.name.length > 0);
   };
 
 
   account.isAdmin = function () {
+
     var userCtx = (account.session || {}).userCtx || {};
     return userCtx.roles && userCtx.roles.indexOf('_admin') >= 0;
   };
 
 
   account.isOnline = function () {
+
     return account.session && account.session.isOnline;
   };
 
 
   account.isOffline = function () {
+
     return !account.isOnline();
   };
 
 
   account.init = function (cb) {
+
     if (!hasInit) {
       capot.log('info', 'initializing account...');
     } else {
       capot.log('info', 'refreshing account...');
     }
 
-    cb = cb || noop;
+    cb = cb || function () {};
 
     var wasOnline = account.isOnline();
     var wasSignedIn = account.isSignedIn();
 
     return new Promise(function (resolve, reject) {
+
       function done() {
-        setState(account.session);
+
+        internals.setState(account.session);
 
         if (!hasInit) {
           hasInit = true;
@@ -180,12 +216,14 @@ module.exports = function (capot) {
         cb();
       }
 
-      couch.get('/_session').then(function (data) {
+      internals.couch.get('/_session').then(function (data) {
+
         account.session = data;
         account.session.isOnline = true;
         done();
       }, function (err) {
-        account.session = getState() || {};
+
+        account.session = internals.getState() || {};
         account.session.isOnline = false;
         done();
       });
@@ -194,13 +232,16 @@ module.exports = function (capot) {
 
 
   function logEvent(eventName) {
+
     return function () {
+
       capot.log('debug', eventName, Array.prototype.slice.call(arguments, 0));
     };
   }
 
   if (capot.settings.debug === true) {
     [ 'init', 'signin', 'signout', 'offline', 'online' ].forEach(function (eventName) {
+
       account.on(eventName, logEvent(eventName));
     });
   }

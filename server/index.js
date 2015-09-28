@@ -131,7 +131,8 @@ internals.plugins = [
   require('./mailer'),
   require('./auth'),
   require('./www'),
-  require('./account')
+  require('./account'),
+  require('./oauth')
 ];
 
 

@@ -1,29 +1,39 @@
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('promise');
 var PouchDB = require('pouchdb');
-var extend = require('extend');
-var omit = require('omit');
-var async = require('async');
-var noop = function () {};
+var Extend = require('extend');
+var Omit = require('omit');
+var Async = require('async');
 
 
-function assertDocType(type) {
+var internals = {};
+
+
+internals.noop = function () {};
+
+
+internals.assertDocType = function (type) {
+
   if (typeof type !== 'string') {
     throw new Error('Model type must be a string');
   }
-}
+};
 
-function parse(doc) {
+
+internals.parse = function (doc) {
+
   var idParts = doc._id.split('/');
-  return extend({
+  return Extend({
     id: idParts[1],
     type: idParts[0]
-  }, omit(doc, [ '_id' ]));
-}
+  }, Omit(doc, [ '_id' ]));
+};
 
-function toJSON(doc) {
-  return extend({ _id: doc.type + '/' + doc.id }, omit(doc, [ 'id' ]));
-}
+
+internals.toJSON = function (doc) {
+
+  return Extend({ _id: doc.type + '/' + doc.id }, Omit(doc, [ 'id' ]));
+};
 
 
 module.exports = function (capot) {
@@ -34,6 +44,7 @@ module.exports = function (capot) {
 
   
   function emitSyncEvent(eventName, data) {
+
     store.emit('sync', eventName, data);
     store.emit('sync:' + eventName, data);
   }
@@ -50,22 +61,27 @@ module.exports = function (capot) {
   // TODO: DEBOUNCE SYNC!!!
   //
   store.sync = function (cb) {
-    cb = cb || noop;
+
+    cb = cb || internals.noop;
     if (!store.remoteUrl) { return cb(); }
     if (capot.account.isOffline()) { return cb(); }
+
     store.remote.replicate.sync(store.local, {
       filter: function (doc) {
+
         return doc._id.indexOf('_design') !== 0;
       }
     })
       .on('error', emitSyncEvent.bind(null, 'error'))
       .on('denied', function (err) {
+
         console.error('sync denied', err);
       })
       .on('paused', emitSyncEvent.bind(null, 'paused'))
       .on('active', emitSyncEvent.bind(null, 'active'))
       .on('change', emitSyncEvent.bind(null, 'change'))
       .on('complete', function (data) {
+
         store.lastSync = data.push.end_time;
         if (data.pull.end_time > store.lastSync) {
           store.lastSync = data.pull.end_time;
@@ -80,15 +96,19 @@ module.exports = function (capot) {
   // Find object by type and id.
   //
   store.find = function (type, id, options) {
-    assertDocType(type);
+
+    internals.assertDocType(type);
     options = options || {};
     return new Promise(function (resolve, reject) {
+
       store.local.get(type + '/' + id).then(function (doc) {
-        var attrs = parse(doc);
+
+        var attrs = internals.parse(doc);
         if (!options.attachments || !doc._attachments) {
           return resolve(attrs);
         }
         store.getAttachments(doc).then(function (attachments) {
+
           attrs._attachments = attachments;
           resolve(attrs);
         });
@@ -101,24 +121,33 @@ module.exports = function (capot) {
   // Find all objects of a given type.
   //
   store.findAll = function (type, options) {
-    assertDocType(type);
+
+    internals.assertDocType(type);
     options = options || {};
     return new Promise(function (resolve, reject) {
+
       store.local.allDocs({
         include_docs: true,
         startkey: type + '/',
         endkey: type + '0'
       }).then(function (data) {
+
         var docs = data.rows.map(function (row) {
-          return parse(row.doc);
+
+          return internals.parse(row.doc);
         });
+
         if (!options.attachments) { return resolve(docs); }
-        async.each(docs, function (attrs, cb) {
+
+        Async.each(docs, function (attrs, cb) {
+
           store.getAttachments(attrs).then(function (attachments) {
+
             attrs._attachments = attachments;
             cb();
           }, cb);
         }, function (err) {
+
           if (err) { return reject(err); }
           resolve(docs);
         });
@@ -131,12 +160,14 @@ module.exports = function (capot) {
   // Add object to store.
   //
   store.add = function (type, attrs) {
-    assertDocType(type);
+
+    internals.assertDocType(type);
 
     var attachments = attrs._attachments || {};
     var attachmentsKeys = Object.keys(attachments);
     var binaryAttachments = {};
     var inlineAttachments = attachmentsKeys.reduce(function (memo, key) {
+
       var value = attachments[key];
       if (value instanceof File) {
         binaryAttachments[k] = value;
@@ -146,7 +177,7 @@ module.exports = function (capot) {
       return memo;
     }, {});
 
-    var doc = extend({}, omit(attrs, [ '_attachments' ]), {
+    var doc = Extend({}, Omit(attrs, [ '_attachments' ]), {
       _id: type + '/' + capot.uid(),
       createdAt: new Date(),
       type: type
@@ -157,30 +188,35 @@ module.exports = function (capot) {
     }
 
     return new Promise(function (resolve, reject) {
+
       var db = store.local;
 
       db.put(doc).then(function (data) {
+
         doc._rev = data.rev;
 
         var binaryAttachmentsKeys = Object.keys(binaryAttachments);
 
         if (!binaryAttachmentsKeys.length) {
-          return resolve(parse(doc));
+          return resolve(internals.parse(doc));
         }
 
-        async.eachSeries(binaryAttachmentsKeys, function (key, cb) {
+        Async.eachSeries(binaryAttachmentsKeys, function (key, cb) {
+
           var docId = doc._id;
           var rev = doc._rev;
           var file = binaryAttachments[key];
           var type = file.type;
           db.putAttachment(docId, key, rev, file, type, function (err, data) {
+
             if (err) { return cb(err); }
             doc._rev = data.rev;
             cb();
           });
         }, function (err) {
+
           if (err) { return reject(err); }
-          resolve(parse(doc));
+          resolve(internals.parse(doc));
         });
       }, reject);
     });
@@ -191,7 +227,8 @@ module.exports = function (capot) {
   // Update object in store.
   //
   store.update = function (type, id, attrs) {
-    assertDocType(type);
+
+    internals.assertDocType(type);
     // ...
   };
 
@@ -200,8 +237,12 @@ module.exports = function (capot) {
   // Remove object from store.
   //
   store.remove = function (type, id) {
+
     return store.find(type, id).then(function (doc) {
-      return store.local.put({ _deleted: true }, toJSON(doc)._id, doc._rev);
+
+      return store.local.put({
+        _deleted: true
+      }, internals.toJSON(doc)._id, doc._rev);
     });
   };
 
@@ -210,31 +251,38 @@ module.exports = function (capot) {
   // Remove all objects of given type from store.
   //
   store.removeAll = function (type) {
+
     // ...
   };
 
 
   store.attach = function (type, id, attachment, contentType) {
+
     //console.log(type, id, attachment, contentType);
     return;
   };
 
 
   store.getAttachments = function (doc) {
-    var docId = toJSON(doc)._id;
+
+    var docId = internals.toJSON(doc)._id;
     var attachments = doc._attachments || {};
     var attachmentsKeys = Object.keys(attachments);
 
     return new Promise(function (resolve, reject) {
+
       if (!attachmentsKeys.length) { return resolve([]); }
 
-      async.each(attachmentsKeys, function (key, cb) {
+      Async.each(attachmentsKeys, function (key, cb) {
+
         store.local.getAttachment(docId, key, function (err, data) {
+
           if (err) { return cb(err); }
           attachments[key].data = data;
           cb();
         });
       }, function (err) {
+
         if (err) { return reject(err); }
         resolve(attachments);
       });
@@ -246,15 +294,17 @@ module.exports = function (capot) {
   // Initialise store.
   //
   store.init = function (cb) {
+
     capot.log('info', 'capot.store init start');
 
-    cb = cb || noop;
+    cb = cb || internals.noop;
 
     var capotId = account.id() || '__capot_anon';
 
     store.local = new PouchDB(capotId, { auto_compaction: true });
 
     function listenToLocalChanges() {
+
       var localChanges = store.local.changes({ 
         since: 'now', 
         live: true,
@@ -262,12 +312,14 @@ module.exports = function (capot) {
       });
 
       localChanges.on('change', function (change) {
-        var doc = parse(change.doc);
+
+        var doc = internals.parse(change.doc);
         var type = doc.type;
 
         if (!type) { return; }
 
         function emit(eventName) {
+
           store.emit(eventName, doc, { local: true });
           store.emit(eventName + ':' + type, doc, { local: true });
         }
@@ -301,18 +353,22 @@ module.exports = function (capot) {
 
 
   [ 'signin', 'signout' ].forEach(function (eventName) {
+
     account.on(eventName, store.init.bind(store));
   });
 
 
   function logEvent(eventName) {
+
     return function () {
+
       capot.log('debug', eventName, Array.prototype.slice.call(arguments, 0));
     };
   }
 
   if (capot.settings.debug === true) {
     [ 'init', 'add', 'update', 'remove', 'change', 'sync' ].forEach(function (eventName) {
+
       store.on(eventName, logEvent(eventName));
     });
   }

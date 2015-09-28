@@ -1,6 +1,7 @@
 var Path = require('path');
 var Joi = require('joi');
 var Account = require('./account');
+var OAuth = require('./oauth');
 
 
 var internals = {};
@@ -93,5 +94,10 @@ module.exports = [
   { path: '/_users/{email}', method: 'DELETE', config: Account.remove },
   { path: '/_users/{email}/_reset', method: 'POST', config: Account.reset },
   { path: '/_users/{email}/_reset/{token}', method: 'GET', config: Account.confirm },
+  { path: '/_oauth/providers', method: 'GET', config: OAuth.getProviders },
+  { path: '/_oauth/available_providers', method: 'GET', config: OAuth.getAvailableProviders },
+  //{ path: '/_oauth/{provider}', method: 'GET', config: OAuth.connect },
+  //{ path: '/_oauth/callback/{provider}', method: 'GET', config: OAuth.callback },
+  //{ path: '/_oauth/session', method: 'GET', config: OAuth.session },
 ];
 

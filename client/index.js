@@ -1,15 +1,20 @@
 //
 // External Dependencies
 //
-var extend = require('extend');
-var async = require('async'); // (19K minified)
-var noop = function () {};
+var Extend = require('extend');
+var Async = require('async'); // (19K minified)
+
+
+var internals = {};
+
+
+internals.noop = function () {};
 
 
 //
 // Default settings.
 //
-var defaults = { 
+internals.defaults = { 
   remote: window.location.origin + '/_couch'
 };
 
@@ -19,7 +24,7 @@ var defaults = {
 //
 module.exports = function Capot(options) {
 
-  var settings = extend({}, defaults, options);
+  var settings = Extend({}, internals.defaults, options);
 
 
   var capot = {
@@ -32,7 +37,6 @@ module.exports = function Capot(options) {
 
   var account = capot.account = require('./account')(capot);
   var store = capot.store = require('./store')(capot);
-  var task = capot.task = require('./task')(capot);
 
 
   capot.log('debug', 'Dependencies: jQuery ' + jQuery.fn.jquery + ', PouchDB ' +
@@ -40,13 +44,14 @@ module.exports = function Capot(options) {
 
 
   capot.start = function (cb) {
-    cb = cb || noop;
+
+    cb = cb || internals.noop;
     capot.log('info', 'Starting capot client...');
-    async.applyEachSeries([
-      async.apply(account.init),
-      async.apply(store.init),
-      //async.apply(task.init),
+    Async.applyEachSeries([
+      Async.apply(account.init),
+      Async.apply(store.init),
     ], function (err) {
+
       capot.log('info', err || 'Capot client successfully started');
       cb(err);
     });

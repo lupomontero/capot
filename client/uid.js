@@ -3,13 +3,15 @@
 //
 
 
-var chars = '0123456789abcdefghijklmnopqrstuvwxyz'.split('');
+var internals = {
+  chars: '0123456789abcdefghijklmnopqrstuvwxyz'.split('')
+};
 
 
 module.exports = function (length) {
 
   var id = '';
-  var radix = chars.length;
+  var radix = internals.chars.length;
 
   // default uuid length to 7
   if (length === undefined) {
@@ -18,7 +20,7 @@ module.exports = function (length) {
 
   for (var i = 0; i < length; i++) {
     var rand = Math.random() * radix;
-    var char = chars[Math.floor(rand)];
+    var char = internals.chars[Math.floor(rand)];
     id += String(char).charAt(0);
   }
 
