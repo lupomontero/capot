@@ -65,7 +65,7 @@ internals.render = function render(appDb, configDoc, msg, cb) {
 };
 
 
-internals.send = function send(log, configDoc, msg, cb) {
+internals.send = function send(server, configDoc, msg, cb) {
 
   var transporter = internals.createTransport(configDoc.mailer);
 
@@ -75,7 +75,7 @@ internals.send = function send(log, configDoc, msg, cb) {
   transporter.sendMail(msg, function (err, data) {
 
     if (err) {
-      log.error(err);
+      server.log('error', err);
       return cb(err);
     }
 
@@ -86,31 +86,30 @@ internals.send = function send(log, configDoc, msg, cb) {
 
 exports.register = function (server, options, next) {
 
-  var log = server.app.log.child({ scope: 'mailer' });
   var couch = Couch(server.settings.app.config.couchdb);
   var appDb = couch.db('app');
 
-  log.info('Initialising mailer...');
+  server.log('info', 'Initialising mailer...');
 
   //
   // Public API
   //
   server.app.sendMail = function (msg, cb) {
 
-    log.info('Sending ' + (msg.subject || msg.template) + ' to ' + msg.to);
+    server.log('info', 'Sending ' + (msg.subject || msg.template) + ' to ' + msg.to);
 
     appDb.get('config', function (err, configDoc) {
 
       if (err) { return cb(err); }
 
       if (!msg.template) {
-        return internals.send(log, configDoc, msg, cb);
+        return internals.send(server, configDoc, msg, cb);
       }
 
       internals.render(appDb, configDoc, msg, function (err) {
 
         if (err) { return cb(err); }
-        internals.send(log, configDoc, msg, cb);
+        internals.send(server, configDoc, msg, cb);
       });
     });
   };
@@ -127,9 +126,9 @@ exports.register = function (server, options, next) {
     var service = mailerConf.service;
 
     if (!service) {
-      log.warn('No mailer service configured. Mailer will use direct transport, very unreliable!');
+      server.log('warn', 'No mailer service configured. Mailer will use direct transport, very unreliable!');
     } else {
-      log.info('Using service: ' + service + ' (' + mailerConf.user + ')');
+      server.log('info', 'Using service: ' + service + ' (' + mailerConf.user + ')');
     }
 
     Async.each(internals.templateDocs, function (templateDoc, cb) {

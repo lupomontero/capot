@@ -18,6 +18,9 @@ var MultiCouch = require('multicouch');
 var Couch = require('./couch');
 
 
+var internals = {};
+
+
 function ensureDataDir(config, cb) {
   Fs.exists(config.data, function (exists) {
     if (exists) { return cb(); }
@@ -26,13 +29,13 @@ function ensureDataDir(config, cb) {
 }
 
 
-function startCouchDBServer(log, config, cb) {
+function startCouchDBServer(server, config, cb) {
   var retries = 10;
   var port = config.port + 1;
   var couchUrl = 'http://127.0.0.1:' + port;
   var couch = Couch({ url: couchUrl });
   var bin = Which.sync('couchdb');
-  var server = new MultiCouch({
+  var couchServer = new MultiCouch({
     port: port,
     prefix: config.data,
     couchdb_path: bin
@@ -51,34 +54,34 @@ function startCouchDBServer(log, config, cb) {
       if (major !== 1 || minor < 6) {
         return cb(new Error('CouchDB version must be 1.6 or above'));
       }
-      log.info('CouchDB Server ' + data.version + ' started on port ' + port);
+      server.log('info', 'CouchDB Server ' + data.version + ' started on port ' + port);
       config.couchdb.url = couchUrl;
       cb();
     });
   }
 
-  server.on('start', wait);
-  server.on('error', function (err) { log.error(err); });
+  couchServer.on('start', wait);
+  couchServer.on('error', function (err) { server.log('error', err); });
 
   function stop(code) {
-    log.info('Stopping CouchDB Server...');
+    server.log('info', 'Stopping CouchDB Server...');
     process.removeListener('exit', stop);
-    server.once('stop', function () {
-      log.info('CouchDB Server stopped.');
+    couchServer.once('stop', function () {
+      server.log('info', 'CouchDB Server stopped.');
       process.exit(code);
     });
-    server.stop();
+    couchServer.stop();
   }
 
   [ 'exit', 'SIGINT', 'SIGTERM' ].forEach(function (eventName) {
     process.once(eventName, stop);
   });
 
-  server.start();
+  couchServer.start();
 }
 
 
-function ensureAdminCredentials(log, config, cb) {
+function ensureAdminCredentials(server, config, cb) {
   var credentialsPath = Path.join(config.data, 'capot.json');
 
   function setCredentials(credentials) {
@@ -111,13 +114,13 @@ function ensureAdminCredentials(log, config, cb) {
     if (!config.couchdb.pass) {
       return prompt();
     }
-    log.info('Using CouchDB credentials passed in environment');
+    server.log('info', 'Using CouchDB credentials passed in environment');
     saveCredentials();
   }
 
   try {
     setCredentials(require(credentialsPath));
-    log.info('Loaded CouchDB credentials from ' + credentialsPath);
+    server.log('info', 'Loaded CouchDB credentials from ' + credentialsPath);
   } catch (err) {
     getCredentials();
   }
@@ -246,17 +249,16 @@ function ensureAppConfigDoc(config, cb) {
 module.exports = function (server, cb) {
 
   var config = server.settings.app.config;
-  var log = server.app.log.child({ scope: 'installer' });
   var tasks = [];
 
   if (!config.couchdb.url) {
-    log.info('No CouchDB url in env, starting local CouchDB...');
+    server.log('info', 'No CouchDB url in env, starting local CouchDB...');
     config.couchdb.run = true;
     tasks.push(ensureDataDir);
-    tasks.push(startCouchDBServer.bind(null, log));
-    tasks.push(ensureAdminCredentials.bind(null, log));
+    tasks.push(startCouchDBServer.bind(null, server));
+    tasks.push(ensureAdminCredentials.bind(null, server));
   } else {
-    log.info('Using remote CouchDB: ' + config.couchdb.url);
+    server.log('info', 'Using remote CouchDB: ' + config.couchdb.url);
   }
 
   tasks.push(ensureAdminUser);

@@ -5,7 +5,6 @@
 
 var Path = require('path');
 var Hapi = require('hapi');
-var Bunyan = require('bunyan');
 var Async = require('async');
 var _ = require('lodash');
 var Installer = require('./lib/installer');
@@ -20,6 +19,7 @@ internals.createConfig = function (argv) {
   var env = process.env;
 
   return _.extend({}, {
+    debug: argv.debug === true,
     port: 3001,
     cwd: process.cwd(),
     data: Path.join(process.cwd(), 'data'),
@@ -48,17 +48,16 @@ internals.requireExtension = function (server, path, cb) {
 internals.loadUserland = function (server, cb) {
 
   var config = server.settings.app.config;
-  var log = server.app.log.child({ scope: 'userland' });
 
   internals.requireExtension(server, config.cwd, function (err) {
 
     if (err) {
       if (err.code !== 'MODULE_NOT_FOUND') {
-        log.warn(err);
+        server.log('warn', err);
       }
-      log.warn('Did not extend Capot Server with userland');
+      server.log('warn', 'Did not extend Capot Server with userland');
     } else {
-      log.info('Extended Capot Server with userland');
+      server.log('info', 'Extended Capot Server with userland');
     }
 
     cb();
@@ -68,7 +67,6 @@ internals.loadUserland = function (server, cb) {
 
 internals.loadPlugins = function (server, cb) {
 
-  var log = server.app.log.child({ scope: 'plugins' });
   var config = server.settings.app.config;
   // read plugins from package.json and add those to pluginsPaths...
   var plugins = (server.settings.app.pkg.capot || {}).plugins || [];
@@ -77,15 +75,15 @@ internals.loadPlugins = function (server, cb) {
 
   Async.each(plugins, function (plugin, cb) {
 
-    log.info('Initialising plugin ' + plugin);
+    server.log('info', 'Initialising plugin ' + plugin);
     var abs = (plugin.charAt(0) === '.') ? Path.join(config.cwd, plugin) : plugin;
     internals.requireExtension(server, abs, function (err) {
 
       if (err) {
-        log.warn(err);
-        log.warn('Plugin ' + plugin + ' not loaded');
+        server.log('warn', err);
+        server.log('warn', 'Plugin ' + plugin + ' not loaded');
       } else {
-        log.info('Plugin ' + plugin + ' loaded!');
+        server.log('info', 'Plugin ' + plugin + ' loaded!');
       }
       cb();
     });
@@ -93,15 +91,14 @@ internals.loadPlugins = function (server, cb) {
 };
 
 
-module.exports = function (argv) {
+internals.createServer = function (config) {
 
-  if (argv.debug) {
-    require('longjohn');
-  }
-
-  var config = internals.createConfig(argv);
   var Pkg = require(Path.join(config.cwd, 'package.json'));
   var server = new Hapi.Server({
+    debug: {
+      log: [ 'info', 'warn', 'error' ],
+      request: [ 'error' ]
+    },
     connections: {
       routes: {
         payload: {
@@ -124,14 +121,35 @@ module.exports = function (argv) {
 
   server.connection({ port: config.port });
 
-  var log = server.app.log = Bunyan.createLogger({
-    name: Pkg.name,
-    level: 'debug'
-  });
+  return server;
+};
+
+
+internals.plugins = [
+  require('h2o2'),
+  require('inert'),
+  require('./mailer'),
+  require('./auth'),
+  require('./www'),
+  require('./account')
+];
+
+
+module.exports = function (argv) {
+
+  var config = internals.createConfig(argv);
+  var plugins = internals.plugins.slice(0);
+
+  if (config.debug) {
+    require('longjohn');
+    plugins = [ require('vision'), require('lout') ].concat(plugins);
+  }
+
+  var server = internals.createServer(config);
 
   function onError(err) {
 
-    log.error(err);
+    server.log('error', err);
     process.exit(1);
   }
 
@@ -139,44 +157,18 @@ module.exports = function (argv) {
   // manage killing and spinning children properly. 
   process.on('uncaughtException', onError);
 
-  Installer(server, function (err) {
-
+  Async.series([
+    Async.apply(Installer, server),
+    server.register.bind(server, plugins),
+    function (cb) { server.route(Routes); cb(); },
+    Async.apply(internals.loadPlugins, server),
+    Async.apply(internals.loadUserland, server),
+    server.start.bind(server)
+  ], function (err) {
+  
     if (err) { return onError(err); }
-
-    server.register([
-      require('vision'),
-      require('lout'),
-      require('h2o2'),
-      require('inert'),
-      require('./mailer'),
-      require('./auth'),
-      require('./www'),
-      //require('./changes'),
-      //require('./task'),
-      require('./account')
-    ], function (err) {
-
-      if (err) { return onError(err); }
-
-      server.route(Routes);
-
-      Async.applyEachSeries([
-        internals.loadPlugins,
-        internals.loadUserland
-      ], server, function (err) {
-
-        if (err) { return onError(err); }
-
-        //server.app.changes.start();
-
-        log.info('Starting server...');
-        server.start(function () {
-
-          log.info('Web server started on port ' + config.port);
-          log.info('Capot back-end has started ;-)');
-        });
-      });
-    });
+    server.log('info', 'Web server started on port ' + config.port);
+    server.log('info', 'Capot back-end has started ;-)');
   });
 
 };

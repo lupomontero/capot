@@ -67,7 +67,6 @@ internals.handleSignUp = function (server, userDoc) {
 
   var config = server.settings.app.config;
   var app = server.app;
-  var log = app.log.child({ scope: 'account' });
   var couch = Couch(config.couchdb);
   var userDb = couch.db(userDoc.database);
   var usersDb = couch.db('_users');
@@ -114,7 +113,7 @@ internals.handleSignUp = function (server, userDoc) {
     }
   ], function (err) {
 
-    if (err) { return log.error(err); }
+    if (err) { return server.log('error', err); }
     app.account.emit('add', userDoc);
   });
 };
@@ -124,12 +123,11 @@ internals.handleAccountDeletion = function (server, userDoc) {
 
   var config = server.settings.app.config;
   var app = server.app;
-  var log = app.log.child({ scope: 'account' });
   var couch = Couch(config.couchdb);
   var appDb = couch.db('app');
 
   function done(err) {
-    if (err) { log.warn(err); }
+    if (err) { server.log('warn', err); }
     app.account.emit('remove', userDoc);
   }
 
@@ -362,7 +360,6 @@ exports.register = function (server, options, next) {
 
   var config = server.settings.app.config;
   var app = server.app;
-  var log = app.log.child({ scope: 'account' });
   var couch = Couch(config.couchdb);
   var account = app.account = new EventEmitter();
   var usersDb = couch.db('_users');

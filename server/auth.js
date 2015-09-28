@@ -3,7 +3,6 @@
 //
 // * registers couchdb auth scheme
 // * registers "user" and "admin" auth strategies.
-// * exposes CouchDB's `/_session` API on `{apiPrefix}/session`
 //
 
 
