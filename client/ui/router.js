@@ -35,10 +35,9 @@ module.exports = Backbone.Router.extend({
   initialize: function (options) {
     var app = this;
     var capot = options.capot || require('../')(_.omit(options, optionKeys));
-    var log = capot.log.child({ scope: 'CapotUI' });
     var capotStart = capot.start.bind(capot);
 
-    log.debug('Dependencies: Lodash: ' + _.VERSION + ', Backbone ' +
+    capot.log('debug', 'Dependencies: Lodash: ' + _.VERSION + ', Backbone ' +
       Backbone.VERSION + ', Handlebars: ' + Handlebars.VERSION);
 
     Backbone.Router.prototype.initialize.call(app, options);

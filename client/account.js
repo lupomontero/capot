@@ -19,7 +19,6 @@ function setState(data) {
 
 module.exports = function (capot) {
 
-  var log = capot.log.child({ scope: 'capot.account' });
   var account = new EventEmitter();
   var hasInit = false;
 
@@ -148,9 +147,9 @@ module.exports = function (capot) {
 
   account.init = function (cb) {
     if (!hasInit) {
-      log.info('initializing...');
+      capot.log('info', 'initializing account...');
     } else {
-      log.info('refreshing...');
+      capot.log('info', 'refreshing account...');
     }
 
     cb = cb || noop;
@@ -195,9 +194,8 @@ module.exports = function (capot) {
 
 
   function logEvent(eventName) {
-    var log = capot.log.child({ scope: 'capot.account:' + eventName });
     return function () {
-      log.debug(Array.prototype.slice.call(arguments, 0));
+      capot.log('debug', eventName, Array.prototype.slice.call(arguments, 0));
     };
   }
 

@@ -29,7 +29,6 @@ function toJSON(doc) {
 module.exports = function (capot) {
 
   var settings = capot.settings;
-  var log = capot.log.child({ scope: 'capot.store' });
   var account = capot.account;
   var store = new EventEmitter();
 
@@ -247,7 +246,7 @@ module.exports = function (capot) {
   // Initialise store.
   //
   store.init = function (cb) {
-    log.info('init start');
+    capot.log('info', 'capot.store init start');
 
     cb = cb || noop;
 
@@ -286,7 +285,7 @@ module.exports = function (capot) {
         store.sync();
       });
 
-      log.info('init ok');
+      capot.log('info', 'capot.store init ok');
       store.emit('init');
       cb();
     }
@@ -307,9 +306,8 @@ module.exports = function (capot) {
 
 
   function logEvent(eventName) {
-    var log = capot.log.child({ scope: 'capot.store:' + eventName });
     return function () {
-      log.debug(Array.prototype.slice.call(arguments, 0));
+      capot.log('debug', eventName, Array.prototype.slice.call(arguments, 0));
     };
   }
 
