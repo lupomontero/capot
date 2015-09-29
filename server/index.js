@@ -129,10 +129,11 @@ internals.plugins = [
   require('h2o2'),
   require('inert'),
   require('./mailer'),
-  require('./auth'),
+  require('./session'),
   require('./www'),
   require('./account'),
-  require('./oauth')
+  require('./oauth'),
+  require('./changes')
 ];
 
 
@@ -168,6 +169,7 @@ module.exports = function (argv) {
   ], function (err) {
   
     if (err) { return onError(err); }
+    server.app.changes.start();
     server.log('info', 'Web server started on port ' + config.port);
     server.log('info', 'Capot back-end has started ;-)');
   });

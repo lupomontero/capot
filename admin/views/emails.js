@@ -6,6 +6,7 @@ module.exports = View.extend({
   templateName: 'emails',
 
   initialize: function (opt) {
+    
     var view = this;
     var app = opt.app;
 
@@ -15,11 +16,13 @@ module.exports = View.extend({
     var partial = Handlebars.partials.email;
 
     emails.on('change', function (email) {
+
       var html = partial(email.toViewContext());
       view.$('[data-id="' + email.id + '"]').replaceWith(html);
     });
 
     emails.once('sync', function () {
+
       view.render();
     });
 
@@ -31,6 +34,7 @@ module.exports = View.extend({
   },
 
   saveEmail: function (e) {
+
     var $btn = $(e.currentTarget);
     var $panel = $btn.parents('.panel');
     var $textarea = $panel.find('textarea');

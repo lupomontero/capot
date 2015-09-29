@@ -8,9 +8,13 @@ var Capot = require('capot/client');
 var capot = Capot(options);
 ```
 
-## Options
+## API
 
-* `remote`: URL to backend HTTP API. Default is `/_couch`.
+* `capot.account`
+* `capot.store`
+* `capot.request`
+* `capot.log`
+* `capot.uid`
 
 ***
 
@@ -125,20 +129,3 @@ This is triggered when the session changes from offline to online. Note that thi
 #### `sync:active`
 #### `sync:change`
 #### `sync:complete`
-
-***
-
-## `capot.task`
-
-### Methods
-
-#### `capot.task.start(type, attrs)`
-#### `capot.task.abort(type, id)`
-#### `capot.task.restart(type, id, extraAttrs)`
-#### `capot.task.restartAll()`
-
-### Events
-
-#### `start`
-#### `abort`
-#### `restart`

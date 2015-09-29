@@ -59,12 +59,46 @@ describe('capot/server/oauth', function () {
         Assert.ok(!err);
         Assert.equal(resp.statusCode, 200);
         Assert.deepEqual(resp.body, [
-          'bitbucket',
-          'facebook',
           'github',
-          'google',
           'twitter'
         ]);
+        done();
+      });
+    });
+
+  });
+
+  describe('GET /_oauth/{provider}', function () {
+
+    it.skip('should...', function (done) {
+
+      Server.req({
+        method: 'GET',
+        url: '/_oauth/bitbucket'
+      }, function (err, resp) {
+
+        Assert.ok(!err);
+        //Assert.equal(resp.statusCode, 401);
+        console.log(resp.body);
+        done();
+      });
+    });
+
+  });
+
+  describe('GET /_oauth/session', function () {
+
+    it('should return 401 when missing cookie', function (done) {
+
+      Server.req({
+        method: 'GET',
+        url: '/_oauth/session'
+      }, function (err, resp) {
+
+        Assert.ok(!err);
+        Assert.equal(resp.statusCode, 401);
+        Assert.equal(resp.body.statusCode, 401);
+        Assert.equal(resp.body.message, 'Missing authentication');
         done();
       });
     });

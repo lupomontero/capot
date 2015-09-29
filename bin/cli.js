@@ -1,24 +1,30 @@
 #!/usr/bin/env node
 
-var minimist = require('minimist');
-var pkg = require('../package.json');
-var argv = minimist(process.argv.slice(2));
+var Minimist = require('minimist');
+var Pkg = require('../package.json');
+var Server = require('../server');
+
+
+var internals = {};
+
+
+internals.argv = Minimist(process.argv.slice(2));
 
 
 // Show version if asked to do so.
-if (argv.v || argv.version) {
-  console.log(pkg.version);
+if (internals.argv.v || internals.argv.version) {
+  console.log(Pkg.version);
   process.exit(0);
 }
 
 
 // Show help if applicable.
-if (argv.h || argv.help) {
+if (internals.argv.h || internals.argv.help) {
   console.log([
     '',
     'Usage:',
     '',
-    pkg.name + ' [ <options> ]',
+    Pkg.name + ' [ <options> ]',
     '',
     'Options:',
     '',
@@ -34,12 +40,12 @@ if (argv.h || argv.help) {
     'COUCHDB_PASS',
     '',
     '-h, --help       Show this help.',
-    '-v, --version    Show ' + pkg.name + ' version.',
+    '-v, --version    Show ' + Pkg.name + ' version.',
     ''
   ].join('\n'));
   process.exit(0);
 }
 
 
-require('../server')(argv);
+Server(internals.argv);
 

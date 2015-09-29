@@ -70,10 +70,15 @@ module.exports = View.extend({
     var oauth = config.get('oauth');
 
     oauth.providers = Object.keys(oauth.providers).reduce(function (memo, key) {
+
       memo[key] = {
         enabled: $('#' + key + '-enabled').is(':checked'),
         key: $('#' + key + '-key').val(),
-        secret: $('#' + key + '-secret').val()
+        secret: $('#' + key + '-secret').val(),
+        scopes: $('#' + key + '-scopes').val().split(',').map(function (scope) {
+
+          return _.trim(scope.toLowerCase());
+        })
       };
       return memo;
     }, {});
@@ -84,9 +89,11 @@ module.exports = View.extend({
       oauth: oauth
     }, {
       error: function (err) {
+
         alert(err.reason || err.message);
       },
       success: function () {
+
         alert('Config updated!');
       }
     });

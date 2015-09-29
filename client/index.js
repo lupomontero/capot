@@ -2,7 +2,7 @@
 // External Dependencies
 //
 var Extend = require('extend');
-var Async = require('async'); // (19K minified)
+var Async = require('async');
 
 
 var internals = {};
@@ -14,8 +14,8 @@ internals.noop = function () {};
 //
 // Default settings.
 //
-internals.defaults = { 
-  remote: window.location.origin + '/_couch'
+internals.defaults = {
+  debug: false
 };
 
 
@@ -61,4 +61,3 @@ module.exports = function Capot(options) {
   return capot;
 
 };
-

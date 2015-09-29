@@ -128,6 +128,10 @@ exports.start = function (dummyData, done) {
       env: _.extend({}, process.env, { COUCHDB_PASS: pass })
     });
 
+    child.stdout.on('data', function (chunk) {
+      console.log('stdout: ' + chunk);
+    });
+
     child.stderr.on('data', function (chunk) {
 
       // keep output, so that if server crashes we can show it.

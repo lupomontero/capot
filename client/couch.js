@@ -13,9 +13,9 @@ var Request = require('./request');
 var internals = {};
 
 
-internals.createApi = function (opt) {
+internals.createApi = function (options) {
 
-  var req = Request(opt);
+  var req = Request(options);
 
   return {
     get: req.bind(null, 'GET'),
@@ -27,22 +27,24 @@ internals.createApi = function (opt) {
 };
 
 
-module.exports = function (opt) {
+module.exports = function (options) {
 
-  if (typeof opt === 'string') {
-    opt = { url: opt };
+  if (typeof options === 'string') {
+    options = { url: options };
   }
 
-  if (!/^https?:\/\//.test(opt.url)) {
-    if (opt.url.charAt(0) === '/') { opt.url = opt.url.slice(1); }
-    opt.url = window.location.origin + '/' + opt.url;
+  if (!/^https?:\/\//.test(options.url)) {
+    if (options.url.charAt(0) === '/') {
+      options.url = options.url.slice(1);
+    }
+    options.url = window.location.origin + '/' + options.url;
   }
 
-  var api = internals.createApi(opt);
+  var api = internals.createApi(options);
 
   api.db = function (dbName) {
 
-    return new PouchDB(opt.url + '/' + encodeURIComponent(dbName));
+    return new PouchDB(options.url + '/' + encodeURIComponent(dbName));
   };
 
   api.isAdminParty = function (cb) {
@@ -62,4 +64,3 @@ module.exports = function (opt) {
   return api;
 
 };
-

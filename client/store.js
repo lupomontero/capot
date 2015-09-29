@@ -24,7 +24,7 @@ internals.parse = function (doc) {
 
   var idParts = doc._id.split('/');
   return Extend({
-    id: idParts[1],
+    id: idParts.slice(1).join('/'),
     type: idParts[0]
   }, Omit(doc, [ '_id' ]));
 };
@@ -42,7 +42,7 @@ module.exports = function (capot) {
   var account = capot.account;
   var store = new EventEmitter();
 
-  
+
   function emitSyncEvent(eventName, data) {
 
     store.emit('sync', eventName, data);
@@ -69,7 +69,7 @@ module.exports = function (capot) {
     store.remote.replicate.sync(store.local, {
       filter: function (doc) {
 
-        return doc._id.indexOf('_design') !== 0;
+        return doc._id.indexOf('_design') !== 0 && doc.$replicate !== false;
       }
     })
       .on('error', emitSyncEvent.bind(null, 'error'))
@@ -252,7 +252,16 @@ module.exports = function (capot) {
   //
   store.removeAll = function (type) {
 
-    // ...
+    return store.findAll(type).then(function (result) {
+
+      var docs = result.map(function (obj) {
+        var doc = internals.toJSON(obj);
+        doc._deleted = true;
+        return doc;
+      });
+
+      return store.local.bulkDocs(docs);
+    });
   };
 
 
@@ -305,8 +314,8 @@ module.exports = function (capot) {
 
     function listenToLocalChanges() {
 
-      var localChanges = store.local.changes({ 
-        since: 'now', 
+      var localChanges = store.local.changes({
+        since: 'now',
         live: true,
         include_docs: true
       });
@@ -343,7 +352,8 @@ module.exports = function (capot) {
     }
 
     if (account.isSignedIn() && !account.isAdmin()) {
-      store.remoteUrl = settings.remote + '/' + encodeURIComponent('user/' + capotId);
+      store.remoteUrl = window.location.origin + '/_couch/' +
+        encodeURIComponent('user/' + capotId);
       store.remote = new PouchDB(store.remoteUrl);
       store.sync(listenToLocalChanges);
     } else {
@@ -377,4 +387,3 @@ module.exports = function (capot) {
   return store;
 
 };
-

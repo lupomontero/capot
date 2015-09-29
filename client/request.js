@@ -1,10 +1,10 @@
 var Promise = require('promise');
 
 
-module.exports = function (opt) {
+module.exports = function (options) {
 
   return function req(/* method, path, params, data */) {
-    
+
     var args = Array.prototype.slice.call(arguments, 0);
     var method = args.shift();
     var path = args.shift();
@@ -16,11 +16,11 @@ module.exports = function (opt) {
 
       var reqOpt = {
         type: method,
-        url: opt.url + path,
+        url: options.url + path,
         dataType: 'json',
         timeout: 10 * 1000,
         cache: false,
-        error: function (xhr) { 
+        error: function (xhr) {
 
           var msg, reason;
           if (xhr.status === 0) { // UNSENT
@@ -34,14 +34,14 @@ module.exports = function (opt) {
           var err = new Error(msg);
           err.statusCode = xhr.status;
           err.reason = reason;
-          reject(err); 
+          reject(err);
         },
         success: resolve
       };
 
-      if (opt.user && opt.pass) {
-        reqOpt.username = opt.user;
-        reqOpt.password = opt.pass;
+      if (options.user && options.pass) {
+        reqOpt.username = options.user;
+        reqOpt.password = options.pass;
       }
 
       if ([ 'PUT', 'POST' ].indexOf(method) >= 0) {
@@ -68,4 +68,3 @@ module.exports = function (opt) {
   };
 
 };
-

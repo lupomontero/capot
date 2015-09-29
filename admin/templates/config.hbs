@@ -74,6 +74,10 @@
           <label for="{{@key}}-secret">Client Secret</label>
           <input class="form-control" id="{{@key}}-secret" value="{{secret}}" placeholder="Enter your {{@key}} Client Secret">
         </div>
+        <div class="form-group">
+          <label for="{{@key}}-scopes">Scopes</label>
+          <input class="form-control" id="{{@key}}-scopes" value="{{scopes}}" placeholder="user:email, ...">
+        </div>
       </fieldset>
       {{/each}}
 

@@ -52,7 +52,7 @@ module.exports = function (capot) {
       function waitForUserReady() {
 
         capot.request('POST', '/_session', {
-          name: email,
+          email: email,
           password: pass
         }).then(function (data) {
 
@@ -78,8 +78,8 @@ module.exports = function (capot) {
 
   account.signIn = function (email, pass) {
 
-    return internals.couch.post('/_session', {
-      name: email,
+    return capot.request('POST', '/_session', {
+      email: email,
       password: pass
     }).then(function () {
 
@@ -90,7 +90,7 @@ module.exports = function (capot) {
 
   account.signOut = function () {
 
-    return internals.couch.del('/_session').then(function () {
+    return capot.request('DELETE', '/_session').then(function () {
 
       return account.init();
     });
@@ -108,7 +108,7 @@ module.exports = function (capot) {
       });
     }
 
-    return internals.couch.post('/_session', { name: email, password: pass })
+    return capot.request('POST', '/_session', { name: email, password: pass })
       .then(function () {
 
         return internals.couch.get(url);
@@ -145,7 +145,7 @@ module.exports = function (capot) {
     var email = account.session.userCtx.name;
     var url = internals.userDocUrl(email);
 
-    return capot.request.del(url).then(function () {
+    return capot.request('DELETE', url).then(function () {
 
       return account.init();
     });
@@ -216,7 +216,7 @@ module.exports = function (capot) {
         cb();
       }
 
-      internals.couch.get('/_session').then(function (data) {
+      capot.request('GET', '/_session').then(function (data) {
 
         account.session = data;
         account.session.isOnline = true;
@@ -229,6 +229,56 @@ module.exports = function (capot) {
       });
     });
   };
+
+
+  //
+  // Connect account with social provider.
+  //
+  account.connectWith = function (provider, options) {
+
+    options = options || {};
+
+    var url = '/_oauth/' + provider;
+
+    if (options.redirectTo) {
+      url += '?redirectTo=' + encodeURIComponent(options.redirectTo);
+    }
+
+    return new Promise(function (resolve, reject) {
+
+      capot.request('GET', url).then(function (data) {
+
+        window.location.href = data.authenticateUrl;
+      }, reject);
+
+    });
+  };
+
+
+	//
+  // When loading we check whether we are coming back from an oauth dance.
+  //
+  account.on('init', function () {
+
+    capot.request('GET', '/_oauth/session').then(function (session) {
+
+      if (typeof session.data !== 'object') { return; }
+
+      if (!session.data.cookie) { return account.emit('oauth', session); }
+
+      //var matches = /(AuthSession=[^;]+);/.exec(session.data.cookie);
+      //console.log(matches);
+      account.init().then(function () {
+
+        account.emit('oauth', session);
+      });
+    }, function (err) {
+
+      if (xhr.status !== 401) {
+        capot.log('info', 'Status: ' + xhr.status + '\n' + xhr.responseText);
+      }
+    });
+  });
 
 
   function logEvent(eventName) {
@@ -250,4 +300,3 @@ module.exports = function (capot) {
   return account;
 
 };
-

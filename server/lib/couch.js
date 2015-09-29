@@ -50,11 +50,12 @@ internals.createError = function (resp) {
     href: resp.request.href,
     headers: resp.request.headers
   };
+
   return err;
 };
 
 
-internals.scopedRequest = function (opt) {
+internals.scopedRequest = function (options) {
 
   function req(/* method, path, params, data, cb */) {
     
@@ -69,13 +70,13 @@ internals.scopedRequest = function (opt) {
 
     var reqOpt = {
       method: method,
-      baseUrl: opt.url,
+      baseUrl: options.url,
       url: path,
       json: true
     };
 
-    if (opt.user && opt.pass) {
-      reqOpt.auth = _.pick(opt, [ 'user', 'pass' ]);
+    if (options.user && options.pass) {
+      reqOpt.auth = _.pick(options, [ 'user', 'pass' ]);
     }
 
     if ([ 'PUT', 'POST' ].indexOf(method) >= 0) {
@@ -110,20 +111,21 @@ internals.scopedRequest = function (opt) {
 };
 
 
-module.exports = function (opt) {
+module.exports = function (options) {
 
-  var couch = internals.scopedRequest(opt);
-  var baseUrl = opt.url;
+  var couch = internals.scopedRequest(options);
+  var baseUrl = options.url;
   var uriObj = Url.parse(baseUrl);
 
-  if (opt.user && opt.pass) {
-    baseUrl = uriObj.protocol + '//' + opt.user + ':' + opt.pass + '@' + uriObj.host + uriObj.path;
+  if (options.user && options.pass) {
+    baseUrl = uriObj.protocol + '//' + options.user + ':' + options.pass + '@' +
+      uriObj.host + uriObj.path;
   }
 
   couch.db = function (name) {
 
-    var dbUrl = opt.url + '/' + encodeURIComponent(name);
-    var db = internals.scopedRequest(_.extend({}, opt, { url: dbUrl }));
+    var dbUrl = options.url + '/' + encodeURIComponent(name);
+    var db = internals.scopedRequest(_.extend({}, options, { url: dbUrl }));
 
 
     db.exists = function (cb) {
@@ -151,13 +153,21 @@ module.exports = function (opt) {
       });
     };
 
-    db.changes = function (opt) {
+    db.changes = function (params, cb) {
 
-      return new Follow.Feed({
-        db: baseUrl + '/' + encodeURIComponent(name),
-        since: 'now',
-        include_docs: true
-      });
+      params = params || {};
+      cb = cb || function () {};
+
+      if (params.feed === 'continuous') {
+      
+        return new Follow.Feed({
+          db: baseUrl + '/' + encodeURIComponent(name),
+          since: params.since || 'now',
+          include_docs: params.include_docs === true
+        });
+      }
+
+      db.get('/_changes', params, cb);
     };
 
 
@@ -225,6 +235,36 @@ module.exports = function (opt) {
         db.put(internals.viewsDdocId, ddoc, cb);
       });
     };
+
+
+    db.query = function (index, params, cb) {
+
+      // `params` is optional, when only two args passed second is callback.
+			if (arguments.length === 2) {
+				cb = params;
+				params = null;
+			}
+
+			var viewUrl = '/_design/views/_view/' + index;
+
+			// If params have been passed we build the query string.
+			if (params) {
+				var qs = _.reduce(params, function (memo, v, k) {
+
+					if (memo) { memo += '&'; }
+					return memo + k + '=' + encodeURIComponent(JSON.stringify(v));
+				}, '');
+
+				if (qs) { viewUrl += '?' + qs; }
+			}
+
+			db.get(viewUrl, function (err, data) {
+
+				if (err) { return cb(err); }
+				cb(null, data.rows, _.omit(data, [ 'rows' ]));
+			});
+    };
+
       
     db.addSecurity = function (securityDoc, cb) {
 
@@ -278,6 +318,14 @@ module.exports = function (opt) {
       } else {
         cb(null, true);
       }
+    });
+  };
+
+
+  couch.dbUpdates = function (params) {
+
+    return new Follow.Feed({
+      db: baseUrl + '/_db_updates',
     });
   };
 

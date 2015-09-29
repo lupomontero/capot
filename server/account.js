@@ -263,7 +263,6 @@ exports.add = {
 
     var email = req.payload.email;
     var pass = req.payload.password;
-
     var uid = Uid();
     var config = req.server.settings.app.config;
     var userDocUrl = config.couchdb.url + '/_users/org.couchdb.user:' +
@@ -319,23 +318,41 @@ exports.all = {
 };
 
 
-exports.get = {
-  auth: 'admin',
-  handler: function (req, reply) {
+internals.proxyHandler = {
+  proxy: {
+    passThrough: true,
+    mapUri: function (req, cb) {
 
-    var config = req.server.settings.app.config;
-    reply(config.couchdb);
+      var couchUrl = req.server.settings.app.config.couchdb.url;
+      var pathParts = req.url.path.split('/');
+      pathParts[2] = 'org.couchdb.user:' + pathParts[2];
+      cb(null, couchUrl + pathParts.join('/'), req.headers);
+    }
   }
+};
+
+
+exports.get = {
+  description: 'Get user document (by email).',
+  auth: 'admin',
+  validate: {
+    params: {
+      email: Joi.string().email().required()
+    }
+  },
+  handler: internals.proxyHandler
 };
 
 
 exports.update = {
   description: 'Update user',
   auth: 'user',
-  handler: function (req, reply) {
-  
-    reply({ok:false});
-  }
+  validate: {
+    params: {
+      email: Joi.string().email().required()
+    }
+  },
+  handler: internals.proxyHandler
 };
 
 
@@ -363,7 +380,7 @@ exports.register = function (server, options, next) {
   var couch = Couch(config.couchdb);
   var account = app.account = new EventEmitter();
   var usersDb = couch.db('_users');
-  var changes = usersDb.changes();
+  var changes = usersDb.changes({ feed: 'continuous', include_docs: true });
 
   // Listen for change events so that we can take action on user creation and
   // deletion.
