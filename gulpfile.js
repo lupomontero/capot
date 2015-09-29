@@ -1,30 +1,30 @@
-var path = require('path');
-var gulp = require('gulp');
-var concat = require('gulp-concat');
-var declare = require('gulp-declare');
-var favicons = require('favicons');
-var handlebars = require('gulp-handlebars');
-var imagemin = require('gulp-imagemin');
-var jshint = require('gulp-jshint');
-var manifest = require('gulp-manifest');
-var mocha = require('gulp-mocha');
-var rename = require('gulp-rename');
-var replace = require('gulp-replace');
-var uglify = require('gulp-uglify');
-var gutil = require('gulp-util');
-var wrap = require('gulp-wrap');
-var merge = require('merge-stream');
-var browserify = require('browserify');
-var source = require('vinyl-source-stream');
-var buffer = require('vinyl-buffer');
-var karma = require('karma');
+var Path = require('path');
+var Gulp = require('gulp');
+var Concat = require('gulp-concat');
+var Declare = require('gulp-declare');
+var Favicons = require('favicons');
+var Handlebars = require('gulp-handlebars');
+var Jshint = require('gulp-jshint');
+var Mocha = require('gulp-mocha');
+var Rename = require('gulp-rename');
+var Uglify = require('gulp-uglify');
+var Gutil = require('gulp-util');
+var Wrap = require('gulp-wrap');
+var Merge = require('merge-stream');
+var Browserify = require('browserify');
+var Source = require('vinyl-source-stream');
+var Buffer = require('vinyl-buffer');
+var Karma = require('karma');
 var _ = require('lodash');
 
 
-var pkg = require('./package.json');
+var Pkg = require('./package.json');
 
 
-var components = {
+var internals = {};
+
+
+internals.components = {
   client: {
     files: 'client/*.js',
     main: './client/index.js',
@@ -48,65 +48,86 @@ var components = {
 };
 
 
-function bundle(bundler, dest) {
+internals.bundle = function (bundler, dest) {
+
   var parts = dest.split('/');
   var name = parts.pop();
   var dir = parts.join('/');
+
   bundler.ignore('jquery');
+
   return bundler.bundle()
-    .on('error', gutil.log.bind(gutil, 'Browserify Error'))
-    .pipe(source(name))
-    .pipe(buffer())
-    .pipe(gulp.dest(dir))
-    .pipe(uglify())
-    .pipe(rename({ extname: '.min.js' }))
-    .pipe(gulp.dest(dir));
-}
+    .on('error', Gutil.log.bind(Gutil, 'Browserify Error'))
+    .pipe(Source(name))
+    .pipe(Buffer())
+    .pipe(Gulp.dest(dir))
+    .pipe(Uglify())
+    .pipe(Rename({ extname: '.min.js' }))
+    .pipe(Gulp.dest(dir));
+};
 
 
-gulp.task('lint:client', function () {
-  return gulp.src([ components.client.files, components.client.tests ])
-    .pipe(jshint({ predef: [ '-Promise' ] }))
-    .pipe(jshint.reporter('jshint-stylish'));
+Gulp.task('lint:client', function () {
+
+  return Gulp.src([
+    internals.components.client.files,
+    internals.components.client.tests
+  ])
+    .pipe(Jshint({ predef: [ '-Promise' ] }))
+    .pipe(Jshint.reporter('jshint-stylish'));
 });
 
-gulp.task('lint:ui', function () {
-  return gulp.src(components.ui.files)
-    .pipe(jshint({ predef: [ '-Promise' ] }))
-    .pipe(jshint.reporter('jshint-stylish'));
+
+Gulp.task('lint:ui', function () {
+
+  return Gulp.src(internals.components.ui.files)
+    .pipe(Jshint({ predef: [ '-Promise' ] }))
+    .pipe(Jshint.reporter('jshint-stylish'));
 });
 
-gulp.task('lint:admin', function () {
-  return gulp.src(components.admin.files)
-    .pipe(jshint({ predef: [ '-Promise' ] }))
-    .pipe(jshint.reporter('jshint-stylish'));
+
+Gulp.task('lint:admin', function () {
+
+  return Gulp.src(internals.components.admin.files)
+    .pipe(Jshint({ predef: [ '-Promise' ] }))
+    .pipe(Jshint.reporter('jshint-stylish'));
 });
 
-gulp.task('lint:server', function () {
-  return gulp.src(components.server.files.concat(components.server.tests))
-    .pipe(jshint({ predef: [ '-Promise' ] }))
-    .pipe(jshint.reporter('jshint-stylish'));
+
+Gulp.task('lint:server', function () {
+
+  return Gulp.src(internals.components.server.files.concat(internals.components.server.tests))
+    .pipe(Jshint({ predef: [ '-Promise' ] }))
+    .pipe(Jshint.reporter('jshint-stylish'));
 });
 
-gulp.task('lint', [ 'lint:client', 'lint:ui', 'lint:admin', 'lint:server' ]);
+
+Gulp.task('lint', [ 'lint:client', 'lint:ui', 'lint:admin', 'lint:server' ]);
 
 
-gulp.task('test:client', [ 'lint:client' ], function (done) {
-  var server = new karma.Server({
+Gulp.task('test:client', [ 'lint:client' ], function (done) {
+
+  var server = new Karma.Server({
     configFile: __dirname + '/karma.conf.js',
     singleRun: true
   }, done);
+
   server.start();
 });
 
-gulp.task('test:server', [ 'lint:server' ], function () {
-  return gulp.src(components.server.tests, { read: false }).pipe(mocha());
+
+Gulp.task('test:server', [ 'lint:server' ], function () {
+
+  return Gulp.src(internals.components.server.tests, { read: false })
+    .pipe(Mocha());
 });
 
-gulp.task('test', [ 'test:client', 'test:server' ]);
+
+Gulp.task('test', [ 'test:client', 'test:server' ]);
 
 
-gulp.task('hbs:admin', function () {
+Gulp.task('hbs:admin', function () {
+
   var partialsWrapper = [
     'Handlebars.registerPartial(',
     '<%= processPartialName(file.relative) %>, ',
@@ -114,65 +135,79 @@ gulp.task('hbs:admin', function () {
     ');'
   ].join('');
 
-  var partials = gulp.src('admin/templates/_*.hbs')
-    .pipe(handlebars({ handlebars: require('handlebars') }))
-    .pipe(wrap(partialsWrapper, {}, {
+  var partials = Gulp.src('admin/templates/_*.hbs')
+    .pipe(Handlebars({ handlebars: require('handlebars') }))
+    .pipe(Wrap(partialsWrapper, {}, {
       imports: {
-        processPartialName: function(fileName) {
+        processPartialName: function (fileName) {
+
           // Strip the extension and the underscore
           // Escape the output with JSON.stringify
-          return JSON.stringify(path.basename(fileName, '.js').substr(1));
+          return JSON.stringify(Path.basename(fileName, '.js').substr(1));
         }
       }
     }));
 
-  var templates = gulp.src('admin/templates/**/[^_]*.hbs')
-    .pipe(handlebars({ handlebars: require('handlebars') }))
-    .pipe(wrap('Handlebars.template(<%= contents %>)'))
-    .pipe(declare({
+  var templates = Gulp.src('admin/templates/**/[^_]*.hbs')
+    .pipe(Handlebars({ handlebars: require('handlebars') }))
+    .pipe(Wrap('Handlebars.template(<%= contents %>)'))
+    .pipe(Declare({
       namespace: 'templates',
       noRedeclare: true, // Avoid duplicate declarations
       processName: function (filePath) {
-        return declare.processNameByPath(filePath.replace('admin/templates/', ''));
+
+        return Declare.processNameByPath(filePath.replace('admin/templates/', ''));
       }
     }));
 
-  return merge(partials, templates)
-    .pipe(concat('templates.js'))
-    .pipe(gulp.dest('admin'));
+  return Merge(partials, templates)
+    .pipe(Concat('templates.js'))
+    .pipe(Gulp.dest('admin'));
 });
 
 
+Gulp.task('build:client', [ 'test:client' ], function () {
 
-gulp.task('build:client', [ 'test:client' ], function () {
-  var bundler = browserify(components.client.main, { standalone: 'Capot' });
-  return bundle(bundler, components.client.dest);
+  var bundler = Browserify(internals.components.client.main, {
+    standalone: 'Capot'
+  });
+
+  return internals.bundle(bundler, internals.components.client.dest);
 });
 
-gulp.task('build:ui', [ 'lint:ui' ], function () {
-  var bundler = browserify(components.ui.main, { standalone: 'CapotUI' });
-  return bundle(bundler, components.ui.dest);
+
+Gulp.task('build:ui', [ 'lint:ui' ], function () {
+
+  var bundler = Browserify(internals.components.ui.main, {
+    standalone: 'CapotUI'
+  });
+
+  return internals.bundle(bundler, internals.components.ui.dest);
 });
 
-gulp.task('build:admin', [ 'lint:admin', 'hbs:admin' ], function () {
-  var bundler = browserify(components.admin.main);
-  return bundle(bundler, components.admin.dest);
+
+Gulp.task('build:admin', [ 'lint:admin', 'hbs:admin' ], function () {
+
+  var bundler = Browserify(internals.components.admin.main);
+  return internals.bundle(bundler, internals.components.admin.dest);
 });
 
-gulp.task('build', [ 'build:client', 'build:ui', 'build:admin' ]);
+
+Gulp.task('build', [ 'build:client', 'build:ui', 'build:admin' ]);
 
 
-gulp.task('favicons', function (done) {
-  favicons({
+Gulp.task('favicons', function (done) {
+
+  Favicons({
     files: {
       src: 'admin/icon.png',
       dest: 'admin/favicons',
       html: 'admin/index.html'
     },
     settings: {
-      appName: pkg.name,
-      appDescription: pkg.description,
-      version: pkg.version,
+      appName: Pkg.name,
+      appDescription: Pkg.description,
+      version: Pkg.version,
       developer: 'Lupo Montero',
       developerURL: 'http://lupomontero.com',
       index: '/',
@@ -182,11 +217,21 @@ gulp.task('favicons', function (done) {
 });
 
 
-gulp.task('watch', function () {
-  gulp.watch([ components.client.files, components.client.tests ], [ 'build:client' ]);
-  gulp.watch(components.ui.files, [ 'build:ui' ]);
-  gulp.watch([ components.server.files, components.server.tests ], [ 'test:server' ]);
-  gulp.watch([
+Gulp.task('watch', function () {
+
+  Gulp.watch([
+    internals.components.client.files,
+    internals.components.client.tests
+  ], [ 'build:client' ]);
+
+  Gulp.watch(internals.components.ui.files, [ 'build:ui' ]);
+
+  Gulp.watch([
+    internals.components.server.files,
+    internals.components.server.tests
+  ], [ 'test:server' ]);
+
+  Gulp.watch([
     'admin/main.js',
     'admin/collections/**/*.js',
     'admin/models/**/*.js',
@@ -197,5 +242,5 @@ gulp.task('watch', function () {
 });
 
 
-gulp.task('default', [ 'build' ]);
+Gulp.task('default', [ 'build' ]);
 
