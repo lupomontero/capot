@@ -1,35 +1,37 @@
 #!/usr/bin/env node
 
-var minimist = require('minimist');
-var pkg = require('../package.json');
-var argv = minimist(process.argv.slice(2));
-var cmd = argv._.shift();
+var Minimist = require('minimist');
+var Pkg = require('../package.json');
+var Server = require('../server');
+
+
+var internals = {};
+
+
+internals.argv = Minimist(process.argv.slice(2));
 
 
 // Show version if asked to do so.
-if (argv.v || argv.version) {
-  console.log(pkg.version);
+if (internals.argv.v || internals.argv.version) {
+  console.log(Pkg.version);
   process.exit(0);
 }
 
 
 // Show help if applicable.
-if (argv.h || argv.help || !cmd || cmd === 'help') {
+if (internals.argv.h || internals.argv.help) {
   console.log([
     '',
     'Usage:',
     '',
-    pkg.name + ' <cmd> [ <options> ]',
-    '',
-    'Commands:',
-    '',
-    'start            Start ' + pkg.name + ' server.',
+    Pkg.name + ' [ <options> ]',
     '',
     'Options:',
     '',
     '--port           Port to start server on.',
     '--www            Path to directory to be served by the web server.',
     '--data           Path to data directory (if using built-in PouchDB server)',
+    '--debug          Switch on verbose logging and long stack traces.',
     '',
     'Environment Variables',
     '',
@@ -38,20 +40,12 @@ if (argv.h || argv.help || !cmd || cmd === 'help') {
     'COUCHDB_PASS',
     '',
     '-h, --help       Show this help.',
-    '-v, --version    Show ' + pkg.name + ' version.',
+    '-v, --version    Show ' + Pkg.name + ' version.',
     ''
   ].join('\n'));
   process.exit(0);
 }
 
 
-if (cmd === 'start') {
-
-  require('../server')(argv);
-
-} else {
-
-  console.log('ha');
-
-}
+Server(internals.argv);
 

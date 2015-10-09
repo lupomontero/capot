@@ -1,109 +1,13 @@
-var path = require('path');
-var async = require('async');
-var nodemailer = require('nodemailer');
+var Async = require('async');
+var Nodemailer = require('nodemailer');
 var Handlebars = require('handlebars');
+var Couch = require('./lib/couch');
 
 
-module.exports = function (capot, cb) {
-
-  var log = capot.log.child({ scope: 'capot.mailer' });
-  var couch = capot.couch;
-  var appDb = couch.db('app');
-
-  log.info('Initialising mailer...');
+var internals = {};
 
 
-  function getConfig() {
-    return ;
-  }
-
-
-  function createTransport(mailerConf) {
-    if (!mailerConf.service) {
-      return nodemailer.createTransport();
-    }
-    return nodemailer.createTransport({
-      service: mailerConf.service,
-      auth: {
-        user: mailerConf.user,
-        pass: mailerConf.pass
-      }
-    });
-  }
-
-
-  function render(configDoc, msg, cb) {
-    var ctx = msg.context || {};
-    var appConfig = configDoc.app || {};
-    if (!ctx.appName) { ctx.appName = configDoc.app.name; }
-    if (!ctx.appUrl) { ctx.appUrl = configDoc.app.url; }
-    appDb.get('email/' + msg.template).then(function (templateDoc) {
-      msg.subject = Handlebars.compile(templateDoc.subject)(ctx);
-      msg.text = Handlebars.compile(templateDoc.text)(ctx);
-      cb(null, msg);
-    }, cb);
-  }
-
-
-  function send(configDoc, msg, cb) {
-    var transporter = createTransport(configDoc.mailer);
-
-    msg.subject = '[' + configDoc.app.name + '] ' + msg.subject;
-    msg.from = configDoc.mailer.from;
-
-    transporter.sendMail(msg, function (err, data) {
-      if (err) {
-        log.error(err);
-        return cb(err);
-      }
-      cb(null, data);
-    });
-  }
-
-
-  capot.sendMail = function (msg, cb) {
-    log.info('Sending ' + (msg.subject || msg.template) + ' to ' + msg.to);
-
-    appDb.get('config').then(function (err, configDoc) {
-      if (err) { return cb(err); }
-
-      if (!msg.template) {
-        return send(configDoc, msg, cb);
-      }
-
-      render(configDoc, msg, function (err) {
-        if (err) { return cb(err); }
-        send(configDoc, msg, cb);
-      });
-    }, cb);
-  };
-
-
-  //
-  // Load mailer configuration on startup so that we can log out mailer info.
-  //
-  appDb.get('config').then(function (configDoc) {
-    var mailerConf = configDoc.mailer || {};
-    var service = mailerConf.service;
-
-    if (!service) {
-      log.warn('No mailer service configured. Mailer will use direct transport, very unreliable!');
-    } else {
-      log.info('Using service: ' + service + ' (' + mailerConf.user + ')');
-    }
-
-    async.each(templateDocs, function (templateDoc, cb) {
-      appDb.get(templateDoc._id, function (err) {
-        if (!err) { return cb(); }
-        appDb.put(templateDoc, cb);
-      });
-    }, cb);
-  }, cb);
-
-};
-
-
-var templateDocs = [
+internals.templateDocs = [
   {
     "_id": "email/password-new",
     "description": "This email is sent when a password is reset successfully. It includes the user's password.",
@@ -126,4 +30,122 @@ var templateDocs = [
     "type": "email"
   }
 ];
+
+
+internals.createTransport = function createTransport(mailerConf) {
+
+  if (!mailerConf.service) {
+    return Nodemailer.createTransport();
+  }
+
+  return Nodemailer.createTransport({
+    service: mailerConf.service,
+    auth: {
+      user: mailerConf.user,
+      pass: mailerConf.pass
+    }
+  });
+};
+
+
+internals.render = function render(appDb, configDoc, msg, cb) {
+
+  var ctx = msg.context || {};
+  var appConfig = configDoc.app || {};
+
+  if (!ctx.appName) { ctx.appName = configDoc.app.name; }
+  if (!ctx.appUrl) { ctx.appUrl = configDoc.app.url; }
+
+  appDb.get('email/' + msg.template).then(function (templateDoc) {
+
+    msg.subject = Handlebars.compile(templateDoc.subject)(ctx);
+    msg.text = Handlebars.compile(templateDoc.text)(ctx);
+    cb(null, msg);
+  }, cb);
+};
+
+
+internals.send = function send(server, configDoc, msg, cb) {
+
+  var transporter = internals.createTransport(configDoc.mailer);
+
+  msg.subject = '[' + configDoc.app.name + '] ' + msg.subject;
+  msg.from = configDoc.mailer.from;
+
+  transporter.sendMail(msg, function (err, data) {
+
+    if (err) {
+      server.log('error', err);
+      return cb(err);
+    }
+
+    cb(null, data);
+  });
+};
+
+
+exports.register = function (server, options, next) {
+
+  var couch = Couch(server.settings.app.config.couchdb);
+  var appDb = couch.db('app');
+
+  server.log('info', 'Initialising mailer...');
+
+  //
+  // Public API
+  //
+  server.app.sendMail = function (msg, cb) {
+
+    server.log('info', 'Sending ' + (msg.subject || msg.template) + ' to ' + msg.to);
+
+    appDb.get('config', function (err, configDoc) {
+
+      if (err) { return cb(err); }
+
+      if (!msg.template) {
+        return internals.send(server, configDoc, msg, cb);
+      }
+
+      internals.render(appDb, configDoc, msg, function (err) {
+
+        if (err) { return cb(err); }
+        internals.send(server, configDoc, msg, cb);
+      });
+    });
+  };
+
+
+  //
+  // Load mailer configuration on startup so that we can log out mailer info.
+  //
+  appDb.get('config', function (err, configDoc) {
+
+    if (err) { return next(err); }
+
+    var mailerConf = configDoc.mailer || {};
+    var service = mailerConf.service;
+
+    if (!service) {
+      server.log('warn', 'No mailer service configured. Mailer will use direct transport, very unreliable!');
+    } else {
+      server.log('info', 'Using service: ' + service + ' (' + mailerConf.user + ')');
+    }
+
+    Async.each(internals.templateDocs, function (templateDoc, cb) {
+
+      var docUrl = encodeURIComponent(templateDoc._id);
+      appDb.get(docUrl, function (err) {
+        if (!err) { return cb(); }
+        appDb.put(docUrl, templateDoc, cb);
+      });
+    }, next);
+  });
+
+};
+
+
+exports.register.attributes = {
+  name: 'mailer',
+  version: '1.0.0'
+};
 

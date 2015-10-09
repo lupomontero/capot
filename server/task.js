@@ -1,14 +1,14 @@
-var events = require('events');
+var EventEmitter = require('events').EventEmitter;
 var _ = require('lodash');
 
 
-module.exports = function (capot, cb) {
+exports.register = function (server, options, next) {
 
 
-  var changes = capot.changes;
-  var couch = capot.couch;
-  var log = capot.log;
-  var task = capot.task = new events.EventEmitter();
+  var changes = server.app.changes;
+  var couch = server.app.couch;
+  var log = server.app.log;
+  var task = server.app.task = new EventEmitter();
 
 
   task.error = function (dbName, taskDoc, err) {
@@ -57,7 +57,13 @@ module.exports = function (capot, cb) {
   });
 
 
-  cb();
+  next();
 
+};
+
+
+exports.register.attributes = {
+  name: 'task',
+  version: '1.0.0'
 };
 

@@ -1,1 +1,10 @@
 <h1 class="page-header">{{ glyphicon 'user' }} Users</h1>
+
+<table class="table table-striped table-hover">
+{{#each models}}
+  <tr>
+    <td>{{name}}</td>
+  </tr>
+{{/each}}
+</table>
+

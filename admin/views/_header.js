@@ -1,11 +1,13 @@
 var View = require('../../client/ui/view');
 
+
 module.exports = View.extend({
 
   className: 'container',
   templateName: 'header',
 
   initialize: function (opt) {
+
     var view = this;
     var app = opt.app;
     var account = app.account;
@@ -13,6 +15,7 @@ module.exports = View.extend({
     View.prototype.initialize.call(view, opt);
 
     function update() {
+      
       view.model = account.session;
       view.render();
     }
@@ -25,7 +28,9 @@ module.exports = View.extend({
 
     // Set active menu item...
     app.on('route', function (route) {
+
       view.$('#main-menu a').each(function () {
+
         var $a = $(this);
         var href = $a.attr('href');
         if (href.charAt(0) === '/') { href = href.slice(1); }
@@ -43,10 +48,14 @@ module.exports = View.extend({
   },
 
   signout: function (e) {
+
     var app = this.app;
+
     app.account.signOut().then(function () {
+
       window.location.href = '/';
     }, function () {
+
       console.error('signout:fail', arguments);
     });
   }

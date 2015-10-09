@@ -5,15 +5,17 @@
 /* global jQuery */
 
 
-var extend = require('extend');
 var Promise = require('promise');
 var PouchDB = require('pouchdb');
-var request = require('./request');
+var Request = require('./request');
 
 
-function createApi(opt) {
+var internals = {};
 
-  var req = request(opt);
+
+internals.createApi = function (options) {
+
+  var req = Request(options);
 
   return {
     get: req.bind(null, 'GET'),
@@ -22,28 +24,33 @@ function createApi(opt) {
     del: req.bind(null, 'DELETE'),
   };
 
-}
+};
 
 
-module.exports = function (opt) {
+module.exports = function (options) {
 
-  if (typeof opt === 'string') {
-    opt = { url: opt };
+  if (typeof options === 'string') {
+    options = { url: options };
   }
 
-  if (!/^https?:\/\//.test(opt.url)) {
-    if (opt.url.charAt(0) === '/') { opt.url = opt.url.slice(1); }
-    opt.url = window.location.origin + '/' + opt.url;
+  if (!/^https?:\/\//.test(options.url)) {
+    if (options.url.charAt(0) === '/') {
+      options.url = options.url.slice(1);
+    }
+    options.url = window.location.origin + '/' + options.url;
   }
 
-  var api = createApi(opt);
+  var api = internals.createApi(options);
 
   api.db = function (dbName) {
-    return new PouchDB(opt.url + '/' + encodeURIComponent(dbName));
+
+    return new PouchDB(options.url + '/' + encodeURIComponent(dbName));
   };
 
   api.isAdminParty = function (cb) {
+
     api.get('/_users/_all_docs', function (err, data) {
+
       if (err && err.statusCode === 401) {
         cb(null, false);
       } else if (err) {
@@ -57,4 +64,3 @@ module.exports = function (opt) {
   return api;
 
 };
-

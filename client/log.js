@@ -1,57 +1,48 @@
-var bunyan = require('bunyan');
+var internals = {};
 
 
-function pad(n, digits, padding) {
+internals.pad = function (n, digits, padding) {
+
   var str = '' + n;
   if (typeof digits !== 'number') { digits = 2; }
   if (typeof padding === 'undefined') { padding = '0'; }
+
   var diff = digits - str.length;
   if (diff <= 0) { return str; }
+
   for (var i = 0; i < diff; i++) {
     str = padding + str;
   }
+
   return str;
-}
-
-
-function formatDate(d) {
-  return [
-    pad(d.getHours()),
-    pad(d.getMinutes()),
-    pad(d.getSeconds()),
-    pad(d.getMilliseconds(), 3)
-  ].join(':');
-}
-
-
-function BrowserStream() {}
-BrowserStream.prototype.write = function (rec) {
-  var t = rec.time;
-  console.log(
-    '[%s] %s (%s): %s',
-    formatDate(rec.time),
-    bunyan.nameFromLevel[rec.level].toUpperCase(),
-    rec.scope || 'capot',
-    rec.msg
-  );
 };
 
 
-function IgnoreStream() {}
-IgnoreStream.prototype.write = function () {};
+internals.formatDate = function (d) {
+
+  return [
+    internals.pad(d.getHours()),
+    internals.pad(d.getMinutes()),
+    internals.pad(d.getSeconds()),
+    internals.pad(d.getMilliseconds(), 3)
+  ].join(':');
+};
+
 
 module.exports = function (options) {
 
-  return bunyan.createLogger({
-    name: 'capot',
-    streams: [
-      {
-        level: 'debug',
-        stream: options.debug ? new BrowserStream(): new IgnoreStream(),
-        type: 'raw'
-      }
-    ]
-  });
+  return function (tags, data) {
+  
+    if (typeof console === 'undefined' || typeof console.log !== 'function') {
+      return;
+    }
+
+    if (typeof tags === 'string') { tags = [ tags ]; }
+
+    if (!options.debug && tags.indexOf('debug') >= 0) { return; }
+
+    console.log(internals.formatDate(new Date()), tags, data);
+  };
 
 };
 

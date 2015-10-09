@@ -1,9 +1,12 @@
+var _ = require('lodash');
 var View = require('../../client/ui/view');
 var Handlebars = window.Handlebars;
 
 
 Handlebars.registerHelper('mailerServicePicker', function (selected) {
+
   var str = '<select name="mailer-service" id="mailer-service" class="form-control">';
+
   [ 'Gmail', 'Mailgun', 'Mandrill', 'Postmark', 'SendGrid' ].forEach(function (service) {
     str += '<option name="' + service + '"';
     if (service === selected) {
@@ -11,7 +14,9 @@ Handlebars.registerHelper('mailerServicePicker', function (selected) {
     }
     str += '>' + service + '</option>';
   });
+
   str += '</select>';
+
   return new Handlebars.SafeString(str);
 });
 
@@ -22,34 +27,38 @@ module.exports = View.extend({
   templateName: 'config',
 
   initialize: function (opt) {
-    var view = this;
-    var db = view.db = opt.app.couch.db('app');
 
+    var view = this;
     View.prototype.initialize.call(view, opt);
 
-    db.get('config').then(function (configDoc) {
-      view.model = configDoc;
+    var app = view.app;
+    var config = view.model = app.createModel('config');
+
+    config.once('sync', function () {
+
       view.render();
-    }, function (err) {
-      console.error(err);
     });
+
+    config.fetch();
   },
 
   events: {
-    'submit #app-form': 'updateAppConfig',
-    'submit #mailer-form': 'updateMailerConfig'
+    'submit #app-form': 'save',
+    'submit #mailer-form': 'save',
+    'submit #oauth-form': 'save'
   },
 
-  updateAppConfig: function (e) {
-    e.preventDefault();
-  
-    return false;
-  },
+  save: function (e) {
 
-  updateMailerConfig: function (e) {
     e.preventDefault();
+
     var view = this;
-    var db = view.db;
+    var config = view.model; 
+
+    var app = {
+      name: view.$('#app-name').val(),
+      url: view.$('#app-url').val()
+    };
 
     var mailer = {
       from: view.$('#mailer-from').val(),
@@ -58,15 +67,35 @@ module.exports = View.extend({
       pass: view.$('#mailer-pass').val()
     };
 
-    db.get('config').then(function (configDoc) {
-      configDoc.mailer = mailer;
-      db.put(configDoc).then(function (data) {
-        alert('Config updated!');
-      }, function (err) {
+    var oauth = config.get('oauth');
+
+    oauth.providers = Object.keys(oauth.providers).reduce(function (memo, key) {
+
+      memo[key] = {
+        enabled: $('#' + key + '-enabled').is(':checked'),
+        key: $('#' + key + '-key').val(),
+        secret: $('#' + key + '-secret').val(),
+        scopes: $('#' + key + '-scopes').val().split(',').map(function (scope) {
+
+          return _.trim(scope.toLowerCase());
+        })
+      };
+      return memo;
+    }, {});
+
+    config.save({
+      app: app,
+      mailer: mailer,
+      oauth: oauth
+    }, {
+      error: function (err) {
+
         alert(err.reason || err.message);
-      });
-    }, function (err) {
-      alert(err.reason || err.message);
+      },
+      success: function () {
+
+        alert('Config updated!');
+      }
     });
 
     return false;

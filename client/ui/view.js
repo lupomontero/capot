@@ -42,7 +42,7 @@ module.exports = Backbone.View.extend({
     var template = getProp(app.templates, templateName);
 
     if (!_.isFunction(template)) {
-      app.log.error('Template ' + templateName + ' not loaded!');
+      app.log('error', 'Template ' + templateName + ' not loaded!');
       return this;
     }
 

@@ -1,30 +1,41 @@
-var os = require('os');
-var fs = require('fs');
-var path = require('path');
-var read = require('read');
+//
+// Installer
+//
+// * ensures there is a usable CouchDB we can access as admin.
+// * modifies `server.settings.app.config.couchdb` when starting local CouchDB.
+// * initialises databases (ensure existence, security doc, views, ...).
+//
+
+
+var Os = require('os');
+var Fs = require('fs');
+var Path = require('path');
+var Read = require('read');
 var _ = require('lodash');
-var async = require('async');
-var which = require('which');
+var Async = require('async');
+var Which = require('which');
 var MultiCouch = require('multicouch');
 var Couch = require('./couch');
 
 
-function ensureDataDir(capot, cb) {
-  fs.exists(capot.config.data, function (exists) {
+var internals = {};
+
+
+function ensureDataDir(config, cb) {
+  Fs.exists(config.data, function (exists) {
     if (exists) { return cb(); }
-    fs.mkdir(capot.config.data, cb);
+    Fs.mkdir(config.data, cb);
   });
 }
 
 
-function startCouchDBServer(log, capot, cb) {
-  var config = capot.config;
+function startCouchDBServer(server, config, cb) {
   var retries = 10;
   var port = config.port + 1;
   var couchUrl = 'http://127.0.0.1:' + port;
   var couch = Couch({ url: couchUrl });
-  var bin = which.sync('couchdb');
-  var server = new MultiCouch({
+  var bin = Which.sync('couchdb');
+  var couchServer = new MultiCouch({
     port: port,
     prefix: config.data,
     couchdb_path: bin
@@ -43,37 +54,35 @@ function startCouchDBServer(log, capot, cb) {
       if (major !== 1 || minor < 6) {
         return cb(new Error('CouchDB version must be 1.6 or above'));
       }
-      log.info('CouchDB Server ' + data.version + ' started on port ' + port);
+      server.log('info', 'CouchDB Server ' + data.version + ' started on port ' + port);
       config.couchdb.url = couchUrl;
       cb();
     });
   }
 
-  server.on('start', wait);
-  server.on('error', function (err) { log.error(err); });
+  couchServer.on('start', wait);
+  couchServer.on('error', function (err) { server.log('error', err); });
 
   function stop(code) {
-    log.info('Stopping CouchDB Server...');
+    server.log('info', 'Stopping CouchDB Server...');
     process.removeListener('exit', stop);
-    server.once('stop', function () {
-      log.info('CouchDB Server stopped.');
+    couchServer.once('stop', function () {
+      server.log('info', 'CouchDB Server stopped.');
       process.exit(code);
     });
-    server.stop();
+    couchServer.stop();
   }
 
   [ 'exit', 'SIGINT', 'SIGTERM' ].forEach(function (eventName) {
     process.once(eventName, stop);
   });
 
-  server.start();
+  couchServer.start();
 }
 
 
-function ensureAdminCredentials(capot, cb) {
-  var config = capot.config;
-  var log = capot.log.child({ scope: 'capot.installer' });
-  var credentialsPath = path.join(config.data, 'capot.json');
+function ensureAdminCredentials(server, config, cb) {
+  var credentialsPath = Path.join(config.data, 'capot.json');
 
   function setCredentials(credentials) {
     _.extend(config.couchdb, _.pick(credentials, [ 'user', 'pass' ]));
@@ -83,14 +92,14 @@ function ensureAdminCredentials(capot, cb) {
   function saveCredentials() {
     var credentials = _.pick(config.couchdb, [ 'user', 'pass' ]);
     var json = JSON.stringify(credentials, null, 2);
-    fs.writeFile(credentialsPath, json, function (err) {
+    Fs.writeFile(credentialsPath, json, function (err) {
       if (err) { return cb(err); }
       setCredentials(credentials);
     });
   }
 
   function prompt() {
-    read({
+    Read({
       prompt: 'New password for "admin" user:',
       silent: true,
       timeout: 10 * 1000
@@ -105,21 +114,20 @@ function ensureAdminCredentials(capot, cb) {
     if (!config.couchdb.pass) {
       return prompt();
     }
-    log.info('Using CouchDB credentials passed in environment');
+    server.log('info', 'Using CouchDB credentials passed in environment');
     saveCredentials();
   }
 
   try {
     setCredentials(require(credentialsPath));
-    log.info('Loaded CouchDB credentials from ' + credentialsPath);
+    server.log('info', 'Loaded CouchDB credentials from ' + credentialsPath);
   } catch (err) {
     getCredentials();
   }
 }
 
 
-function ensureAdminUser(capot, cb) {
-  var config = capot.config;
+function ensureAdminUser(config, cb) {
   var couch = Couch({ url: config.couchdb.url });
 
   function createAdminUser(config, cb) {
@@ -141,8 +149,7 @@ function ensureAdminUser(capot, cb) {
 }
 
 
-function checkAdminCredentials(capot, cb) {
-  var config = capot.config;
+function checkAdminCredentials(config, cb) {
   var couch = Couch({ url: config.couchdb.url });
   couch.post('/_session', {
     name: config.couchdb.user,
@@ -157,9 +164,9 @@ function checkAdminCredentials(capot, cb) {
 }
 
 
-function ensureConfigValues(capot, cb) {
-  var couch = Couch(capot.config.couchdb);
-  async.each([
+function ensureConfigValues(config, cb) {
+  var couch = Couch(config.couchdb);
+  Async.each([
     { key: 'couchdb/delayed_commits', val: 'false'  },
     { key: 'couch_httpd_auth/timeout', val: '1209600' },
     { key: 'couchdb/max_dbs_open', val: '1024' }
@@ -169,11 +176,11 @@ function ensureConfigValues(capot, cb) {
 }
 
 
-function ensureUsersDesignDoc(capot, cb) {
-  var couch = Couch(capot.config.couchdb);
+function ensureUsersDesignDoc(config, cb) {
+  var couch = Couch(config.couchdb);
   var usersDb = couch.db('_users');
 
-  async.series([
+  Async.series([
     function (cb) {
       usersDb.addIndex('by_capot_id', {
         map: function (doc) {
@@ -194,8 +201,8 @@ function ensureUsersDesignDoc(capot, cb) {
 }
 
 
-function ensureAppDb(capot, cb) {
-  var couch = Couch(capot.config.couchdb);
+function ensureAppDb(config, cb) {
+  var couch = Couch(config.couchdb);
   couch.get('app', function (err) {
     if (err && err.statusCode !== 404) {
       return cb(err);
@@ -207,8 +214,8 @@ function ensureAppDb(capot, cb) {
 }
 
 
-function ensureAppDbSecurity(capot, cb) {
-  var couch = Couch(capot.config.couchdb);
+function ensureAppDbSecurity(config, cb) {
+  var couch = Couch(config.couchdb);
   var db = couch.db('app');
   var securityDoc = {
     admins: { roles: [ '_admin' ] },
@@ -218,42 +225,40 @@ function ensureAppDbSecurity(capot, cb) {
 }
 
 
-function ensureAppConfigDoc(capot, cb) {
-  var config = capot.config;
-  var pkg = require(path.join(config.cwd, 'package.json'));
+function ensureAppConfigDoc(config, cb) {
+  var pkg = require(Path.join(config.cwd, 'package.json'));
   var couch = Couch(config.couchdb);
   var db = couch.db('app');
   db.get('config', function (err) {
-    if (err && err.status !== 404) {
+    if (err && err.statusCode !== 404) {
       return cb(err);
     } else if (!err) {
       return cb();
     }
-    db.put({
+    db.put('config', {
       _id: 'config',
       app: {
         name: pkg.name,
-        url: 'http://' + os.hostname() + ':' + config.port
+        url: 'http://' + Os.hostname() + ':' + config.port
       }
     }, cb);
   });
 }
 
 
-module.exports = function (capot, cb) {
+module.exports = function (server, cb) {
 
-  var config = capot.config;
-  var log = capot.log.child({ scope: 'capot.installer' });
+  var config = server.settings.app.config;
   var tasks = [];
 
   if (!config.couchdb.url) {
-    log.info('No CouchDB url in env, starting local CouchDB...');
+    server.log('info', 'No CouchDB url in env, starting local CouchDB...');
     config.couchdb.run = true;
     tasks.push(ensureDataDir);
-    tasks.push(startCouchDBServer.bind(null, log));
-    tasks.push(ensureAdminCredentials);
+    tasks.push(startCouchDBServer.bind(null, server));
+    tasks.push(ensureAdminCredentials.bind(null, server));
   } else {
-    log.info('Using remote CouchDB: ' + config.couchdb.url);
+    server.log('info', 'Using remote CouchDB: ' + config.couchdb.url);
   }
 
   tasks.push(ensureAdminUser);
@@ -264,11 +269,7 @@ module.exports = function (capot, cb) {
   tasks.push(ensureAppDbSecurity);
   tasks.push(ensureAppConfigDoc);
 
-  async.applyEachSeries(tasks, capot, function (err) {
-    if (err) { return cb(err); }
-    capot.couch = Couch(capot.config.couchdb);
-    cb();
-  });
+  Async.applyEachSeries(tasks, config, cb);
 
 };
 

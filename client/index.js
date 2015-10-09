@@ -1,24 +1,21 @@
 //
 // External Dependencies
 //
-var extend = require('extend');
-var async = require('async'); // (19K minified)
-var noop = function () {};
+var Extend = require('extend');
+var Async = require('async');
 
-//
-// Other deps:
-// * jQuery
-// * events (5.1K minified)
-// * Promise (6.9K minified)
-// * PouchDB (142K minified)
-//
+
+var internals = {};
+
+
+internals.noop = function () {};
 
 
 //
 // Default settings.
 //
-var defaults = { 
-  remote: window.location.origin + '/_couch'
+internals.defaults = {
+  debug: false
 };
 
 
@@ -27,7 +24,7 @@ var defaults = {
 //
 module.exports = function Capot(options) {
 
-  var settings = extend({}, defaults, options);
+  var settings = Extend({}, internals.defaults, options);
 
 
   var capot = {
@@ -40,35 +37,27 @@ module.exports = function Capot(options) {
 
   var account = capot.account = require('./account')(capot);
   var store = capot.store = require('./store')(capot);
-  var task = capot.task = require('./task')(capot);
 
 
-  var log = capot.log.child({ scope: 'Capot' });
-  log.debug('Dependencies: jQuery ' + jQuery.fn.jquery + ', PouchDB ' +
+  capot.log('debug', 'Dependencies: jQuery ' + jQuery.fn.jquery + ', PouchDB ' +
     require('pouchdb').version);
 
 
   capot.start = function (cb) {
-    cb = cb || noop;
-    var log = capot.log.child({ scope: 'capot.start' });
-    log.info('Starting capot client...');
-    async.applyEachSeries([
-      async.apply(account.init),
-      async.apply(store.init),
-      //async.apply(task.init),
+
+    cb = cb || internals.noop;
+    capot.log('info', 'Starting capot client...');
+    Async.applyEachSeries([
+      Async.apply(account.init),
+      Async.apply(store.init),
     ], function (err) {
-      log.info(err || 'Capot client successfully started');
+
+      capot.log('info', err || 'Capot client successfully started');
       cb(err);
     });
   };
 
 
-  capot.stop = function (cb) {
-    // remove logger listeners...
-    // clear account.init interval...
-  };
-
   return capot;
 
 };
-

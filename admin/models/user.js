@@ -5,13 +5,13 @@ var Model = require('../../client/ui/model');
 module.exports = Model.extend({
 
   defaults: function () {
-    
+
     return {
-      type: 'email'
+      type: 'user'
     };
   },
 
-  database: 'app'
+  database: '_users'
 
 });
 

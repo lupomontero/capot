@@ -14,9 +14,12 @@ var app = window.app = CapotUI({
     header: require('./views/_header')
   },
   models: {
+    user: require('./models/user'),
+    config: require('./models/config'),
     email: require('./models/email')
   },
   collections: {
+    users: require('./collections/users'),
     emails: require('./collections/emails')
   },
   templates: require('./templates').templates
