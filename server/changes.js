@@ -108,6 +108,8 @@ internals.getChanges = function (couch, feed, dbName, cb) {
           feed.emit('change:' + dbName + ':' + result.doc.type, result);
         }
       });
+
+      return internals.updateSince(couch, dbName, data.last_seq, cb);
     }
 
     cb();
@@ -129,15 +131,12 @@ internals.listen = function (couch, feed) {
 
   var dbUpdates = couch.dbUpdates();
   
-  dbUpdates.on('change', function (change) {
+  dbUpdates.on('change', function (update) {
 
-    console.log(change);
-    return;
+    if (!update || !update.db_name || !update.type) { return; }
 
-    if (!data || !data.db_name || !data.type) { return; }
-
-    var db = data.db_name;
-    var eventName = data.type;
+    var db = update.db_name;
+    var eventName = update.type;
 
     if (eventName === 'created') {
       feed.emit('add', db);
@@ -173,7 +172,7 @@ exports.register = function (server, options, next) {
       if (err) { return server.log('error', err); }
       internals.listen(couch, feed);
     });
-  }
+  };
 
 
   Async.series([

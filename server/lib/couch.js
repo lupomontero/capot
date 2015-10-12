@@ -325,7 +325,7 @@ module.exports = function (options) {
   couch.dbUpdates = function (params) {
 
     return new Follow.Feed({
-      db: baseUrl + '/_db_updates',
+      db: baseUrl + '_db_updates',
     });
   };
 
