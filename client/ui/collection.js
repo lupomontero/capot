@@ -31,7 +31,7 @@ internals.remoteSync = function (collection, model, type, options) {
     return _.pluck(data.rows, 'doc').map(function (doc) {
 
       var idParts = doc._id.split('/');
-      doc.id = idParts[1];
+      doc.id = idParts.slice(1).join('/');
       delete doc._id;
       return doc;
     });
