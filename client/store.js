@@ -66,7 +66,7 @@ module.exports = function (capot) {
     if (!store.remoteUrl) { return cb(); }
     if (capot.account.isOffline()) { return cb(); }
 
-    store.remote.replicate.sync(store.local, {
+    store.remote.sync(store.local, {
       filter: function (doc) {
 
         return doc._id.indexOf('_design') !== 0 && doc.$replicate !== false;
@@ -86,6 +86,7 @@ module.exports = function (capot) {
         if (data.pull.end_time > store.lastSync) {
           store.lastSync = data.pull.end_time;
         }
+
         emitSyncEvent('complete', data);
         cb();
       });
@@ -372,7 +373,7 @@ module.exports = function (capot) {
 
     return function () {
 
-      capot.log('debug', eventName, Array.prototype.slice.call(arguments, 0));
+      capot.log('debug', 'store:' + eventName, Array.prototype.slice.call(arguments, 0));
     };
   }
 

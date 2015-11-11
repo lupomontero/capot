@@ -285,7 +285,7 @@ module.exports = function (capot) {
 
     return function () {
 
-      capot.log('debug', eventName, Array.prototype.slice.call(arguments, 0));
+      capot.log('debug', 'account:' + eventName, Array.prototype.slice.call(arguments, 0));
     };
   }
 
