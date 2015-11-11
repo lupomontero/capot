@@ -31,7 +31,7 @@ internals.formatDate = function (d) {
 
 module.exports = function (options) {
 
-  return function (tags, data) {
+  return function (tags) {
   
     if (typeof console === 'undefined' || typeof console.log !== 'function') {
       return;
@@ -40,6 +40,11 @@ module.exports = function (options) {
     if (typeof tags === 'string') { tags = [ tags ]; }
 
     if (!options.debug && tags.indexOf('debug') >= 0) { return; }
+
+    var data = Array.prototype.slice.call(arguments, 1);
+    if (data.length === 1) {
+      data = data[0];
+    }
 
     console.log(internals.formatDate(new Date()), tags, data);
   };
