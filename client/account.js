@@ -181,9 +181,9 @@ module.exports = function (capot) {
   account.init = function (cb) {
 
     if (!hasInit) {
-      capot.log('info', 'initializing account...');
+      capot.log('debug', 'initializing account...');
     } else {
-      capot.log('info', 'refreshing account...');
+      capot.log('debug', 'refreshing account...');
     }
 
     cb = cb || function () {};
@@ -275,7 +275,7 @@ module.exports = function (capot) {
     }, function (err) {
 
       if (xhr.status !== 401) {
-        capot.log('info', 'Status: ' + xhr.status + '\n' + xhr.responseText);
+        capot.log('error', 'Status: ' + xhr.status + '\n' + xhr.responseText);
       }
     });
   });

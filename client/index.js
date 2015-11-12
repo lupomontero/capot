@@ -46,7 +46,7 @@ module.exports = function Capot(options) {
   capot.start = function (cb) {
 
     cb = cb || internals.noop;
-    capot.log('info', 'Starting capot client...');
+    capot.log('debug', 'Starting capot client...');
     Async.applyEachSeries([
       Async.apply(account.init),
       Async.apply(store.init),

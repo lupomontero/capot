@@ -305,7 +305,7 @@ module.exports = function (capot) {
   //
   store.init = function (cb) {
 
-    capot.log('info', 'capot.store init start');
+    capot.log('debug', 'capot.store init start');
 
     cb = cb || internals.noop;
 
@@ -347,7 +347,7 @@ module.exports = function (capot) {
         store.sync();
       });
 
-      capot.log('info', 'capot.store init ok');
+      capot.log('debug', 'capot.store init ok');
       store.emit('init');
       cb();
     }
