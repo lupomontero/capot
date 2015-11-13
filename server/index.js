@@ -3,15 +3,37 @@
 //
 
 
-var Path = require('path');
-var Hapi = require('hapi');
-var Async = require('async');
-var _ = require('lodash');
-var Installer = require('./lib/installer');
-var Routes = require('./routes');
+'use strict';
 
 
-var internals = {};
+const Path = require('path');
+const Hapi = require('hapi');
+const Async = require('async');
+const _ = require('lodash');
+const Good = require('good');
+const GoodConsole = require('good-console');
+const Installer = require('./lib/installer');
+const Routes = require('./routes');
+
+
+const internals = {};
+
+
+internals.createLogger = function (debug) {
+
+  return {
+    register: Good,
+    options: {
+      reporters: [{
+        reporter: GoodConsole,
+        events: {
+          response: '*',
+          log: '*'
+        }
+      }]
+    }
+  };
+};
 
 
 internals.createConfig = function (argv) {
@@ -146,6 +168,8 @@ module.exports = function (argv) {
     require('longjohn');
     plugins = [ require('vision'), require('lout') ].concat(plugins);
   }
+
+  plugins.unshift(internals.createLogger(config.debug));
 
   var server = internals.createServer(config);
 
