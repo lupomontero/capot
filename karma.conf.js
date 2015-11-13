@@ -18,11 +18,15 @@ module.exports = function (config) {
       'test/client/vendor/bind-polyfill.js',
       'test/client/vendor/jquery.min.js',
       'test/client/vendor/jquery.mockjax.js',
-      'test/client/account.spec.js'
+      'test/client/*.spec.js'
     ],
 
     preprocessors: {
       'test/client/*.js': ['browserify']
+    },
+
+    browserify: {
+      debug: true
     },
 
     reporters: ['mocha'],

@@ -55,7 +55,7 @@ module.exports = function (capot) {
 
     return new Promise(function (resolve, reject) {
 
-      const waitForUserReady = function () {
+      var waitForUserReady = function () {
 
         capot.request('POST', '/_session', {
           email: email,
@@ -203,7 +203,7 @@ module.exports = function (capot) {
 
     return new Promise(function (resolve, reject) {
 
-      const done = function () {
+      var done = function () {
 
         internals.setState(account.session);
 
@@ -299,7 +299,7 @@ module.exports = function (capot) {
   });
 
 
-  const logEvent = function (eventName) {
+  var logEvent = function (eventName) {
 
     return function () {
 

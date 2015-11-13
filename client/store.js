@@ -335,7 +335,7 @@ module.exports = function (capot) {
 
     store.local = new PouchDB(capotId, { auto_compaction: true });
 
-    const listenToLocalChanges = function () {
+    var listenToLocalChanges = function () {
 
       var localChanges = store.local.changes({
         since: 'now',
@@ -352,7 +352,7 @@ module.exports = function (capot) {
           return;
         }
 
-        const emit = function (eventName) {
+        var emit = function (eventName) {
 
           store.emit(eventName, doc, { local: true });
           store.emit(eventName + ':' + type, doc, { local: true });
@@ -397,7 +397,7 @@ module.exports = function (capot) {
   });
 
 
-  const logEvent = function (eventName) {
+  var logEvent = function (eventName) {
 
     return function () {
 

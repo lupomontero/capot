@@ -25,7 +25,7 @@ describe('capot/client/account', function () {
       done();
     });
 
-    it.only('should return null when not signed in', function () {
+    it('should return null when not signed in', function () {
 
       Assert.equal(capot.account.id(), null);
     });
