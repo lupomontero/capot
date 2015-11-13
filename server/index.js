@@ -19,9 +19,9 @@ const Routes = require('./routes');
 const internals = {};
 
 
-internals.createLogger = function (debug) {
+internals.createLogger = function (server, cb) {
 
-  return {
+  server.register({
     register: Good,
     options: {
       reporters: [{
@@ -32,7 +32,7 @@ internals.createLogger = function (debug) {
         }
       }]
     }
-  };
+  }, cb);
 };
 
 
@@ -117,10 +117,10 @@ internals.createServer = function (config) {
 
   var Pkg = require(Path.join(config.cwd, 'package.json'));
   var server = new Hapi.Server({
-    debug: {
-      log: [ 'info', 'warn', 'error' ],
-      request: [ 'error' ]
-    },
+    //debug: {
+    //  log: [ 'info', 'warn', 'error' ],
+    //  request: [ 'error' ]
+    //},
     connections: {
       routes: {
         payload: {
@@ -169,8 +169,6 @@ module.exports = function (argv) {
     plugins = [ require('vision'), require('lout') ].concat(plugins);
   }
 
-  plugins.unshift(internals.createLogger(config.debug));
-
   var server = internals.createServer(config);
 
   function onError(err) {
@@ -184,6 +182,7 @@ module.exports = function (argv) {
   process.on('uncaughtException', onError);
 
   Async.series([
+    Async.apply(internals.createLogger, server),
     Async.apply(Installer, server),
     server.register.bind(server, plugins),
     function (cb) { server.route(Routes); cb(); },
@@ -194,8 +193,8 @@ module.exports = function (argv) {
   
     if (err) { return onError(err); }
     server.app.changes.start();
-    server.log('info', 'Web server started on port ' + config.port);
-    server.log('info', 'Capot back-end has started ;-)');
+    server.log(['info'], 'Web server started on port ' + config.port);
+    server.log(['info'], 'Capot back-end has started ;-)');
   });
 
 };
