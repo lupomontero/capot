@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('promise');
 
@@ -39,7 +43,9 @@ module.exports = function (capot) {
     return roles.reduce(function (memo, item) {
 
       var matches = /^capot:write:user\/([a-z0-9]+)$/.exec(item);
-      if (matches && matches[1]) { return matches[1]; }
+      if (matches && matches[1]) {
+        return matches[1];
+      }
       return memo;
     }, null);
   };
@@ -56,7 +62,9 @@ module.exports = function (capot) {
           password: pass
         }).then(function (data) {
 
-          if (!data.roles.length) { return setTimeout(waitForUserReady, 1000); }
+          if (!data.roles.length) {
+            return setTimeout(waitForUserReady, 1000);
+          }
           account.init().then(resolve, reject);
         }, reject);
       }
@@ -98,6 +106,7 @@ module.exports = function (capot) {
 
 
   account.changePassword = function (pass, newPass) {
+
     var email = account.session.userCtx.name;
     var url = internals.userDocUrl(email);
 
@@ -182,7 +191,8 @@ module.exports = function (capot) {
 
     if (!hasInit) {
       capot.log('debug', 'initializing account...');
-    } else {
+    }
+    else {
       capot.log('debug', 'refreshing account...');
     }
 
@@ -202,13 +212,17 @@ module.exports = function (capot) {
           account.emit('init');
           // Check session every 30s...
           window.setInterval(account.init.bind(account), 30 * 1000);
-        } else if (wasOnline && account.isOffline()) {
+        }
+        else if (wasOnline && account.isOffline()) {
           account.emit('offline');
-        } else if (!wasOnline && account.isOnline()) {
+        }
+        else if (!wasOnline && account.isOnline()) {
           account.emit('online');
-        } else if (!wasSignedIn && account.isSignedIn()) {
+        }
+        else if (!wasSignedIn && account.isSignedIn()) {
           account.emit('signin');
-        } else if (wasSignedIn && !account.isSignedIn()) {
+        }
+        else if (wasSignedIn && !account.isSignedIn()) {
           account.emit('signout');
         }
 
@@ -262,9 +276,13 @@ module.exports = function (capot) {
 
     capot.request('GET', '/_oauth/session').then(function (session) {
 
-      if (typeof session.data !== 'object') { return; }
+      if (typeof session.data !== 'object') {
+        return;
+      }
 
-      if (!session.data.cookie) { return account.emit('oauth', session); }
+      if (!session.data.cookie) {
+        return account.emit('oauth', session);
+      }
 
       //var matches = /(AuthSession=[^;]+);/.exec(session.data.cookie);
       //console.log(matches);
@@ -290,7 +308,7 @@ module.exports = function (capot) {
   }
 
   if (capot.settings.debug === true) {
-    [ 'init', 'signin', 'signout', 'offline', 'online' ].forEach(function (eventName) {
+    ['init', 'signin', 'signout', 'offline', 'online'].forEach(function (eventName) {
 
       account.on(eventName, logEvent(eventName));
     });

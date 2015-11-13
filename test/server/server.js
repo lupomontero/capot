@@ -1,28 +1,31 @@
-var Os = require('os');
-var Cp = require('child_process');
-var Fs = require('fs');
-var Path = require('path');
-var Assert = require('assert');
-var _ = require('lodash');
-var Async = require('async');
-var Mkdirp = require('mkdirp');
-var Rimraf = require('rimraf');
-var Request = require('request');
-var Pkg = require('../../package.json');
+'use strict';
 
 
-var internals = {};
+const Os = require('os');
+const Cp = require('child_process');
+const Fs = require('fs');
+const Path = require('path');
+const Assert = require('assert');
+const _ = require('lodash');
+const Async = require('async');
+const Mkdirp = require('mkdirp');
+const Rimraf = require('rimraf');
+const Request = require('request');
+const Pkg = require('../../package.json');
 
 
-var bin = Path.join(__dirname, '../../bin/cli.js');
-var tmpdir = Path.join(Os.tmpdir(), Pkg.name + '-test-' + Date.now());
-var port = 3333;
-var pass = 'secret';
-var uri = 'http://127.0.0.1:' + port;
-var child;
+const internals = {};
 
 
-var couch = Request.defaults({
+const bin = Path.join(__dirname, '../../bin/cli.js');
+const tmpdir = Path.join(Os.tmpdir(), Pkg.name + '-test-' + Date.now());
+const port = 3333;
+const pass = 'secret';
+const uri = 'http://127.0.0.1:' + port;
+const child;
+
+
+const couch = Request.defaults({
   baseUrl: uri + '/_couch',
   auth: { user: 'admin', pass: pass },
   json: true
@@ -30,6 +33,7 @@ var couch = Request.defaults({
 
 
 function removeDummyUsers(cb) {
+
   couch('/_users/_all_docs', {
     qs: {
       startkey: '"org.couchdb.user:"',
@@ -37,12 +41,14 @@ function removeDummyUsers(cb) {
       include_docs: 'true'
     }
   }, function (err, resp) {
+
     if (err) { return cb(err); }
     if (resp.statusCode !== 200) {
       return cb(new Error(resp.body.error));
     }
 
-    var docs = resp.body.rows.map(function (row) {
+    const docs = resp.body.rows.map(function (row) {
+
       row.doc._deleted = true;
       return row.doc;
     });
@@ -54,6 +60,7 @@ function removeDummyUsers(cb) {
       url: '/_users/_bulk_docs',
       body: { docs: docs }
     }, function (err, resp) {
+
       if (err) { return cb(err); }
       if (resp.statusCode > 201) {
         return cb(new Error(resp.body.error));
@@ -65,6 +72,7 @@ function removeDummyUsers(cb) {
 
 
 function removeDummyData(cb) {
+
   Async.parallel([
     removeDummyUsers,
   ], cb); 
@@ -72,6 +80,7 @@ function removeDummyData(cb) {
 
 
 function addDummyUser(name, pass, cb) {
+
   Request({
     method: 'PUT',
     url: uri + '/_couch/_users/org.couchdb.user:' + name,
@@ -83,6 +92,7 @@ function addDummyUser(name, pass, cb) {
       type: 'user'
     }
   }, function (err, resp) {
+
     if (err) { return cb(err); }
     if (resp.statusCode > 201) {
       return cb(new Error(resp.body.error));
@@ -93,7 +103,9 @@ function addDummyUser(name, pass, cb) {
 
 
 function addDummyData(cb) {
+
   removeDummyData(function (err) {
+
     if (err) { return cb(err); }
     addDummyUser('testuser1', 'secret1', cb);
   });
@@ -123,12 +135,13 @@ exports.start = function (dummyData, done) {
 
     if (err) { return done(err); }
 
-    child = Cp.spawn(bin, [ '--port', port, '--debug' ], {
+    child = Cp.spawn(bin, ['--port', port, '--debug'], {
       cwd: tmpdir,
       env: _.extend({}, process.env, { COUCHDB_PASS: pass })
     });
 
     child.stdout.on('data', function (chunk) {
+
       console.log('stdout: ' + chunk);
     });
 

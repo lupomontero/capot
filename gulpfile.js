@@ -1,27 +1,30 @@
-var Path = require('path');
-var Gulp = require('gulp');
-var Concat = require('gulp-concat');
-var Declare = require('gulp-declare');
-var Favicons = require('favicons');
-var Handlebars = require('gulp-handlebars');
-var Jshint = require('gulp-jshint');
-var Mocha = require('gulp-mocha');
-var Rename = require('gulp-rename');
-var Uglify = require('gulp-uglify');
-var Gutil = require('gulp-util');
-var Wrap = require('gulp-wrap');
-var Merge = require('merge-stream');
-var Browserify = require('browserify');
-var Source = require('vinyl-source-stream');
-var Buffer = require('vinyl-buffer');
-var Karma = require('karma');
-var _ = require('lodash');
+'use strict';
 
 
-var Pkg = require('./package.json');
+const Path = require('path');
+const Gulp = require('gulp');
+const Concat = require('gulp-concat');
+const Declare = require('gulp-declare');
+const Eslint = require('gulp-eslint');
+const Favicons = require('favicons');
+const Handlebars = require('gulp-handlebars');
+const Mocha = require('gulp-mocha');
+const Rename = require('gulp-rename');
+const Uglify = require('gulp-uglify');
+const Gutil = require('gulp-util');
+const Wrap = require('gulp-wrap');
+const Merge = require('merge-stream');
+const Browserify = require('browserify');
+const Source = require('vinyl-source-stream');
+const Buffer = require('vinyl-buffer');
+const Karma = require('karma');
+const _ = require('lodash');
 
 
-var internals = {};
+const Pkg = require('./package.json');
+
+
+const internals = {};
 
 
 internals.components = {
@@ -73,39 +76,43 @@ Gulp.task('lint:client', function () {
     internals.components.client.files,
     internals.components.client.tests
   ])
-    .pipe(Jshint({ predef: [ '-Promise' ] }))
-    .pipe(Jshint.reporter('jshint-stylish'));
+    .pipe(Eslint())
+    .pipe(Eslint.format())
+    .pipe(Eslint.failAfterError());
 });
 
 
 Gulp.task('lint:ui', function () {
 
   return Gulp.src(internals.components.ui.files)
-    .pipe(Jshint({ predef: [ '-Promise' ] }))
-    .pipe(Jshint.reporter('jshint-stylish'));
+    .pipe(Eslint())
+    .pipe(Eslint.format())
+    .pipe(Eslint.failAfterError());
 });
 
 
 Gulp.task('lint:admin', function () {
 
   return Gulp.src(internals.components.admin.files)
-    .pipe(Jshint({ predef: [ '-Promise' ] }))
-    .pipe(Jshint.reporter('jshint-stylish'));
+    .pipe(Eslint())
+    .pipe(Eslint.format())
+    .pipe(Eslint.failAfterError());
 });
 
 
 Gulp.task('lint:server', function () {
 
   return Gulp.src(internals.components.server.files.concat(internals.components.server.tests))
-    .pipe(Jshint({ predef: [ '-Promise' ] }))
-    .pipe(Jshint.reporter('jshint-stylish'));
+    .pipe(Eslint())
+    .pipe(Eslint.format())
+    .pipe(Eslint.failAfterError());
 });
 
 
-Gulp.task('lint', [ 'lint:client', 'lint:ui', 'lint:admin', 'lint:server' ]);
+Gulp.task('lint', ['lint:client', 'lint:ui', 'lint:admin', 'lint:server']);
 
 
-Gulp.task('test:client', [ 'lint:client' ], function (done) {
+Gulp.task('test:client', ['lint:client'], function (done) {
 
   var server = new Karma.Server({
     configFile: __dirname + '/karma.conf.js',

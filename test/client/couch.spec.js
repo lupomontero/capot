@@ -1,4 +1,8 @@
-var assert = require('assert');
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
+var Assert = require('assert');
 var Promise = require('promise');
 var Couch = require('../../client/couch');
 
@@ -6,7 +10,8 @@ var Couch = require('../../client/couch');
 describe('capot/cient/couch', function () {
 
   it('should be a function', function () {
-    assert.equal(typeof Couch, 'function');
+
+    Assert.equal(typeof Couch, 'function');
   });
 
   var couch = Couch({ url: '/_couch' });
@@ -15,11 +20,12 @@ describe('capot/cient/couch', function () {
   describe('couch.get()', function () {
 
     it('should return a promise, send ajax request and resolve', function () {
+
       var resp = {
-        "express-pouchdb": "Welcome!",
-        "version": "0.14.0",
-        "vendor": { "name": "PouchDB authors", "version": "0.14.0" },
-        "uuid": "61a7ef3c-6c28-43d5-9a02-6671186a995c"
+        'express-pouchdb': 'Welcome!',
+        'version': '0.14.0',
+        'vendor': { 'name': 'PouchDB authors', 'version': '0.14.0' },
+        'uuid': '61a7ef3c-6c28-43d5-9a02-6671186a995c'
       };
 
       $.mockjax({
@@ -29,11 +35,12 @@ describe('capot/cient/couch', function () {
       });
 
       var promise = couch.get('/');
-      
-      assert.ok(promise instanceof Promise);
+
+      Assert.ok(promise instanceof Promise);
 
       promise.then(function (data) {
-        assert.deepEqual(data, resp);
+
+        Assert.deepEqual(data, resp);
       });
     });
 
@@ -43,6 +50,7 @@ describe('capot/cient/couch', function () {
   describe('couch.db()', function () {
 
     it.skip('should...', function () {
+
       //var db = couch.db('_users');
       // TODO: Should this be an instance of PouchDB?
       //console.log(db);

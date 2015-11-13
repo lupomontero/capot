@@ -1,25 +1,32 @@
-var Assert = require('assert');
-var Server = require('./server');
+'use strict';
 
 
-describe('capot/server/auth', function () {
+const Assert = require('assert');
+const Server = require('./server');
 
-  before(function (done) {
+
+describe('capot/server/auth', () => {
+
+  before((done) => {
+
     this.timeout(30 * 1000);
     Server.start(done);
   });
 
-  after(function (done) {
+  after((done) => {
+
     Server.stop(done);
   });
 
-  describe('GET /_session', function () {
+  describe('GET /_session', () => {
 
-    it('should get empty session when no auth', function (done) {
+    it('should get empty session when no auth', (done) => {
+
       Server.req({
         method: 'GET',
         url: '/_session'
-      }, function (err, resp) {
+      }, (err, resp) => {
+
         Assert.ok(!err);
         Assert.equal(resp.body.ok, true);
         Assert.equal(resp.body.userCtx.name, null);
@@ -30,15 +37,15 @@ describe('capot/server/auth', function () {
 
   });
 
-  describe('POST /_session', function () {
+  describe('POST /_session', () => {
 
-    it('should require email', function (done) {
+    it('should require email', (done) => {
 
       Server.req({
         method: 'POST',
         url: '/_session',
         body: {}
-      }, function (err, resp) {
+      }, (err, resp) => {
 
         Assert.ok(!err);
         Assert.equal(resp.statusCode, 400);
@@ -48,13 +55,13 @@ describe('capot/server/auth', function () {
       });
     });
 
-    it('should require valid email', function (done) {
+    it('should require valid email', (done) => {
 
       Server.req({
         method: 'POST',
         url: '/_session',
         body: { email: 'foo' }
-      }, function (err, resp) {
+      }, (err, resp) => {
 
         Assert.ok(!err);
         Assert.ok(/valid email/i.test(resp.body.message));
@@ -65,13 +72,13 @@ describe('capot/server/auth', function () {
       });
     });
 
-    it('should require password', function (done) {
+    it('should require password', (done) => {
 
       Server.req({
         method: 'POST',
         url: '/_session',
         body: { email: 'foo@localhost' }
-      }, function (err, resp) {
+      }, (err, resp) => {
 
         Assert.ok(!err);
         Assert.equal(resp.statusCode, 400);
@@ -81,13 +88,13 @@ describe('capot/server/auth', function () {
       });
     });
 
-    it('should return unauthorized when unknown email', function (done) {
+    it('should return unauthorized when unknown email', (done) => {
 
       Server.req({
         method: 'POST',
         url: '/_session',
         body: { email: 'foo@localhost', password: 'xxxxxxxx' }
-      }, function (err, resp) {
+      }, (err, resp) => {
 
         Assert.ok(!err);
         Assert.equal(resp.statusCode, 401);
@@ -95,23 +102,23 @@ describe('capot/server/auth', function () {
       });
     });
 
-    it('should return unauthorized when bad pass', function (done) {
+    it('should return unauthorized when bad pass', (done) => {
 
-      var credentials = { email: 'test2@localhost', password: 'secret' };
+      const credentials = { email: 'test2@localhost', password: 'secret' };
 
       Server.req({
         method: 'POST',
         url: '/_users',
         body: credentials
-      }, function (err) {
-    
+      }, (err) => {
+
         credentials.password = 'xxx';
 
         Server.req({
           method: 'POST',
           url: '/_session',
           body: credentials
-        }, function (err, resp) {
+        }, (err, resp) => {
 
           Assert.ok(!err);
           Assert.equal(resp.statusCode, 401);
@@ -120,61 +127,61 @@ describe('capot/server/auth', function () {
       });
     });
 
-    it('should authenticate valid credentials', function (done) {
+    it('should authenticate valid credentials', (done) => {
 
-      var credentials = { email: 'test3@localhost', password: 'secret' };
+      const credentials = { email: 'test3@localhost', password: 'secret' };
 
       Server.req({
         method: 'POST',
         url: '/_users',
         body: credentials
-      }, function (err) {
-    
+      }, (err) => {
+
         Server.req({
           method: 'POST',
           url: '/_session',
           body: credentials
-        }, function (err, resp) {
+        }, (err, resp) => {
 
           Assert.ok(!err);
           Assert.equal(resp.statusCode, 200);
           Assert.equal(resp.body.ok, true);
           Assert.equal(resp.body.name, credentials.email);
-          var cookie = resp.headers['set-cookie'][0];
+          const cookie = resp.headers['set-cookie'][0];
           Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
           done();
         });
       });
     });
 
-    it('should authenticate valid credentials after pass changed by OAuth login', function (done) {
+    it('should authenticate valid credentials after pass changed by OAuth login', (done) => {
 
-      var credentials = { email: 'test4@localhost', password: 'secret' };
+      const credentials = { email: 'test4@localhost', password: 'secret' };
 
       Server.req({
         method: 'POST',
         url: '/_users',
         body: credentials
-      }, function (err) {
-    
+      }, (err) => {
+
         Server.req({
           method: 'POST',
           url: '/_session',
           body: credentials
-        }, function (err, resp) {
+        }, (err, resp) => {
 
           Assert.ok(!err);
           Assert.equal(resp.statusCode, 200);
           Assert.equal(resp.body.ok, true);
           Assert.equal(resp.body.name, credentials.email);
-          var cookie = resp.headers['set-cookie'][0];
+          const cookie = resp.headers['set-cookie'][0];
           Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
 
           Server.req({
             method: 'GET',
             url: '/_users/' + encodeURIComponent(credentials.email),
             auth: { user: 'admin', pass: 'secret' }
-          }, function (err, resp, userDoc) {
+          }, (err, resp, userDoc) => {
 
             Assert.ok(!err);
             Assert.equal(resp.statusCode, 200);
@@ -188,7 +195,7 @@ describe('capot/server/auth', function () {
               url: '/_users/' + encodeURIComponent(credentials.email),
               auth: { user: 'admin', pass: 'secret' },
               body: userDoc
-            }, function (err, resp) {
+            }, (err, resp) => {
 
               Assert.ok(!err);
 
@@ -196,11 +203,11 @@ describe('capot/server/auth', function () {
                 method: 'POST',
                 url: '/_session',
                 body: credentials
-              }, function (err, resp) {
+              }, (err, resp) => {
 
                 Assert.ok(!err);
                 Assert.equal(resp.statusCode, 200);
-                var cookie = resp.headers['set-cookie'][0];
+                const cookie = resp.headers['set-cookie'][0];
                 Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
                 Assert.equal(resp.body.ok, true);
                 Assert.equal(resp.body.name, credentials.email);
@@ -208,9 +215,9 @@ describe('capot/server/auth', function () {
                 Server.req({
                   method: 'GET',
                   url: '/_users/' + encodeURIComponent(credentials.email),
-                  auth: { user: 'admin', pass: 'secret' },
-                }, function (err, resp) {
-                
+                  auth: { user: 'admin', pass: 'secret' }
+                }, (err, resp) => {
+
                   Assert.ok(!err);
                   Assert.equal(resp.statusCode, 200);
                   // After successfull login with password, derived_key2 and

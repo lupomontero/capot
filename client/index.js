@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 //
 // External Dependencies
 //
@@ -49,7 +53,7 @@ module.exports = function Capot(options) {
     capot.log('debug', 'Starting capot client...');
     Async.applyEachSeries([
       Async.apply(account.init),
-      Async.apply(store.init),
+      Async.apply(store.init)
     ], function (err) {
 
       capot.log('info', err || 'Capot client successfully started');

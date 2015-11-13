@@ -5,21 +5,25 @@
 // * registers "user" and "admin" auth strategies.
 //
 
+'use strict';
 
-var Crypto = require('crypto');
-var Boom = require('boom');
-var Joi = require('joi');
-var Request = require('request');
-var Couch = require('./lib/couch');
 
-var internals = {};
+const Crypto = require('crypto');
+const Boom = require('boom');
+const Joi = require('joi');
+const Request = require('request');
+const Couch = require('./lib/couch');
+
+
+const internals = {};
+
 
 internals.proxyHandler = {
   proxy: {
     passThrough: true,
-    mapUri: function (req, cb) {
+    mapUri: (req, cb) => {
 
-      var couchUrl = req.server.settings.app.config.couchdb.url;
+      const couchUrl = req.server.settings.app.config.couchdb.url;
       cb(null, couchUrl + '/_session', req.headers);
     }
   }
@@ -46,48 +50,57 @@ exports.create = {
       password: Joi.string().required()
     }
   },
-  handler: function (req, reply) {
+  handler: (req, reply) => {
 
-    var server = req.server;
-    var config = server.settings.app.config;
-    var couch = Couch(config.couchdb);
-    var usersDb = couch.db('_users');
-    var email = req.payload.email;
-    var pass = req.payload.password;
+    const server = req.server;
+    const config = server.settings.app.config;
+    const couch = Couch(config.couchdb);
+    const usersDb = couch.db('_users');
+    const email = req.payload.email;
+    const pass = req.payload.password;
 
     Request.post(config.couchdb.url + '/_session', {
       json: true,
       body: { name: email, password: pass }
-    }, function (err, resp) {
+    }, (err, resp) => {
 
-      if (err) { return reply(Boom.wrap(err)); }
+      if (err) {
+        return reply(Boom.wrap(err));
+      }
 
       if (resp.statusCode === 200) {
         return reply(resp.body).header('set-cookie', resp.headers['set-cookie']);
-      } else if (resp.statusCode !== 401) {
+      }
+      else if (resp.statusCode !== 401) {
         return reply(Boom.create(resp.statusCode, resp.body.reason));
       }
 
-      var encodedDocId = encodeURIComponent('org.couchdb.user:' + email);
-      usersDb.get(encodedDocId, function (err, userDoc) {
+      const encodedDocId = encodeURIComponent('org.couchdb.user:' + email);
+      usersDb.get(encodedDocId, (err, userDoc) => {
 
         // on error we reply with 401 to avoid disclosing whether username/email
         // is already registered.
-        if (err) { return reply(Boom.create(401)); }
+        if (err) {
+          return reply(Boom.create(401));
+        }
 
-        var key = userDoc.derived_key2;
-        var salt = userDoc.salt2;
-        var iterations = userDoc.iterations;
+        const key = userDoc.derived_key2;
+        const salt = userDoc.salt2;
+        const iterations = userDoc.iterations;
 
         // if we don't have `derived_key2` and `salt2` we can not check for
         // password automatically changed by OAuth login, so nothing else to do.
-        if (!key || !salt) { return reply(Boom.create(401)); }
+        if (!key || !salt) {
+          return reply(Boom.create(401));
+        }
 
         // TODO: installer should make sure password_scheme is set to pbkdf2.
         // check pass against derived_key2 and salt2...
-        Crypto.pbkdf2(pass, salt, iterations, key.length, 'sha1', function (err, hash) {
+        Crypto.pbkdf2(pass, salt, iterations, key.length, 'sha1', (err, hash) => {
 
-          if (err) { return reply(Boom.wrap(err)); }
+          if (err) {
+            return reply(Boom.wrap(err));
+          }
 
           // If password doesn't match don't continue.
           if (key !== hash.toString('hex').slice(0, key.length)) {
@@ -101,16 +114,20 @@ exports.create = {
           delete userDoc.derived_key2;
           delete userDoc.salt2;
 
-          usersDb.put(encodedDocId, userDoc, function (err) {
+          usersDb.put(encodedDocId, userDoc, (err) => {
 
-            if (err) { return reply(Boom.create(500)); }
+            if (err) {
+              return reply(Boom.create(500));
+            }
 
             Request.post(config.couchdb.url + '/_session', {
               json: true,
               body: { name: email, password: pass }
-            }, function (err, resp) {
+            }, (err, resp) => {
 
-              if (err) { return reply(Boom.wrap(err)); }
+              if (err) {
+                return reply(Boom.wrap(err));
+              }
 
               if (resp.statusCode !== 200) {
                 return reply(Boom.create(resp.statusCode, resp.body.reason));
@@ -128,83 +145,92 @@ exports.create = {
 
 exports.register = function (server, options, next) {
 
-  var config = server.settings.app.config;
-  var couch = Request.defaults({
+  const config = server.settings.app.config;
+  const couch = Request.defaults({
     json: true,
     baseUrl: config.couchdb.url
   });
 
-  function validateCookie(cookie, cb) {
-    
+  const validateCookie = function (cookie, cb) {
+
     couch.get('/_session', {
       headers: { cookie: cookie }
-    }, function (err, resp) {
+    }, (err, resp) => {
 
       if (err) {
         cb(err);
-      } else if (resp.statusCode !== 200) {
+      }
+      else if (resp.statusCode !== 200) {
         cb(Boom.create(resp.statusCode));
-      } else if (!resp.body.userCtx || !resp.body.userCtx.name) {
+      }
+      else if (!resp.body.userCtx || !resp.body.userCtx.name) {
         cb(Boom.unauthorized());
-      } else {
+      }
+      else {
         cb(null, resp.body);
       }
     });
-  }
+  };
 
-  function cookieAuth(req, cb) {
+  const cookieAuth = function (req, cb) {
 
     validateCookie(req.headers.cookie, cb);
-  }
+  };
 
 
-  function basicAuth(req, cb) {
+  const basicAuth = function (req, cb) {
 
-    var auth = req.headers.authorization || '';
-    var matches = /^Basic ([a-zA-Z0-9]+)$/.exec(auth);
+    const auth = req.headers.authorization || '';
+    const matches = /^Basic ([a-zA-Z0-9]+)$/.exec(auth);
 
     if (!matches || matches.length < 2) {
       return cb(Boom.unauthorized());
     }
 
-    var buf = new Buffer(matches[1], 'base64');
-    var parts = buf.toString().split(':');
+    const buf = new Buffer(matches[1], 'base64');
+    const parts = buf.toString().split(':');
 
     couch.post('/_session', {
       body: {
         name: parts[0],
         password: parts[1]
       }
-    }, function (err, resp) {
+    }, (err, resp) => {
 
-      if (err) { return cb(err); }
+      if (err) {
+        return cb(err);
+      }
       if (resp.statusCode !== 200) {
         return cb(Boom.create(resp.statusCode));
       }
       validateCookie(resp.headers['set-cookie'], cb);
     });
-  }
+  };
 
-  server.auth.scheme('couchdb', function (server, options) {
+  server.auth.scheme('couchdb', (server, options) => {
 
-    var validate = options.validateFunc;
+    const validate = options.validateFunc;
 
     return {
       authenticate: function (req, reply) {
 
-        var authHandler;
+        let authHandler;
 
         if (req.headers.authorization) {
           authHandler = basicAuth;
-        } else if (req.headers.cookie) {
+        }
+        else if (req.headers.cookie) {
           authHandler = cookieAuth;
-        } else {
+        }
+        else {
           return reply(Boom.unauthorized());
         }
 
-        authHandler(req, function (err, credentials) {
+        authHandler(req, (err, credentials) => {
 
-          if (err) { return reply(err); }
+          if (err) {
+            return reply(err);
+          }
 
           if (typeof validate === 'function' && !validate(credentials)) {
             return reply(Boom.unauthorized());
@@ -219,14 +245,15 @@ exports.register = function (server, options, next) {
   server.auth.strategy('user', 'couchdb', {
     validateFunc: function (credentials) {
 
-      var userCtx = credentials.userCtx || {};
+      const userCtx = credentials.userCtx || {};
       return userCtx.name && userCtx.roles && userCtx.roles.length;
     }
   });
 
   server.auth.strategy('admin', 'couchdb', {
     validateFunc: function (credentials) {
-      var roles = (credentials.userCtx || {}).roles || [];
+
+      const roles = (credentials.userCtx || {}).roles || [];
       return roles.indexOf('_admin') >= 0;
     }
   });

@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var _ = require('lodash');
 var Backbone = require('backbone');
 var Moment = require('moment');
@@ -56,7 +60,7 @@ internals.remoteSync = function (method, model) {
 internals.localSync = function (method, model) {
 
   var type = model.get('type');
-  var store = (this.app || this.collection.app).store;
+  var store = (model.app || model.collection.app).store;
 
   if (method === 'create') {
     return store.add(type, model.toJSON());

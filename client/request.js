@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var Promise = require('promise');
 
 
@@ -10,7 +14,9 @@ module.exports = function (options) {
     var path = args.shift();
 
     // Add leading slash if needed.
-    if (path.charAt(0) !== '/') { path = '/' + path; }
+    if (path.charAt(0) !== '/') {
+      path = '/' + path;
+    }
 
     return new Promise(function (resolve, reject) {
 
@@ -25,10 +31,12 @@ module.exports = function (options) {
           var msg, reason;
           if (xhr.status === 0) { // UNSENT
             msg = 'Request timed out';
-          } else if (xhr.responseJSON && xhr.responseJSON.error) {
+          }
+          else if (xhr.responseJSON && xhr.responseJSON.error) {
             msg = xhr.responseJSON.error;
             reason = xhr.responseJSON.reason;
-          } else {
+          }
+          else {
             msg = xhr.statusText;
           }
           var err = new Error(msg);
@@ -44,7 +52,7 @@ module.exports = function (options) {
         reqOpt.password = options.pass;
       }
 
-      if ([ 'PUT', 'POST' ].indexOf(method) >= 0) {
+      if (['PUT', 'POST'].indexOf(method) >= 0) {
         var data = args.pop();
         if (data) {
           reqOpt.data = JSON.stringify(data);
@@ -58,7 +66,9 @@ module.exports = function (options) {
         reqOpt.url += paramsKeys.reduce(function (memo, k) {
 
           var v = JSON.stringify(params[k]);
-          if (memo) { memo += '&'; }
+          if (memo) {
+            memo += '&';
+          }
           return memo += encodeURIComponent(k) + '=' + encodeURIComponent(v);
         }, '?');
       }

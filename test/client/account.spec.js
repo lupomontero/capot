@@ -1,4 +1,8 @@
-var assert = require('assert');
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
+var Assert = require('assert');
 var Capot = require('../../client');
 
 
@@ -10,20 +14,24 @@ describe('capot/client/account', function () {
     var capot;
 
     beforeEach(function (done) {
+
       capot = Capot();
       capot.start(done);
     });
 
     afterEach(function (done) {
+
       //console.log('after', capot);
       done();
     });
 
     it('should return null when not signed in', function () {
-      assert.equal(capot.account.id(), null);
+
+      Assert.equal(capot.account.id(), null);
     });
 
     it('should return the user\'s capotId when signed in', function () {
+
       capot.account.session = {
         userCtx: {
           roles: [
@@ -35,7 +43,7 @@ describe('capot/client/account', function () {
         }
       };
 
-      assert.equal(capot.account.id(), 'xxxxxxx');
+      Assert.equal(capot.account.id(), 'xxxxxxx');
     });
 
   });
@@ -43,33 +51,27 @@ describe('capot/client/account', function () {
 
   describe('account.signUp()', function () {
 
-    var capot = Capot();
+    //var capot = Capot();
 
-    it('should...', function () {
-      //...
-    });
+    it('should...');
 
   });
 
 
   describe('account.signIn()', function () {
 
-    var capot = Capot();
+    //var capot = Capot();
 
-    it('should...', function () {
-      //...
-    });
+    it('should...');
 
   });
 
 
   describe('account.signOut()', function () {
 
-    var capot = Capot();
+    //var capot = Capot();
 
-    it('should...', function () {
-      //...
-    });
+    it('should...');
 
   });
 

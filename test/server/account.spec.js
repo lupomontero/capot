@@ -1,25 +1,32 @@
-var Assert = require('assert');
-var Server = require('./server');
+'use strict';
 
 
-describe('capot/server/account', function () {
+const Assert = require('assert');
+const Server = require('./server');
 
-  before(function (done) {
+
+describe('capot/server/account', () => {
+
+  before((done) => {
+
     this.timeout(30 * 1000);
     Server.start(true, done);
   });
 
-  after(function (done) {
+  after((done) => {
+
     Server.stop(done);
   });
 
-  describe('GET /_users', function () {
+  describe('GET /_users', () => {
 
-    it('should not allow unauthenticated access', function (done) {
+    it('should not allow unauthenticated access', (done) => {
+
       Server.req({
         method: 'GET',
         url: '/_users'
-      }, function (err, resp) {
+      }, (err, resp) => {
+
         Assert.ok(!err);
         Assert.equal(resp.statusCode, 401);
         Assert.equal(resp.body.statusCode, 401);
@@ -28,12 +35,14 @@ describe('capot/server/account', function () {
       });
     });
 
-    it('should not allow access to non admin users', function (done) {
+    it('should not allow access to non admin users', (done) => {
+
       Server.req({
         method: 'GET',
         url: '/_users',
         auth: { user: 'testuser1', pass: 'secret1' }
-      }, function (err, resp) {
+      }, (err, resp) => {
+
         Assert.ok(!err);
         Assert.equal(resp.statusCode, 401);
         Assert.equal(resp.body.statusCode, 401);
@@ -44,14 +53,16 @@ describe('capot/server/account', function () {
 
   });
 
-  describe('POST /_users', function () {
+  describe('POST /_users', () => {
 
-    it('should ...', function (done) {
+    it('should ...', (done) => {
+
       Server.req({
         method: 'POST',
         url: '/_users',
         body: { email: 'test@localhost', password: 'secret' }
-      }, function (err, resp) {
+      }, (err, resp) => {
+
         Assert.ok(!err);
         Assert.equal(resp.body.ok, true);
         Assert.equal(resp.body.email, 'test@localhost');

@@ -1,25 +1,32 @@
-var assert = require('assert');
-var server = require('./server');
+'use strict';
 
 
-describe('capot/server/www', function () {
+const Assert = require('assert');
+const Server = require('./server');
 
-  before(function (done) {
+
+describe('capot/server/www', () => {
+
+  before((done) => {
+
     this.timeout(30 * 1000);
-    server.start(done);
+    Server.start(done);
   });
 
-  after(function (done) {
-    server.stop(done);
+  after((done) => {
+
+    Server.stop(done);
   });
 
-  describe('GET /_couch', function () {
-  
-    it('should proxy to couchdb', function (done) {
-      server.req('/_couch', function (err, resp) {
-        assert.ok(!err);
-        assert.equal(resp.statusCode, 200);
-        assert.equal(resp.body.couchdb, 'Welcome');
+  describe('GET /_couch', () => {
+
+    it('should proxy to couchdb', (done) => {
+
+      Server.req('/_couch', (err, resp) => {
+
+        Assert.ok(!err);
+        Assert.equal(resp.statusCode, 200);
+        Assert.equal(resp.body.couchdb, 'Welcome');
         done();
       });
     });

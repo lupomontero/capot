@@ -1,11 +1,11 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 //
 // This is a couchdb client for the browser.
 //
 
-/* global jQuery */
-
-
-var Promise = require('promise');
 var PouchDB = require('pouchdb');
 var Request = require('./request');
 
@@ -21,7 +21,7 @@ internals.createApi = function (options) {
     get: req.bind(null, 'GET'),
     post: req.bind(null, 'POST'),
     put: req.bind(null, 'PUT'),
-    del: req.bind(null, 'DELETE'),
+    del: req.bind(null, 'DELETE')
   };
 
 };
@@ -53,9 +53,11 @@ module.exports = function (options) {
 
       if (err && err.statusCode === 401) {
         cb(null, false);
-      } else if (err) {
+      }
+      else if (err) {
         cb(err);
-      } else {
+      }
+      else {
         cb(null, true);
       }
     });

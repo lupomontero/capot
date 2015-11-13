@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('promise');
 var PouchDB = require('pouchdb');
@@ -26,28 +30,27 @@ internals.parse = function (doc) {
   return Extend({
     id: idParts.slice(1).join('/'),
     type: idParts[0]
-  }, Omit(doc, [ '_id' ]));
+  }, Omit(doc, ['_id']));
 };
 
 
 internals.toJSON = function (doc) {
 
-  return Extend({ _id: doc.type + '/' + doc.id }, Omit(doc, [ 'id' ]));
+  return Extend({ _id: doc.type + '/' + doc.id }, Omit(doc, ['id']));
 };
 
 
 module.exports = function (capot) {
 
-  var settings = capot.settings;
   var account = capot.account;
   var store = new EventEmitter();
 
 
-  function emitSyncEvent(eventName, data) {
+  var emitSyncEvent = function (eventName, data) {
 
     store.emit('sync', eventName, data);
     store.emit('sync:' + eventName, data);
-  }
+  };
 
 
   //
@@ -63,8 +66,10 @@ module.exports = function (capot) {
   store.sync = function (cb) {
 
     cb = cb || internals.noop;
-    if (!store.remoteUrl) { return cb(); }
-    if (capot.account.isOffline()) { return cb(); }
+
+    if (!store.remoteUrl || capot.account.isOffline()) {
+      return cb();
+    }
 
     store.remote.sync(store.local, {
       filter: function (doc) {
@@ -138,7 +143,9 @@ module.exports = function (capot) {
           return internals.parse(row.doc);
         });
 
-        if (!options.attachments) { return resolve(docs); }
+        if (!options.attachments) {
+          return resolve(docs);
+        }
 
         Async.each(docs, function (attrs, cb) {
 
@@ -149,7 +156,9 @@ module.exports = function (capot) {
           }, cb);
         }, function (err) {
 
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
           resolve(docs);
         });
       }, reject);
@@ -172,13 +181,14 @@ module.exports = function (capot) {
       var value = attachments[key];
       if (value instanceof File) {
         binaryAttachments[k] = value;
-      } else {
+      }
+      else {
         memo[k] = value;
       }
       return memo;
     }, {});
 
-    var doc = Extend({}, Omit(attrs, [ '_attachments' ]), {
+    var doc = Extend({}, Omit(attrs, ['_attachments']), {
       _id: type + '/' + capot.uid(),
       createdAt: new Date(),
       type: type
@@ -210,13 +220,18 @@ module.exports = function (capot) {
           var type = file.type;
           db.putAttachment(docId, key, rev, file, type, function (err, data) {
 
-            if (err) { return cb(err); }
+            if (err) {
+              return cb(err);
+            }
+
             doc._rev = data.rev;
             cb();
           });
         }, function (err) {
 
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
           resolve(internals.parse(doc));
         });
       }, reject);
@@ -256,6 +271,7 @@ module.exports = function (capot) {
     return store.findAll(type).then(function (result) {
 
       var docs = result.map(function (obj) {
+
         var doc = internals.toJSON(obj);
         doc._deleted = true;
         return doc;
@@ -281,19 +297,25 @@ module.exports = function (capot) {
 
     return new Promise(function (resolve, reject) {
 
-      if (!attachmentsKeys.length) { return resolve([]); }
+      if (!attachmentsKeys.length) {
+        return resolve([]);
+      }
 
       Async.each(attachmentsKeys, function (key, cb) {
 
         store.local.getAttachment(docId, key, function (err, data) {
 
-          if (err) { return cb(err); }
+          if (err) {
+            return cb(err);
+          }
           attachments[key].data = data;
           cb();
         });
       }, function (err) {
 
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
         resolve(attachments);
       });
     });
@@ -326,7 +348,9 @@ module.exports = function (capot) {
         var doc = internals.parse(change.doc);
         var type = doc.type;
 
-        if (!type) { return; }
+        if (!type) {
+          return;
+        }
 
         function emit(eventName) {
 
@@ -336,9 +360,11 @@ module.exports = function (capot) {
 
         if (change.deleted || doc._deleted) {
           emit('remove');
-        } else if (/^1-/.test(doc._rev)) {
+        }
+        else if (/^1-/.test(doc._rev)) {
           emit('add');
-        } else {
+        }
+        else {
           emit('update');
         }
 
@@ -357,13 +383,14 @@ module.exports = function (capot) {
         encodeURIComponent('user/' + capotId);
       store.remote = new PouchDB(store.remoteUrl);
       store.sync(listenToLocalChanges);
-    } else {
+    }
+    else {
       listenToLocalChanges();
     }
   };
 
 
-  [ 'signin', 'signout' ].forEach(function (eventName) {
+  ['signin', 'signout'].forEach(function (eventName) {
 
     account.on(eventName, store.init.bind(store));
   });
@@ -378,7 +405,7 @@ module.exports = function (capot) {
   }
 
   if (capot.settings.debug === true) {
-    [ 'init', 'add', 'update', 'remove', 'change', 'sync' ].forEach(function (eventName) {
+    ['init', 'add', 'update', 'remove', 'change', 'sync'].forEach(function (eventName) {
 
       store.on(eventName, logEvent(eventName));
     });

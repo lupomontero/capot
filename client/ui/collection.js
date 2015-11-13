@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var Backbone = require('backbone');
 var Model = require('./model');
 

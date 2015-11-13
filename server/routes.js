@@ -1,11 +1,13 @@
-var Path = require('path');
-var Joi = require('joi');
-var Account = require('./account');
-var Session = require('./session');
-var OAuth = require('./oauth');
+'use strict';
 
 
-var internals = {};
+const Joi = require('joi');
+const Account = require('./account');
+const Session = require('./session');
+const OAuth = require('./oauth');
+
+
+const internals = {};
 
 
 internals.couch = {
@@ -14,7 +16,7 @@ internals.couch = {
       passThrough: true,
       mapUri: function (req, cb) {
 
-        var couchUrl = req.server.settings.app.config.couchdb.url;
+        const couchUrl = req.server.settings.app.config.couchdb.url;
         cb(null, couchUrl + req.url.path.substr(7), req.headers);
       }
     }
@@ -29,7 +31,7 @@ internals.www = {
   handler: {
     directory: {
       path: '.'
-    },
+    }
   },
   plugins: {
     lout: false
@@ -41,7 +43,7 @@ internals.admin = {
   handler: {
     directory: {
       path: '../node_modules/capot/admin'
-    },
+    }
   },
   plugins: {
     lout: false
@@ -60,13 +62,13 @@ internals.apiInfo = {
   },
   handler: function (req, reply) {
 
-    var pkg = req.server.settings.app.pkg;
+    const pkg = req.server.settings.app.pkg;
     reply({ version: pkg.version, timestamp: Date.now() });
   }
 };
 
 
-internals.all = [ 'GET', 'POST', 'PUT', 'DELETE' ];
+internals.all = ['GET', 'POST', 'PUT', 'DELETE'];
 
 
 module.exports = [
@@ -88,6 +90,6 @@ module.exports = [
   { path: '/_oauth/available_providers', method: 'GET', config: OAuth.getAvailableProviders },
   { path: '/_oauth/{provider}', method: 'GET', config: OAuth.connect },
   { path: '/_oauth/callback/{provider}', method: 'GET', config: OAuth.callback },
-  { path: '/_oauth/session', method: 'GET', config: OAuth.session },
+  { path: '/_oauth/session', method: 'GET', config: OAuth.session }
 ];
 
