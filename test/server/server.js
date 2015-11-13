@@ -5,7 +5,6 @@ const Os = require('os');
 const Cp = require('child_process');
 const Fs = require('fs');
 const Path = require('path');
-const Assert = require('assert');
 const _ = require('lodash');
 const Async = require('async');
 const Mkdirp = require('mkdirp');
@@ -34,7 +33,7 @@ const couch = Request.defaults({
 });
 
 
-function removeDummyUsers(cb) {
+internals.removeDummyUsers = function (cb) {
 
   couch('/_users/_all_docs', {
     qs: {
@@ -42,46 +41,53 @@ function removeDummyUsers(cb) {
       endkey: '"org.couchdb.user;"',
       include_docs: 'true'
     }
-  }, function (err, resp) {
+  }, (err, resp) => {
 
-    if (err) { return cb(err); }
+    if (err) {
+      return cb(err);
+    }
+
     if (resp.statusCode !== 200) {
       return cb(new Error(resp.body.error));
     }
 
-    const docs = resp.body.rows.map(function (row) {
+    const docs = resp.body.rows.map((row) => {
 
       row.doc._deleted = true;
       return row.doc;
     });
 
-    if (!docs.length) { return cb(); }
+    if (!docs.length) {
+      return cb();
+    }
 
     couch({
       method: 'POST',
       url: '/_users/_bulk_docs',
       body: { docs: docs }
-    }, function (err, resp) {
+    }, (err, resp) => {
 
-      if (err) { return cb(err); }
+      if (err) {
+        return cb(err);
+      }
+
       if (resp.statusCode > 201) {
         return cb(new Error(resp.body.error));
       }
+
       cb();
     });
   });
-}
+};
 
 
-function removeDummyData(cb) {
+internals.removeDummyData = function (cb) {
 
-  Async.parallel([
-    removeDummyUsers,
-  ], cb); 
-}
+  Async.parallel([internals.removeDummyUsers], cb);
+};
 
 
-function addDummyUser(name, pass, cb) {
+internals.addDummyUser = function (name, pass, cb) {
 
   Request({
     method: 'PUT',
@@ -93,25 +99,29 @@ function addDummyUser(name, pass, cb) {
       roles: [],
       type: 'user'
     }
-  }, function (err, resp) {
+  }, (err, resp) => {
 
-    if (err) { return cb(err); }
+    if (err) {
+      return cb(err);
+    }
     if (resp.statusCode > 201) {
       return cb(new Error(resp.body.error));
     }
     cb();
   });
-}
+};
 
 
-function addDummyData(cb) {
+internals.addDummyData = function (cb) {
 
-  removeDummyData(function (err) {
+  internals.removeDummyData((err) => {
 
-    if (err) { return cb(err); }
-    addDummyUser('testuser1', 'secret1', cb);
+    if (err) {
+      return cb(err);
+    }
+    internals.addDummyUser('testuser1', 'secret1', cb);
   });
-}
+};
 
 
 internals.pkgJsonTmpl = JSON.stringify({
@@ -131,9 +141,9 @@ exports.start = function (dummyData, done) {
     Async.apply(Rimraf, tmpdir),
     Async.apply(Mkdirp, tmpdir),
     Async.apply(Fs.writeFile, Path.join(tmpdir, 'package.json'), internals.pkgJsonTmpl)
-  ], function (err) {
+  ], (err) => {
 
-    var out = [];
+    const out = [];
 
     if (err) {
       return done(err);
@@ -144,25 +154,27 @@ exports.start = function (dummyData, done) {
       env: _.extend({}, process.env, { COUCHDB_PASS: pass })
     });
 
-    child.stderr.on('data', function (chunk) {
+    child.stderr.on('data', (chunk) => {
 
       console.error('stderr: ' + chunk);
     });
 
-    child.stdout.on('data', function (chunk) {
+    child.stdout.on('data', (chunk) => {
 
       // keep output, so that if server crashes we can show it.
       out.push(chunk);
 
       if (/capot back-end has started/i.test(chunk)) {
-        var originalDone = done;
+        const originalDone = done;
         done = function () {};
-        if (!dummyData) { return originalDone(); }
-        addDummyData(originalDone);
+        if (!dummyData) {
+          return originalDone();
+        }
+        internals.addDummyData(originalDone);
       }
     });
 
-    child.once('close', function (code, signal) {
+    child.once('close', (code, signal) => {
 
       if (code > 0) {
         console.error(out.join(''));
@@ -179,7 +191,7 @@ exports.stop = function (done) {
     return Rimraf(tmpdir, done);
   }
 
-  child.once('close', function (code, signal) {
+  child.once('close', (code, signal) => {
 
     Rimraf(tmpdir, done);
   });

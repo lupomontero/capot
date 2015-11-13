@@ -2,4 +2,5 @@ language: node_js
 node_js:
   - 5
 before_script:
+  - npm install -g node-gyp
   - npm install -g gulp

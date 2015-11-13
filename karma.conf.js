@@ -1,10 +1,13 @@
+'use strict';
+
+
 module.exports = function (config) {
 
   config.set({
 
-    browsers: ['PhantomJS'],
-
     frameworks: ['browserify', 'mocha'],
+
+    browsers: ['PhantomJS'],
 
     files: [
       // Function.prototype.bind is missing in PhantomJS, so we add polyfill.
@@ -15,11 +18,11 @@ module.exports = function (config) {
       'test/client/vendor/bind-polyfill.js',
       'test/client/vendor/jquery.min.js',
       'test/client/vendor/jquery.mockjax.js',
-      'test/client/**/*.spec.js'
+      'test/client/account.spec.js'
     ],
 
     preprocessors: {
-      'test/**/*.spec.js': ['browserify']
+      'test/client/*.js': ['browserify']
     },
 
     reporters: ['mocha'],
