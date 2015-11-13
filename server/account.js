@@ -2,19 +2,20 @@
 // Capot Account
 //
 
-
-var EventEmitter = require('events').EventEmitter;
-var Async = require('async');
-var Moment = require('moment');
-var Boom = require('boom');
-var Joi = require('joi');
-var Request = require('request');
-var _ = require('lodash');
-var Couch = require('./lib/couch');
-var Uid = require('../client/uid');
+'use strict';
 
 
-var internals = {};
+const EventEmitter = require('events').EventEmitter;
+const Async = require('async');
+const Moment = require('moment');
+const Boom = require('boom');
+const Joi = require('joi');
+const Request = require('request');
+const Couch = require('./lib/couch');
+const Uid = require('../client/uid');
+
+
+const internals = {};
 
 
 internals.permissionsDdoc = function (uid) {
@@ -65,23 +66,23 @@ internals.roles = function (uid) {
 
 internals.handleSignUp = function (server, userDoc) {
 
-  var config = server.settings.app.config;
-  var app = server.app;
-  var couch = Couch(config.couchdb);
-  var userDb = couch.db(userDoc.database);
-  var usersDb = couch.db('_users');
-  var appDb = couch.db('app');
-  var uid = userDoc.uid;
+  const config = server.settings.app.config;
+  const app = server.app;
+  const couch = Couch(config.couchdb);
+  const userDb = couch.db(userDoc.database);
+  const usersDb = couch.db('_users');
+  const appDb = couch.db('app');
+  const uid = userDoc.uid;
 
   Async.series([
     function (cb) {
-    
+
       userDb.createIfNotExists(cb);
     },
     function (cb) {
 
-      var doc = internals.permissionsDdoc(uid);
-      var docUrl = encodeURIComponent(doc._id);
+      const doc = internals.permissionsDdoc(uid);
+      const docUrl = encodeURIComponent(doc._id);
       userDb.put(docUrl, doc, cb);
     },
     function (cb) {
@@ -90,30 +91,34 @@ internals.handleSignUp = function (server, userDoc) {
     },
     function (cb) {
 
-      var doc = {
+      const doc = {
         _id: 'db/' + userDoc._id,
         type: 'db',
         database: userDoc.database,
         createdAt: new Date()
       };
-      var docUrl = encodeURIComponent(doc._id);
+      const docUrl = encodeURIComponent(doc._id);
       appDb.put(docUrl, doc, cb);
     },
     function (cb) {
 
       userDoc.roles = internals.roles(uid);
       //userDoc.createdAt = new Date();
-      var docUrl = encodeURIComponent(userDoc._id);
-      usersDb.put(docUrl, userDoc, function (err, data) {
+      const docUrl = encodeURIComponent(userDoc._id);
+      usersDb.put(docUrl, userDoc, (err, data) => {
 
-        if (err) { return cb(err); }
+        if (err) {
+          return cb(err);
+        }
         userDoc._rev = data.rev;
         cb();
       });
     }
-  ], function (err) {
+  ], (err) => {
 
-    if (err) { return server.log('error', err); }
+    if (err) {
+      return server.log('error', err);
+    }
     app.account.emit('add', userDoc);
   });
 };
@@ -121,25 +126,34 @@ internals.handleSignUp = function (server, userDoc) {
 
 internals.handleAccountDeletion = function (server, userDoc) {
 
-  var config = server.settings.app.config;
-  var app = server.app;
-  var couch = Couch(config.couchdb);
-  var appDb = couch.db('app');
+  const config = server.settings.app.config;
+  const app = server.app;
+  const couch = Couch(config.couchdb);
+  const appDb = couch.db('app');
 
-  function done(err) {
-    if (err) { server.log('warn', err); }
+  const done = function (err) {
+
+    if (err) {
+      server.log('warn', err);
+    }
     app.account.emit('remove', userDoc);
-  }
+  };
 
-  appDb.get('db/' + userDoc._id, function (err, dbDoc) {
+  appDb.get('db/' + userDoc._id, (err, dbDoc) => {
 
-    if (err) { return done(err); }
-    couch.del(encodeURIComponent(dbDoc.database), function (err) {
+    if (err) {
+      return done(err);
+    }
+    couch.del(encodeURIComponent(dbDoc.database), (err) => {
 
-      if (err) { return done(err); }
-      appDb.remove(dbDoc, function (err) {
+      if (err) {
+        return done(err);
+      }
+      appDb.remove(dbDoc, (err) => {
 
-        if (err) { return done(err); }
+        if (err) {
+          return done(err);
+        }
         done();
       });
     });
@@ -150,36 +164,39 @@ internals.handleAccountDeletion = function (server, userDoc) {
 exports.reset = {
   handler: function (req, reply) {
 
-    var usersDb = app.couch.db('_users');
-    var sendMail = app.sendMail;
-    var baseurl = req.payload.baseurl;
-    var userDocId = 'org.couchdb.user:' + req.payload.email;
-    var userDocUrl = '/_users/' + encodeURIComponent(userDocId);
+    const usersDb = app.couch.db('_users');
+    const sendMail = app.sendMail;
+    const baseurl = req.payload.baseurl;
+    const userDocId = 'org.couchdb.user:' + req.payload.email;
 
-    function sendResetLink(userDoc) {
+    const sendResetLink = function (userDoc) {
 
       sendMail({
         to: userDoc.name,
         template: 'password-reset',
         context: { resetLink: baseurl + '/_reset/' + userDoc.$reset.token }
-      }, function (mailerErr, mailerResp) {
+      }, (mailerErr, mailerResp) => {
 
         userDoc.$reset.attempts.push({
           error: mailerErr,
           response: mailerResp
         });
         userDoc.$reset.updatedAt = new Date();
-        usersDb.put(userDoc, function (err, data) {
+        usersDb.put(userDoc, (err, data) => {
 
-          if (err) { return reply(err); }
+          if (err) {
+            return reply(err);
+          }
           reply(mailerErr || { ok: true });
         });
       });
-    }
+    };
 
-    usersDb.get(userDocId, function (err, userDoc) {
+    usersDb.get(userDocId, (err, userDoc) => {
 
-      if (err) { return reply(Boom.notFound()); }
+      if (err) {
+        return reply(Boom.notFound());
+      }
 
       // Check if we already have a reset token...
       if (userDoc.$reset && userDoc.$reset.createdAt &&
@@ -197,9 +214,11 @@ exports.reset = {
         attempts: []
       };
 
-      usersDb.put(userDoc, function (err, data) {
+      usersDb.put(userDoc, (err, data) => {
 
-        if (err) { return reply(err); }
+        if (err) {
+          return reply(err);
+        }
         userDoc._rev = data.rev;
         sendResetLink(userDoc);
       });
@@ -211,18 +230,27 @@ exports.reset = {
 exports.confirm = {
   handler: function (req, reply) {
 
-    var usersDb = app.couch.db('_users');
-    var sendMail = app.sendMail;
-    var token = req.params.token;
+    const usersDb = app.couch.db('_users');
+    const sendMail = app.sendMail;
+    const token = req.params.token;
 
-    usersDb.query('views/by_reset_token', { key: token }, function (err, data) {
+    usersDb.query('views/by_reset_token', { key: token }, (err, data) => {
 
-      if (err) { return reply(err); }
-      var row = data.rows.shift();
-      if (!row || !row.id) { return reply(Boom.notFound()); }
-      usersDb.get(row.id, function (err, userDoc) {
+      if (err) {
+        return reply(err);
+      }
 
-        if (err) { return reply(err); }
+      const row = data.rows.shift();
+      if (!row || !row.id) {
+        return reply(Boom.notFound());
+      }
+
+      usersDb.get(row.id, (err, userDoc) => {
+
+        if (err) {
+          return reply(err);
+        }
+
         // TODO: check that token is valid (hasnt expired, ...)
         userDoc.password = Uid(10);
         userDoc.$reset = null;
@@ -231,9 +259,9 @@ exports.confirm = {
           to: userDoc.name,
           template: 'password-new',
           context: { newPass: userDoc.password }
-        }, function (mailerErr, mailerResp) {
+        }, (mailerErr, mailerResp) => {
 
-          usersDb.put(userDoc, function (err, data) {
+          usersDb.put(userDoc, (err, data) => {
 
             reply(arguments);
           });
@@ -261,11 +289,11 @@ exports.add = {
   },
   handler: function (req, reply) {
 
-    var email = req.payload.email;
-    var pass = req.payload.password;
-    var uid = Uid();
-    var config = req.server.settings.app.config;
-    var userDocUrl = config.couchdb.url + '/_users/org.couchdb.user:' +
+    const email = req.payload.email;
+    const pass = req.payload.password;
+    const uid = Uid();
+    const config = req.server.settings.app.config;
+    const userDocUrl = config.couchdb.url + '/_users/org.couchdb.user:' +
       encodeURIComponent(email);
 
     Request({
@@ -280,9 +308,12 @@ exports.add = {
         uid: uid,
         database: 'user/' + uid
       }
-    }, function (err, resp) {
+    }, (err, resp) => {
 
-      if (err) { return reply(err); }
+      if (err) {
+        return reply(err);
+      }
+
       if (resp.statusCode > 201) {
         return reply(Boom.create(resp.statusCode));
       }
@@ -301,16 +332,20 @@ exports.all = {
   auth: 'admin',
   handler: function (req, reply) {
 
-    var config = req.server.settings.app.config;
-    var couch = Couch(config.couchdb);
+    const config = req.server.settings.app.config;
+    const couch = Couch(config.couchdb);
 
     couch.db('_users').get('/_all_docs', {
       startkey: 'org.couchdb.user:',
       endkey: 'org.couchdb.user;'
-    }, function (err, data) {
+    }, (err, data) => {
 
-      if (err) { return reply(err); }
-      reply(data.rows.map(function (row) {
+      if (err) {
+        return reply(err);
+      }
+
+      reply(data.rows.map((row) => {
+
         return row.id.split(':').slice(1).join(':');
       }));
     });
@@ -323,8 +358,8 @@ internals.proxyHandler = {
     passThrough: true,
     mapUri: function (req, cb) {
 
-      var couchUrl = req.server.settings.app.config.couchdb.url;
-      var pathParts = req.url.path.split('/');
+      const couchUrl = req.server.settings.app.config.couchdb.url;
+      const pathParts = req.url.path.split('/');
       pathParts[2] = 'org.couchdb.user:' + pathParts[2];
       cb(null, couchUrl + pathParts.join('/'), req.headers);
     }
@@ -365,7 +400,7 @@ exports.remove = {
       mapUri: function (req, cb) {
 
         console.log(req.url);
-        var couchUrl = req.server.settings.app.config.couchdb.url;
+        //const couchUrl = req.server.settings.app.config.couchdb.url;
         //cb(null, couchUrl + '/_users', req.headers);
       }
     }
@@ -375,32 +410,37 @@ exports.remove = {
 
 exports.register = function (server, options, next) {
 
-  var config = server.settings.app.config;
-  var app = server.app;
-  var couch = Couch(config.couchdb);
-  var account = app.account = new EventEmitter();
-  var usersDb = couch.db('_users');
-  var changes = usersDb.changes({ feed: 'continuous', include_docs: true });
+  const config = server.settings.app.config;
+  const app = server.app;
+  const couch = Couch(config.couchdb);
+  const account = app.account = new EventEmitter();
+  const usersDb = couch.db('_users');
+  const changes = usersDb.changes({ feed: 'continuous', include_docs: true });
 
   // Listen for change events so that we can take action on user creation and
   // deletion.
-  changes.on('change', function (change) {
+  changes.on('change', (change) => {
 
     // We only care about user docs..
-    if (!/^org\.couchdb\.user:/.test(change.id)) { return; }
+    if (!/^org\.couchdb\.user:/.test(change.id)) {
+      return;
+    }
 
-    var userDoc = change.doc;
+    const userDoc = change.doc;
 
     if (change.deleted) {
       internals.handleAccountDeletion(server, userDoc);
-    } else if (!userDoc.roles.length) {
+    }
+    else if (!userDoc.roles.length) {
       internals.handleSignUp(server, userDoc);
-    } else {
+    }
+    else {
       account.emit('update', userDoc);
     }
   });
 
-  changes.on('error', function (err) {
+  changes.on('error', (err) => {
+
     console.error(err);
   });
 

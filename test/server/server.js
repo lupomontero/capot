@@ -22,7 +22,9 @@ const tmpdir = Path.join(Os.tmpdir(), Pkg.name + '-test-' + Date.now());
 const port = 3333;
 const pass = 'secret';
 const uri = 'http://127.0.0.1:' + port;
-const child;
+
+
+let child;
 
 
 const couch = Request.defaults({
@@ -133,19 +135,21 @@ exports.start = function (dummyData, done) {
 
     var out = [];
 
-    if (err) { return done(err); }
+    if (err) {
+      return done(err);
+    }
 
     child = Cp.spawn(bin, ['--port', port, '--debug'], {
       cwd: tmpdir,
       env: _.extend({}, process.env, { COUCHDB_PASS: pass })
     });
 
-    child.stdout.on('data', function (chunk) {
+    child.stderr.on('data', function (chunk) {
 
-      console.log('stdout: ' + chunk);
+      console.error('stderr: ' + chunk);
     });
 
-    child.stderr.on('data', function (chunk) {
+    child.stdout.on('data', function (chunk) {
 
       // keep output, so that if server crashes we can show it.
       out.push(chunk);

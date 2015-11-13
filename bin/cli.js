@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
-var Minimist = require('minimist');
-var Pkg = require('../package.json');
-var Server = require('../server');
+'use strict';
 
 
-var internals = {};
+const Minimist = require('minimist');
+const Pkg = require('../package.json');
+const Server = require('../server');
+
+
+const internals = {};
 
 
 internals.argv = Minimist(process.argv.slice(2));

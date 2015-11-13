@@ -13,7 +13,7 @@ internals.remoteSync = function (collection, model, type, options) {
 
   var app = collection.app;
   var account = app.account;
-  var userCtx = account.session.userCtx;
+  //var userCtx = account.session.userCtx;
   var dbName = 'user/' + account.id();
   var dbUrl = '/_couch/' + encodeURIComponent(dbName);
   var key = type + (options.idStartsWith ? '/' + options.idStartsWith : '');
@@ -23,7 +23,7 @@ internals.remoteSync = function (collection, model, type, options) {
     endkey: key + (options.descending ? '/' : '0')
   };
 
-  _.each([ 'limit', 'start', 'descending' ], function (param) {
+  _.each(['limit', 'start', 'descending'], function (param) {
 
     if (options[param]) {
       params[param] = options[param];

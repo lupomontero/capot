@@ -1,13 +1,20 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var _ = require('lodash');
 var Collection = require('../../client/ui/collection');
 var User = require('../models/user');
 
 
 module.exports = Collection.extend({
-  
+
   model: User,
 
-  comparator: function (m) { return -1 * m.get('id'); },
+  comparator: function (m) {
+
+    return -1 * m.get('id');
+  },
 
   sync: function (method, collection, options) {
 
@@ -16,25 +23,25 @@ module.exports = Collection.extend({
     var app = collection.app;
     var db = app.couch.db('_users');
 
-    function reject(err) {
+    var reject = function (err) {
 
       error(null, null, err);
-    }
+    };
 
     switch (method) {
-      case 'read':
-        db.allDocs({
-          startkey: 'org.couchdb.user:',
-          endkey: 'org.couchdb.user;',
-          include_docs: true
-        }).then(function (data) {
+    case 'read':
+      db.allDocs({
+        startkey: 'org.couchdb.user:',
+        endkey: 'org.couchdb.user;',
+        include_docs: true
+      }).then(function (data) {
 
-          success(_.pluck(data.rows, 'doc'));
-        }, reject);
-        break;
-      default:
-        //
-        break;
+        success(_.pluck(data.rows, 'doc'));
+      }, reject);
+      break;
+    default:
+      //
+      break;
     }
   }
 

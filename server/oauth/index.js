@@ -1,18 +1,22 @@
-var Fs = require('fs');
-var Path = require('path');
-var Joi = require('joi');
-var Boom = require('boom');
-var HapiAuthCookie = require('hapi-auth-cookie');
-var Async = require('async');
-var Request = require('request');
-var _ = require('lodash');
-var Couch = require('../lib/couch');
+'use strict';
 
 
-var internals = {};
+const Fs = require('fs');
+const Path = require('path');
+const Joi = require('joi');
+const Boom = require('boom');
+const HapiAuthCookie = require('hapi-auth-cookie');
+const Async = require('async');
+const Request = require('request');
+const _ = require('lodash');
+const Couch = require('../lib/couch');
+
+
+const internals = {};
 
 
 internals.random = function (len) {
+
   len = len || 32;
   return Math.random().toString(9).slice(2, len + 2);
 };
@@ -20,14 +24,17 @@ internals.random = function (len) {
 
 internals.getAvailableProviders = function () {
 
-  var dir = Path.join(__dirname, 'providers');
+  const dir = Path.join(__dirname, 'providers');
 
-  return Fs.readdirSync(dir).reduce(function (memo, fname) {
-    var parts = fname.split('.');
-    var ext = parts.pop();
-    var name = parts.join('.');
+  return Fs.readdirSync(dir).reduce((memo, fname) => {
 
-    if (name === 'index' || ext !== 'js') { return memo; }
+    const parts = fname.split('.');
+    const ext = parts.pop();
+    const name = parts.join('.');
+
+    if (name === 'index' || ext !== 'js') {
+      return memo;
+    }
 
     memo.push(name);
     return memo;
@@ -37,30 +44,39 @@ internals.getAvailableProviders = function () {
 
 internals.getAppConfig = function (server, cb) {
 
-  var config = server.settings.app.config;
-  var couch = Couch(config.couchdb);
+  const config = server.settings.app.config;
+  const couch = Couch(config.couchdb);
 
-  var oauthDefaults = {
+  const oauthDefaults = {
     cookie: {
       secret: internals.random(32)
     },
-    providers: internals.getAvailableProviders().reduce(function (memo, name) {
+    providers: internals.getAvailableProviders().reduce((memo, name) => {
+
       memo[name] = { enabled: false };
       return memo;
     }, {})
   };
 
 
-  function update(doc) {
-    couch.put('/app/config', doc, function (err) {
-      if (err) { return cb(err); }
+  const update = function (doc) {
+
+    couch.put('/app/config', doc, (err) => {
+
+      if (err) {
+        return cb(err);
+      }
+
       cb(null, doc);
     });
-  }
+  };
 
-  couch.get('/app/config', function (err, doc) {
 
-    if (err) { return cb(err); }
+  couch.get('/app/config', (err, doc) => {
+
+    if (err) {
+      return cb(err);
+    }
 
     if (!doc.oauth) {
       doc.oauth = oauthDefaults;
@@ -79,12 +95,14 @@ internals.getAppConfig = function (server, cb) {
 
 internals.getProviderApi = function (server, name, cb) {
 
-  internals.getAppConfig(server, function (err, appConfig) {
+  internals.getAppConfig(server, (err, appConfig) => {
 
-    if (err) { return cb(err); }
+    if (err) {
+      return cb(err);
+    }
 
-    var providers = (appConfig.oauth || {}).providers || {};
-    var options = providers[name];
+    const providers = (appConfig.oauth || {}).providers || {};
+    const options = providers[name];
 
     if (!options) {
       return cb(Boom.badRequest('Unsupported OAuth provider'));
@@ -99,51 +117,58 @@ internals.getProviderApi = function (server, name, cb) {
 
 internals.handleAuthorised = function (req, authData, cb) {
 
-  var server = req.server;
-  var config = server.settings.app.config;
-  var couch = Couch(config.couchdb);
-  var usersDb = couch.db('_users');
-  var cookie = req.headers.cookie;
+  const server = req.server;
+  const config = server.settings.app.config;
+  const couch = Couch(config.couchdb);
+  const usersDb = couch.db('_users');
+  const cookie = req.headers.cookie;
 
   // Validate cookie to see if user is signed in.
   Request.get(config.couchdb.url + '/_session', {
     headers: { cookie: cookie },
     json: true
-  }, function (err, resp) {
+  }, (err, resp) => {
 
-    if (err) { return cb(err); }
+    if (err) {
+      return cb(err);
+    }
 
     if (resp.statusCode !== 200) {
       return cb(Boom.create(resp.statusCode));
     }
 
-    var authSession = resp.body || {};
-    var isSignedIn = authSession.userCtx && authSession.userCtx.name;
-    var name = authData.provider;
-    var params = { key: [ name, authData.uid ] };
+    const authSession = resp.body || {};
+    const isSignedIn = authSession.userCtx && authSession.userCtx.name;
+    const name = authData.provider;
+    const params = { key: [name, authData.uid] };
 
-    usersDb.query('by_oauth', params, function (err, rows) {
+    usersDb.query('by_oauth', params, (err, rows) => {
 
-      if (err) { return cb(err); }
+      if (err) {
+        return cb(err);
+      }
 
       // social identity hasn't been claimed by anyone.
       if (!rows.length) {
         if (!isSignedIn) { // not logged in
           internals.signup(server, authData, cb);
-        } else { // logged in
+        }
+        else { // logged in
           internals.connect(server, authData, authSession, cb);
         }
-
+      }
       // if social identity has already been claimed.
-      } else if (rows.length === 1) {
+      else if (rows.length === 1) {
         if (!isSignedIn) { // not logged in
           internals.signin(server, authData, rows[0].value, cb);
-        } else { // logged in
+        }
+        else { // logged in
           internals.reconnect(server, authData, authSession, rows[0].value, cb);
         }
 
+      }
       // social identity has been claimed more than once?
-      } else {
+      else {
         cb(new Error('This should never happen'));
       }
     });
@@ -159,11 +184,11 @@ internals.signup = function (server, authData, cb) {
 
 internals.signin = function (server, authData, userDoc, cb) {
 
-  var config = server.settings.app.config;
-  var couch = Couch(config.couchdb);
-  var usersDb = couch.db('_users');
-  var tmpPass = internals.random(10);
-  var userDocUrl = encodeURIComponent(userDoc._id);
+  const config = server.settings.app.config;
+  const couch = Couch(config.couchdb);
+  const usersDb = couch.db('_users');
+  const tmpPass = internals.random(10);
+  const userDocUrl = encodeURIComponent(userDoc._id);
 
   // Keep `derived_key` and `salt` as they were before temporarily changing the
   // password so that we can set it back to what it was.
@@ -175,9 +200,11 @@ internals.signin = function (server, authData, userDoc, cb) {
   // Temporarily set password to temporary random one so that we can
   // authenticate with the CouchDB server.
   userDoc.password = tmpPass;
-  usersDb.put(userDocUrl, userDoc, function (err, data) {
+  usersDb.put(userDocUrl, userDoc, (err, data) => {
 
-    if (err) { return cb(err); }
+    if (err) {
+      return cb(err);
+    }
 
     userDoc._rev = data.rev;
 
@@ -185,9 +212,11 @@ internals.signin = function (server, authData, userDoc, cb) {
     couch.post('/_session', {
       name: userDoc.name,
       password: tmpPass
-    }, function (err, data, resp) {
+    }, (err, data, resp) => {
 
-      if (err) { return cb(err); }
+      if (err) {
+        return cb(err);
+      }
 
       authData.cookie = (resp.headers['set-cookie'] || [])[0];
       cb(null, authData);
@@ -198,14 +227,16 @@ internals.signin = function (server, authData, userDoc, cb) {
 
 internals.connect = function (server, authData, authSession, cb) {
 
-  var config = server.settings.app.config;
-  var couch = Couch(config.couchdb);
-  var usersDb = couch.db('_users');
-  var docId = encodeURIComponent('org.couchdb.user:' + authSession.userCtx.name);
+  const config = server.settings.app.config;
+  const couch = Couch(config.couchdb);
+  const usersDb = couch.db('_users');
+  const docId = encodeURIComponent('org.couchdb.user:' + authSession.userCtx.name);
 
-  usersDb.get(docId, function (err, userDoc) {
+  usersDb.get(docId, (err, userDoc) => {
 
-    if (err) { return cb(err); }
+    if (err) {
+      return cb(err);
+    }
     internals.saveAuth(server, authData, userDoc, cb);
   });
 };
@@ -219,13 +250,14 @@ internals.reconnect = function (server, authData, authSession, userDoc, cb) {
 
 internals.saveAuth = function (server, authData, userDoc, cb) {
 
-  var config = server.settings.app.config;
-  var couch = Couch(config.couchdb);
-  var usersDb = couch.db('_users');
-  var provider = authData.provider;
+  const config = server.settings.app.config;
+  const couch = Couch(config.couchdb);
+  const usersDb = couch.db('_users');
+  const provider = authData.provider;
 
   // Check whether profile has already been connected?
-  var oauth = (userDoc.oauth || []).reduce(function (memo, item) {
+  const oauth = (userDoc.oauth || []).reduce((memo, item) => {
+
     if (item.provider !== provider || item.uid !== authData.uid) {
       memo.push(item);
     }
@@ -235,9 +267,11 @@ internals.saveAuth = function (server, authData, userDoc, cb) {
   oauth.push(_.extend({ provider: provider }, authData));
   userDoc.oauth = oauth;
 
-  usersDb.put(userDoc._id, userDoc, function (err) {
+  usersDb.put(userDoc._id, userDoc, (err) => {
 
-    if (err) { return cb(err); }
+    if (err) {
+      return cb(err);
+    }
     cb(null, authData);
   });
 };
@@ -273,13 +307,15 @@ exports.getProviders = {
     schema: Joi.array()
   },
   handler: function (req, reply) {
-  
-    internals.getAppConfig(req.server, function (err, appConfig) {
 
-      if (err) { return reply(err); }
+    internals.getAppConfig(req.server, (err, appConfig) => {
 
-      var providers = (appConfig.oauth || {}).providers || {};
-      reply(Object.keys(providers).reduce(function (memo, name) {
+      if (err) {
+        return reply(err);
+      }
+
+      const providers = (appConfig.oauth || {}).providers || {};
+      reply(Object.keys(providers).reduce((memo, name) => {
 
         if (providers[name] && providers[name].enabled) {
           memo.push(name);
@@ -305,18 +341,20 @@ exports.connect = {
   },
   handler: function (req, reply) {
 
-    var name = req.params.provider;
-    var ret = {
+    const name = req.params.provider;
+    const ret = {
       provider: name,
       redirectTo: req.query.redirectTo || '/'
     };
 
-    internals.getProviderApi(req.server, name, function (err, providerApi) {
+    internals.getProviderApi(req.server, name, (err, providerApi) => {
 
-      if (err) { return reply(err); }
+      if (err) {
+        return reply(err);
+      }
 
-      providerApi.authenticate(req, function (err, authenticateUrl, data) {
-      
+      providerApi.authenticate(req, (err, authenticateUrl, data) => {
+
         ret.error = err;
         ret.data = data;
         req.auth.session.set(ret);
@@ -343,27 +381,33 @@ exports.callback = {
   },
   handler: function (req, reply) {
 
-    var server = req.server;
-    var name = req.params.provider;
-    var redirectTo = req.auth.credentials.redirectTo || '/';
-    var ret = { provider: name, createdAt: new Date() };
+    const server = req.server;
+    const name = req.params.provider;
+    const redirectTo = req.auth.credentials.redirectTo || '/';
+    const ret = { provider: name, createdAt: new Date() };
 
-    function done(err, data) {
+    const done = function (err, data) {
 
-      if (err) { ret.error = err.message || err; }
+      if (err) {
+        ret.error = err.message || err;
+      }
 
-      ret.data = _.omit(data, [ 'access_token' ]);
+      ret.data = _.omit(data, ['access_token']);
       req.auth.session.set(ret);
       reply.redirect(redirectTo);
-    }
+    };
 
-    internals.getProviderApi(server, name, function (err, providerApi) {
+    internals.getProviderApi(server, name, (err, providerApi) => {
 
-      if (err) { return reply(err); }
+      if (err) {
+        return reply(err);
+      }
 
-      providerApi.callback(req, function (err, authData) {
+      providerApi.callback(req, (err, authData) => {
 
-        if (err) { return done(err); }
+        if (err) {
+          return done(err);
+        }
 
         authData.provider = name;
 
@@ -387,8 +431,8 @@ exports.session = {
   auth: 'oauth-session',
   handler: function (req, reply) {
 
-    var session = req.auth.credentials || {};
-    var response = reply(session);
+    const session = req.auth.credentials || {};
+    const response = reply(session);
 
     if (session.data && session.data.cookie) {
       response.header('set-cookie', session.data.cookie);
@@ -406,24 +450,29 @@ exports.session = {
 //
 exports.register = function (server, options, next) {
 
-  var config = server.settings.app.config;
-  var couch = Couch(config.couchdb);
-  var usersDb = couch.db('_users');
+  const config = server.settings.app.config;
+  const couch = Couch(config.couchdb);
+  const usersDb = couch.db('_users');
 
   Async.auto({
     ddoc: function (cb) {
+
       usersDb.addIndex('by_oauth', {
         map: function (doc) {
-          if (!doc.oauth || !doc.oauth.length) { return; }
-          doc.oauth.forEach(function (item) {
-            emit([ item.provider, item.uid ], doc);
+
+          if (!doc.oauth || !doc.oauth.length) {
+            return;
+          }
+          doc.oauth.forEach((item) => {
+
+            emit([item.provider, item.uid], doc);
           });
         }
       }, cb);
     },
     cookiePlugin: server.register.bind(server, HapiAuthCookie),
-    appConfig: [ 'cookiePlugin', internals.getAppConfig.bind(null, server) ],
-    foo: [ 'appConfig', function (cb, results) {
+    appConfig: ['cookiePlugin', internals.getAppConfig.bind(null, server)],
+    foo: ['appConfig', (cb, results) => {
 
       server.auth.strategy('oauth-session', 'cookie', {
         password: results.appConfig.oauth.cookie.secret,
@@ -433,7 +482,7 @@ exports.register = function (server, options, next) {
       });
 
       cb();
-    } ]
+    }]
   }, next);
 };
 

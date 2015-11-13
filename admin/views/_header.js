@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var View = require('../../client/ui/view');
 
 
@@ -8,17 +12,17 @@ module.exports = View.extend({
 
   initialize: function (opt) {
 
-    var view = this;
+    var self = this;
     var app = opt.app;
     var account = app.account;
 
-    View.prototype.initialize.call(view, opt);
+    View.prototype.initialize.call(self, opt);
 
-    function update() {
-      
-      view.model = account.session;
-      view.render();
-    }
+    var update = function () {
+
+      self.model = account.session;
+      self.render();
+    };
 
     account.on('init', update);
     account.on('signin', update);
@@ -29,14 +33,19 @@ module.exports = View.extend({
     // Set active menu item...
     app.on('route', function (route) {
 
-      view.$('#main-menu a').each(function () {
+      self.$('#main-menu a').each(function () {
 
         var $a = $(this);
         var href = $a.attr('href');
-        if (href.charAt(0) === '/') { href = href.slice(1); }
+
+        if (href.charAt(0) === '/') {
+          href = href.slice(1);
+        }
+
         if (href === route) {
           $a.parents('li').addClass('active');
-        } else {
+        }
+        else {
           $a.parents('li').removeClass('active');
         }
       });

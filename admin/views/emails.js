@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var View = require('../../client/ui/view');
 
 module.exports = View.extend({
@@ -6,24 +10,24 @@ module.exports = View.extend({
   templateName: 'emails',
 
   initialize: function (opt) {
-    
-    var view = this;
+
+    var self = this;
     var app = opt.app;
 
-    View.prototype.initialize.call(view, opt);
+    View.prototype.initialize.call(self, opt);
 
-    var emails = view.model = app.createCollection('emails');
+    var emails = self.model = app.createCollection('emails');
     var partial = Handlebars.partials.email;
 
     emails.on('change', function (email) {
 
       var html = partial(email.toViewContext());
-      view.$('[data-id="' + email.id + '"]').replaceWith(html);
+      self.$('[data-id="' + email.id + '"]').replaceWith(html);
     });
 
     emails.once('sync', function () {
 
-      view.render();
+      self.render();
     });
 
     emails.fetch();

@@ -7,16 +7,19 @@ const Server = require('./server');
 
 describe('capot/server/account', () => {
 
-  before((done) => {
+
+  before(function (done) {
 
     this.timeout(30 * 1000);
     Server.start(true, done);
   });
 
+
   after((done) => {
 
     Server.stop(done);
   });
+
 
   describe('GET /_users', () => {
 

@@ -2,9 +2,9 @@ module.exports = function (config) {
 
   config.set({
 
-    browsers: [ 'PhantomJS' ],
+    browsers: ['PhantomJS'],
 
-    frameworks: [ 'browserify', 'mocha' ],
+    frameworks: ['browserify', 'mocha'],
 
     files: [
       // Function.prototype.bind is missing in PhantomJS, so we add polyfill.
@@ -19,10 +19,10 @@ module.exports = function (config) {
     ],
 
     preprocessors: {
-      'test/**/*.spec.js': [ 'browserify' ]
+      'test/**/*.spec.js': ['browserify']
     },
 
-    reporters: [ 'mocha' ],
+    reporters: ['mocha'],
 
     client: {
       mocha: {

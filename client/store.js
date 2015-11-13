@@ -335,7 +335,7 @@ module.exports = function (capot) {
 
     store.local = new PouchDB(capotId, { auto_compaction: true });
 
-    function listenToLocalChanges() {
+    const listenToLocalChanges = function () {
 
       var localChanges = store.local.changes({
         since: 'now',
@@ -352,11 +352,11 @@ module.exports = function (capot) {
           return;
         }
 
-        function emit(eventName) {
+        const emit = function (eventName) {
 
           store.emit(eventName, doc, { local: true });
           store.emit(eventName + ':' + type, doc, { local: true });
-        }
+        };
 
         if (change.deleted || doc._deleted) {
           emit('remove');
@@ -376,7 +376,8 @@ module.exports = function (capot) {
       capot.log('debug', 'capot.store init ok');
       store.emit('init');
       cb();
-    }
+    };
+
 
     if (account.isSignedIn() && !account.isAdmin()) {
       store.remoteUrl = window.location.origin + '/_couch/' +
@@ -396,13 +397,14 @@ module.exports = function (capot) {
   });
 
 
-  function logEvent(eventName) {
+  const logEvent = function (eventName) {
 
     return function () {
 
       capot.log('debug', 'store:' + eventName, Array.prototype.slice.call(arguments, 0));
     };
-  }
+  };
+
 
   if (capot.settings.debug === true) {
     ['init', 'add', 'update', 'remove', 'change', 'sync'].forEach(function (eventName) {

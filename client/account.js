@@ -55,7 +55,7 @@ module.exports = function (capot) {
 
     return new Promise(function (resolve, reject) {
 
-      function waitForUserReady() {
+      const waitForUserReady = function () {
 
         capot.request('POST', '/_session', {
           email: email,
@@ -67,7 +67,7 @@ module.exports = function (capot) {
           }
           account.init().then(resolve, reject);
         }, reject);
-      }
+      };
 
       if (pass.length < 8) {
         return reject(new Error('Password must be at least 8 chars long'));
@@ -203,7 +203,7 @@ module.exports = function (capot) {
 
     return new Promise(function (resolve, reject) {
 
-      function done() {
+      const done = function () {
 
         internals.setState(account.session);
 
@@ -228,7 +228,7 @@ module.exports = function (capot) {
 
         resolve();
         cb();
-      }
+      };
 
       capot.request('GET', '/_session').then(function (data) {
 
@@ -299,13 +299,13 @@ module.exports = function (capot) {
   });
 
 
-  function logEvent(eventName) {
+  const logEvent = function (eventName) {
 
     return function () {
 
       capot.log('debug', 'account:' + eventName, Array.prototype.slice.call(arguments, 0));
     };
-  }
+  };
 
   if (capot.settings.debug === true) {
     ['init', 'signin', 'signout', 'offline', 'online'].forEach(function (eventName) {

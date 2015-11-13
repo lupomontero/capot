@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var Couch = require('../client/couch');
 var CapotUI = require('../client/ui');
 
@@ -38,27 +42,38 @@ app.addRegion('header', {
 
 
 app.route('', app.requireAdmin(function () {
+
   app.showView('index');
 }));
 
+
 app.route('users', app.requireAdmin(function () {
+
   app.showView('users');
 }));
 
+
 app.route('config', app.requireAdmin(function () {
+
   app.showView('config');
 }));
 
+
 app.route('emails', app.requireAdmin(function () {
+
   app.showView('emails');
 }));
 
+
 app.route('signin', function () {
+
   if (app.account.isSignedIn() && !app.account.isAdmin()) {
     window.location.href = '/';
-  } else if (app.account.isSignedIn()) {
+  }
+  else if (app.account.isSignedIn()) {
     app.navigate('', { trigger: true });
-  } else {
+  }
+  else {
     app.showView('signin');
   }
 });

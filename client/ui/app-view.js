@@ -17,6 +17,7 @@ module.exports = Backbone.View.extend({
   },
 
   initialize: function (opt) {
+
     opt = opt || {};
     Backbone.View.prototype.initialize.call(this, opt);
     this.options = opt;
@@ -26,6 +27,7 @@ module.exports = Backbone.View.extend({
   },
 
   addRegion: function (name, opt) {
+
     var region = _.extend({ id: name }, opt || {});
 
     // If no DOM element has been specified to contain this region's view we
@@ -44,7 +46,8 @@ module.exports = Backbone.View.extend({
       // If main region we inject the DOM element at the beginning of the
       // AppView's $el, that is the body tag.
       this.$el.prepend(region.$el);
-    } else {
+    }
+    else {
       // All other regions are added relative to the main view, either after
       // (default) or before (if prepend option is set).
       var method = (region.prepend) ? 'before' : 'after';
@@ -63,11 +66,17 @@ module.exports = Backbone.View.extend({
   },
 
   setRegionView: function (name, view) {
+
     var region = this.regions[name];
     var container = region.$el[0];
 
-    if (!region) { throw new Error('Unknown region: ' + name); }
-    if (!view) { throw new Error('No view passed to AppView.setRegionView()'); }
+    if (!region) {
+      throw new Error('Unknown region: ' + name);
+    }
+
+    if (!view) {
+      throw new Error('No view passed to AppView.setRegionView()');
+    }
 
     if (typeof view === 'string') {
       view = this.model.createView(view);
@@ -82,13 +91,17 @@ module.exports = Backbone.View.extend({
   },
 
   overrideLink: function (e) {
+
     var app = this.model;
     var href = $(e.currentTarget).attr('href');
     var routeStr = href.substr(1);
 
-    if (href.charAt(0) === '#') { return; }
+    if (href.charAt(0) === '#') {
+      return;
+    }
 
     var route = _.find(_.keys(app.routes), function (name) {
+
       return app._routeToRegExp(name).test(routeStr);
     });
 

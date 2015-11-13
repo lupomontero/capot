@@ -1,7 +1,10 @@
-var OAuth2 = require('oauth').OAuth2;
+'use strict';
 
 
-var internals = {};
+const OAuth2 = require('oauth').OAuth2;
+
+
+const internals = {};
 
 
 internals.createClient = function (options, endpoint) {
@@ -9,24 +12,23 @@ internals.createClient = function (options, endpoint) {
   return new OAuth2(
     options.key,                // client id
     options.secret,             // client secret
-    endpoint,      // baseUrl
+    endpoint,                   // baseUrl
     'login/oauth/authorize',    // authorize path
     'login/oauth/access_token', // access token path
     null                        // custom headers
   );
-
 };
 
 
 module.exports = function (options) {
 
   return {
-  
+
     authenticate: function (req, cb) {
 
-      var id = req.query.id;
-      var oauth2 = internals.createClient(options, 'https://github.com/');
-      var authUrl = oauth2.getAuthorizeUrl({
+      //const id = req.query.id;
+      const oauth2 = internals.createClient(options, 'https://github.com/');
+      const authUrl = oauth2.getAuthorizeUrl({
         redirect_uri: options.baseurl + '/_oauth/callback/github',
         scope: (options.scopes || []).join(','),
         state: 'some random string?'
@@ -37,9 +39,9 @@ module.exports = function (options) {
 
     callback: function (req, cb) {
 
-      var provider = this;
-      var code = req.query.code;
-      var error = req.query.error;
+      const self = this;
+      const code = req.query.code;
+      const error = req.query.error;
 
       // If github passed an error in query string we don't bother continuing
       // with the OAuth dance.
@@ -55,17 +57,21 @@ module.exports = function (options) {
         });
       }
 
-      var oauth2 = internals.createClient(options, 'https://github.com/');
+      const oauth2 = internals.createClient(options, 'https://github.com/');
       oauth2.getOAuthAccessToken(code, {
         redirect_uri: options.baseurl + '/_oauth/callback/github'
-      }, function (err, accessToken, refreshToken, results) {
+      }, (err, accessToken, refreshToken, results) => {
 
-        if (err) { return cb(err); }
+        if (err) {
+          return cb(err);
+        }
 
         // get uid?
-        provider.profile(accessToken, function (err, profile) {
+        self.profile(accessToken, (err, profile) => {
 
-          if (err) { return cb(err); }
+          if (err) {
+            return cb(err);
+          }
 
           cb(null, {
             connected: true,
@@ -79,15 +85,18 @@ module.exports = function (options) {
 
     profile: function (accessToken, cb) {
 
-      var oauth2 = internals.createClient(options, 'https://api.github.com/');
-      oauth2.get('https://api.github.com/user', accessToken, function (err, resp) {
+      const oauth2 = internals.createClient(options, 'https://api.github.com/');
+      oauth2.get('https://api.github.com/user', accessToken, (err, resp) => {
 
-        if (err) { return cb(err); }
+        if (err) {
+          return cb(err);
+        }
 
         try {
-          var profile = JSON.parse(resp);
+          const profile = JSON.parse(resp);
           cb(null, profile);
-        } catch (ex) {
+        }
+        catch (ex) {
           cb(new Error('Error parsing OAuth user profile'));
         }
       });

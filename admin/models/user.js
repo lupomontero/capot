@@ -1,4 +1,7 @@
-var _ = require('lodash');
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var Model = require('../../client/ui/model');
 
 

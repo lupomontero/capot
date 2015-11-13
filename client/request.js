@@ -28,7 +28,9 @@ module.exports = function (options) {
         cache: false,
         error: function (xhr) {
 
-          var msg, reason;
+          var msg;
+          var reason;
+
           if (xhr.status === 0) { // UNSENT
             msg = 'Request timed out';
           }
@@ -69,7 +71,7 @@ module.exports = function (options) {
           if (memo) {
             memo += '&';
           }
-          return memo += encodeURIComponent(k) + '=' + encodeURIComponent(v);
+          return memo + encodeURIComponent(k) + '=' + encodeURIComponent(v);
         }, '?');
       }
 

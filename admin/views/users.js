@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var View = require('../../client/ui/view');
 
 
@@ -7,16 +11,16 @@ module.exports = View.extend({
   templateName: 'users',
 
   initialize: function (opt) {
-    
-    var view = this;
-    View.prototype.initialize.call(view, opt);
 
-    var app = view.app;
-    var users = view.model = app.createCollection('users');
+    var self = this;
+    View.prototype.initialize.call(self, opt);
+
+    var app = self.app;
+    var users = self.model = app.createCollection('users');
 
     users.once('sync', function () {
 
-      view.render();
+      self.render();
     });
 
     users.fetch();

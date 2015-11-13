@@ -38,7 +38,7 @@ internals.createLogger = function (server, cb) {
 
 internals.createConfig = function (argv) {
 
-  var env = process.env;
+  const env = process.env;
 
   return _.extend({}, {
     debug: argv.debug === true,
@@ -50,14 +50,19 @@ internals.createConfig = function (argv) {
       user: env.COUCHDB_USER || 'admin',
       pass: env.COUCHDB_PASS
     }
-  }, _.omit(argv, [ '_' ]));
+  }, _.omit(argv, ['_']));
 };
 
 
 internals.requireExtension = function (server, path, cb) {
 
-  var ext;
-  try { ext = require(path); } catch (ex) { return cb(ex); }
+  let ext;
+  try {
+    ext = require(path);
+  }
+  catch (ex) {
+    return cb(ex);
+  }
 
   if (typeof ext !== 'function') {
     return setTimeout(cb.bind(null, new Error('Could not load ' + path)), 10);
@@ -69,16 +74,17 @@ internals.requireExtension = function (server, path, cb) {
 
 internals.loadUserland = function (server, cb) {
 
-  var config = server.settings.app.config;
+  const config = server.settings.app.config;
 
-  internals.requireExtension(server, config.cwd, function (err) {
+  internals.requireExtension(server, config.cwd, (err) => {
 
     if (err) {
       if (err.code !== 'MODULE_NOT_FOUND') {
         server.log('warn', err);
       }
       server.log('warn', 'Did not extend Capot Server with userland');
-    } else {
+    }
+    else {
       server.log('info', 'Extended Capot Server with userland');
     }
 
@@ -89,22 +95,25 @@ internals.loadUserland = function (server, cb) {
 
 internals.loadPlugins = function (server, cb) {
 
-  var config = server.settings.app.config;
+  const config = server.settings.app.config;
   // read plugins from package.json and add those to pluginsPaths...
-  var plugins = (server.settings.app.pkg.capot || {}).plugins || [];
+  const plugins = (server.settings.app.pkg.capot || {}).plugins || [];
 
-  if (!plugins.length) { return cb(); }
+  if (!plugins.length) {
+    return cb();
+  }
 
-  Async.each(plugins, function (plugin, cb) {
+  Async.each(plugins, (plugin, cb) => {
 
     server.log('info', 'Initialising plugin ' + plugin);
-    var abs = (plugin.charAt(0) === '.') ? Path.join(config.cwd, plugin) : plugin;
-    internals.requireExtension(server, abs, function (err) {
+    const abs = (plugin.charAt(0) === '.') ? Path.join(config.cwd, plugin) : plugin;
+    internals.requireExtension(server, abs, (err) => {
 
       if (err) {
         server.log('warn', err);
         server.log('warn', 'Plugin ' + plugin + ' not loaded');
-      } else {
+      }
+      else {
         server.log('info', 'Plugin ' + plugin + ' loaded!');
       }
       cb();
@@ -115,8 +124,8 @@ internals.loadPlugins = function (server, cb) {
 
 internals.createServer = function (config) {
 
-  var Pkg = require(Path.join(config.cwd, 'package.json'));
-  var server = new Hapi.Server({
+  const Pkg = require(Path.join(config.cwd, 'package.json'));
+  const server = new Hapi.Server({
     //debug: {
     //  log: [ 'info', 'warn', 'error' ],
     //  request: [ 'error' ]
@@ -161,37 +170,43 @@ internals.plugins = [
 
 module.exports = function (argv) {
 
-  var config = internals.createConfig(argv);
-  var plugins = internals.plugins.slice(0);
+  const config = internals.createConfig(argv);
+  let plugins = internals.plugins.slice(0);
 
   if (config.debug) {
     require('longjohn');
-    plugins = [ require('vision'), require('lout') ].concat(plugins);
+    plugins = [require('vision'), require('lout')].concat(plugins);
   }
 
-  var server = internals.createServer(config);
+  const server = internals.createServer(config);
 
-  function onError(err) {
+  const onError = function (err) {
 
     server.log('error', err);
     process.exit(1);
-  }
+  };
 
   // TODO: We should use cluser module to spin one instance per cpu and then
-  // manage killing and spinning children properly. 
+  // manage killing and spinning children properly.
   process.on('uncaughtException', onError);
 
   Async.series([
     Async.apply(internals.createLogger, server),
     Async.apply(Installer, server),
     server.register.bind(server, plugins),
-    function (cb) { server.route(Routes); cb(); },
+    function (cb) {
+
+      server.route(Routes); cb();
+    },
     Async.apply(internals.loadPlugins, server),
     Async.apply(internals.loadUserland, server),
     server.start.bind(server)
-  ], function (err) {
-  
-    if (err) { return onError(err); }
+  ], (err) => {
+
+    if (err) {
+      return onError(err);
+    }
+
     server.app.changes.start();
     server.log(['info'], 'Web server started on port ' + config.port);
     server.log(['info'], 'Capot back-end has started ;-)');

@@ -22,11 +22,11 @@ internals.remoteSync = function (method, model) {
   console.log('oh my god!');
   return;
 
-  var type = model.get('type');
+  //var type = model.get('type');
   var app = this.app || this.collection.app;
   var db = app.couch.db('app');
   var json = model.toJSON();
-  var doc = _.omit(json, [ 'id' ]);
+  var doc = _.omit(json, ['id']);
 
   doc._id = json.type + '/' + json.id;
 
@@ -36,24 +36,27 @@ internals.remoteSync = function (method, model) {
       json._rev = data.rev;
       return json;
     });
-  } else if (method === 'read') {
+  }
+  else if (method === 'read') {
     return db.get(doc._id).then(function (data) {
 
       data.id = data._id.split('/')[1];
       delete data._id;
       return data;
     });
-  } else if (method === 'update') {
+  }
+  else if (method === 'update') {
     return db.put(doc).then(function (data) {
 
       json._rev = data.rev;
       return json;
     });
-  } else if (method === 'delete') {
-    return db.remove(doc);
-  } else {
-    throw new Error('Unsupported model sync method');
   }
+  else if (method === 'delete') {
+    return db.remove(doc);
+  }
+
+  throw new Error('Unsupported model sync method');
 };
 
 
@@ -64,13 +67,17 @@ internals.localSync = function (method, model) {
 
   if (method === 'create') {
     return store.add(type, model.toJSON());
-  } else if (method === 'read') {
+  }
+  else if (method === 'read') {
     return store.find(type, model.id);
-  } else if (method === 'update') {
+  }
+  else if (method === 'update') {
     //...
-  } else if (method === 'delete') {
+  }
+  else if (method === 'delete') {
     return store.remove(type, model.id);
-  } else {
+  }
+  else {
     throw new Error('Unsupported model sync method');
   }
 };
@@ -122,7 +129,9 @@ module.exports = Backbone.Model.extend({
 
     return _.reduce(data, function (memo, v, k) {
 
-      if (k === '$replicate') { return memo; }
+      if (k === '$replicate') {
+        return memo;
+      }
       memo[k] = internals.isISODateString(v) ? Moment(v).toDate() : v;
       return memo;
     }, {});

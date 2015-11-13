@@ -1,7 +1,10 @@
-var OAuth = require('oauth').OAuth;
+'use strict';
 
 
-var internals = {};
+const OAuth = require('oauth').OAuth;
+
+
+const internals = {};
 
 
 internals.apiUrl = 'https://api.twitter.com/oauth';
@@ -24,15 +27,17 @@ internals.createClient = function (options) {
 module.exports = function (options) {
 
   return {
-  
+
     authenticate: function (req, cb) {
 
-      var id = req.query.id;
-      var oauth = internals.createClient(options);
+      //const id = req.query.id;
+      const oauth = internals.createClient(options);
 
-      oauth.getOAuthRequestToken(function (err, token, tokenSecret, results) {
+      oauth.getOAuthRequestToken((err, token, tokenSecret, results) => {
 
-        if (err) { return cb(err); }
+        if (err) {
+          return cb(err);
+        }
 
         cb(null, internals.apiUrl + '/authenticate?oauth_token=' + token, {
           token: token,
@@ -43,21 +48,21 @@ module.exports = function (options) {
 
     callback: function (req, cb) {
 
-      var provider = this;
-      var error = req.query.error;
-      var code = req.query.code;
-      var cred = req.auth.credentials;
+      const error = req.query.error;
+      const cred = req.auth.credentials;
 
-      if (!cred.data) { return cb(new Error('No credentials')); }
+      if (!cred.data) {
+        return cb(new Error('No credentials'));
+      }
 
-      var reqToken = cred.data.token;
-      var reqTokenSecret = cred.data.tokenSecret;
-      var verifier = req.query.oauth_verifier;
+      const reqToken = cred.data.token;
+      const reqTokenSecret = cred.data.tokenSecret;
+      const verifier = req.query.oauth_verifier;
 
       // If github passed an error in query string we don't bother continuing
       // with the OAuth dance.
       if (error) {
-        var err = new Error(req.query.error_description);
+        const err = new Error(req.query.error_description);
         err.reason = error;
         err.code = error;
         return cb(err);
@@ -73,10 +78,13 @@ module.exports = function (options) {
         return cb(new Error('OAuth token mismatch'));
       }
 
-      var oauth = internals.createClient(options);
-      oauth.getOAuthAccessToken(reqToken, reqTokenSecret, verifier, function (err, accessToken, accessTokenSecret, results) {
+      const oauth = internals.createClient(options);
+      oauth.getOAuthAccessToken(reqToken, reqTokenSecret, verifier, (err, accessToken, accessTokenSecret, results) => {
 
-        if (err) { return cb(err); }
+        if (err) {
+          return cb(err);
+        }
+
         cb(null, {
           connected: true,
           uid: results.user_id,

@@ -1,9 +1,12 @@
-var Events = require('events');
-var Async = require('async');
-var Couch = require('./lib/couch');
+'use strict';
 
 
-var internals = {};
+const Events = require('events');
+const Async = require('async');
+const Couch = require('./lib/couch');
+
+
+const internals = {};
 
 
 internals.since = {};
@@ -14,13 +17,15 @@ internals.ignore = ['_replicator', 'changes'];
 
 internals.ensureChangesDb = function (couch, cb) {
 
-  couch.put('/changes', function (err) {
+  couch.put('/changes', (err) => {
 
     if (err && err.statusCode === 412) { // already exists
       return cb();
-    } else if (err) {
+    }
+    else if (err) {
       return cb(err);
     }
+
     cb();
   });
 };
@@ -29,8 +34,8 @@ internals.ensureChangesDb = function (couch, cb) {
 internals.ensureChangesDbSecurity = function (changesDb, cb) {
 
   changesDb.addSecurity({
-    admins: { roles: [ '_admin' ] },
-    members: { roles: [ '_admin' ] }
+    admins: { roles: ['_admin'] },
+    members: { roles: ['_admin'] }
   }, cb);
 };
 
@@ -41,13 +46,15 @@ internals.init = function (changesDb, cb) {
     startkey: 'since/',
     endkey: 'since0',
     include_docs: true
-  }, function (err, data) {
+  }, (err, data) => {
 
-    if (err) { return cb(err); }
+    if (err) {
+      return cb(err);
+    }
 
-    data.rows.forEach(function (row) {
+    data.rows.forEach((row) => {
 
-      var db = row.id.split('/').slice(1).join('/');
+      const db = row.id.split('/').slice(1).join('/');
       internals.since[db] = row.doc.seq;
     });
 
@@ -58,19 +65,22 @@ internals.init = function (changesDb, cb) {
 
 internals.updateSince = function (couch, dbName, seq, cb) {
 
-  var changesDb = couch.db('changes');
-  var sinceDoc = { _id: 'since/' + dbName, type: 'since', seq: seq };
-  var encodedDocId = encodeURIComponent(sinceDoc._id);
+  const changesDb = couch.db('changes');
+  const sinceDoc = { _id: 'since/' + dbName, type: 'since', seq: seq };
+  const encodedDocId = encodeURIComponent(sinceDoc._id);
 
-  changesDb.get(encodedDocId, function (err, data) {
+  changesDb.get(encodedDocId, (err, data) => {
 
     if (err && err.statusCode !== 404) {
       return console.error(err);
-    } else if (err) { // not found
+    }
+    else if (err) { // not found
 
-    } else if (seq === data.seq) {
+    }
+    else if (seq === data.seq) {
       return cb();
-    } else {
+    }
+    else {
       sinceDoc._rev = data._rev;
     }
 
@@ -83,12 +93,14 @@ internals.getChanges = function (couch, feed, dbName, cb) {
 
   cb = cb || function () {};
 
-  if (internals.ignore.indexOf(dbName) >= 0) { return cb(); }
+  if (internals.ignore.indexOf(dbName) >= 0) {
+    return cb();
+  }
 
-  var db = couch.db(dbName);
-  var params = { since: internals.since[dbName] || 0, include_docs: true };
+  const db = couch.db(dbName);
+  const params = { since: internals.since[dbName] || 0, include_docs: true };
 
-  db.changes(params, function (err, data) {
+  db.changes(params, (err, data) => {
 
     if (err) {
       server.log('error', 'changes:error', err);
@@ -99,7 +111,7 @@ internals.getChanges = function (couch, feed, dbName, cb) {
       // Keep track of last seq for this db, so future requests only get
       // updates since this last sequence number.
       internals.since[dbName] = data.last_seq;
-      data.results.forEach(function (result) {
+      data.results.forEach((result) => {
 
         feed.emit('change', dbName, result);
         feed.emit('change:' + dbName, result);
@@ -119,9 +131,12 @@ internals.getChanges = function (couch, feed, dbName, cb) {
 
 internals.checkPastChanges = function (couch, feed, cb) {
 
-  couch.get('/_all_dbs', function (err, dbs) {
+  couch.get('/_all_dbs', (err, dbs) => {
 
-    if (err) { return cb(err); }
+    if (err) {
+      return cb(err);
+    }
+
     Async.eachLimit(dbs, 2, Async.apply(internals.getChanges, couch, feed), cb);
   });
 };
@@ -129,25 +144,29 @@ internals.checkPastChanges = function (couch, feed, cb) {
 
 internals.listen = function (couch, feed) {
 
-  var dbUpdates = couch.dbUpdates();
-  
-  dbUpdates.on('change', function (update) {
+  const dbUpdates = couch.dbUpdates();
 
-    if (!update || !update.db_name || !update.type) { return; }
+  dbUpdates.on('change', (update) => {
 
-    var db = update.db_name;
-    var eventName = update.type;
+    if (!update || !update.db_name || !update.type) {
+      return;
+    }
+
+    const db = update.db_name;
+    const eventName = update.type;
 
     if (eventName === 'created') {
       feed.emit('add', db);
-    } else if (eventName === 'deleted') {
+    }
+    else if (eventName === 'deleted') {
       feed.emit('remove', db);
-    } else if (eventName === 'updated') {
+    }
+    else if (eventName === 'updated') {
       internals.getChanges(couch, feed, db);
     }
   });
 
-  dbUpdates.on('error', function (err) {
+  dbUpdates.on('error', (err) => {
 
     console.error('dbUpdates error', err);
     feed.emit('error', err);
@@ -159,17 +178,19 @@ internals.listen = function (couch, feed) {
 
 exports.register = function (server, options, next) {
 
-  var config = server.settings.app.config;
-  var couch = Couch(config.couchdb);
-  var changesDb = couch.db('changes');
-  var feed = server.app.changes = new Events.EventEmitter();
+  const config = server.settings.app.config;
+  const couch = Couch(config.couchdb);
+  const changesDb = couch.db('changes');
+  const feed = server.app.changes = new Events.EventEmitter();
 
 
   feed.start = function () {
 
-    internals.checkPastChanges(couch, feed, function (err) {
+    internals.checkPastChanges(couch, feed, (err) => {
 
-      if (err) { return server.log('error', err); }
+      if (err) {
+        return server.log('error', err);
+      }
       internals.listen(couch, feed);
     });
   };

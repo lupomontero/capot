@@ -1,3 +1,7 @@
+/*eslint no-var:0, prefer-arrow-callback: 0 */
+'use strict';
+
+
 var _ = require('lodash');
 var View = require('../../client/ui/view');
 var Handlebars = window.Handlebars;
@@ -7,7 +11,8 @@ Handlebars.registerHelper('mailerServicePicker', function (selected) {
 
   var str = '<select name="mailer-service" id="mailer-service" class="form-control">';
 
-  [ 'Gmail', 'Mailgun', 'Mandrill', 'Postmark', 'SendGrid' ].forEach(function (service) {
+  ['Gmail', 'Mailgun', 'Mandrill', 'Postmark', 'SendGrid'].forEach(function (service) {
+
     str += '<option name="' + service + '"';
     if (service === selected) {
       str += ' selected';
@@ -28,15 +33,15 @@ module.exports = View.extend({
 
   initialize: function (opt) {
 
-    var view = this;
-    View.prototype.initialize.call(view, opt);
+    var self = this;
+    View.prototype.initialize.call(self, opt);
 
-    var app = view.app;
-    var config = view.model = app.createModel('config');
+    var app = self.app;
+    var config = self.model = app.createModel('config');
 
     config.once('sync', function () {
 
-      view.render();
+      self.render();
     });
 
     config.fetch();
@@ -52,19 +57,19 @@ module.exports = View.extend({
 
     e.preventDefault();
 
-    var view = this;
-    var config = view.model; 
+    var self = this;
+    var config = self.model;
 
     var app = {
-      name: view.$('#app-name').val(),
-      url: view.$('#app-url').val()
+      name: self.$('#app-name').val(),
+      url: self.$('#app-url').val()
     };
 
     var mailer = {
-      from: view.$('#mailer-from').val(),
-      service: view.$('#mailer-service').val(),
-      user: view.$('#mailer-user').val(),
-      pass: view.$('#mailer-pass').val()
+      from: self.$('#mailer-from').val(),
+      service: self.$('#mailer-service').val(),
+      user: self.$('#mailer-user').val(),
+      pass: self.$('#mailer-pass').val()
     };
 
     var oauth = config.get('oauth');

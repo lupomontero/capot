@@ -4,7 +4,6 @@
 
 var _ = require('lodash');
 var Backbone = require('backbone');
-var Handlebars = require('handlebars');
 
 
 //
@@ -13,15 +12,29 @@ var Handlebars = require('handlebars');
 require('./helpers');
 
 
+var internals = {};
+
+
 // TODO: move this somewhere else, duplicate in router.js
-function getProp(obj, key) {
-  if (!key) { return obj; }
+internals.getProp = function (obj, key) {
+
+  if (!key) {
+    return obj;
+  }
+
   var parts = key.split('/');
   var curr = parts.shift();
-  if (!obj || !obj.hasOwnProperty(curr)) { return null; }
-  if (!_.isObject(obj[curr])) { return obj[curr]; }
-  return getProp(obj[curr], parts.join('/'));
-}
+
+  if (!obj || !obj.hasOwnProperty(curr)) {
+    return null;
+  }
+
+  if (!_.isObject(obj[curr])) {
+    return obj[curr];
+  }
+
+  return internals.getProp(obj[curr], parts.join('/'));
+};
 
 
 module.exports = Backbone.View.extend({
@@ -31,6 +44,7 @@ module.exports = Backbone.View.extend({
   locals: {},
 
   initialize: function (opt) {
+
     Backbone.View.prototype.initialize.call(this, opt);
     this.app = opt.app;
     this.render = _.debounce(this.render, 100);
@@ -38,12 +52,15 @@ module.exports = Backbone.View.extend({
   },
 
   render: function (ctx) {
+
     var templateName = this.templateName;
     var app = this.app;
 
-    if (!templateName) { return; }
+    if (!templateName) {
+      return;
+    }
 
-    var template = getProp(app.templates, templateName);
+    var template = internals.getProp(app.templates, templateName);
 
     if (!_.isFunction(template)) {
       app.log('error', 'Template ' + templateName + ' not loaded!');
@@ -55,11 +72,14 @@ module.exports = Backbone.View.extend({
 
     if (_.isFunction(ctx.toViewContext)) {
       ctx = ctx.toViewContext();
-    } else if (ctx.attributes) {
+    }
+    else if (ctx.attributes) {
       ctx = ctx.attributes;
-    } else if (_.isArray(ctx)) {
+    }
+    else if (_.isArray(ctx)) {
       ctx = {
         models: _.map(ctx, function (i) {
+
           return (i.toViewContext) ? i.toViewContext() : i;
         })
       };
@@ -73,48 +93,64 @@ module.exports = Backbone.View.extend({
   },
 
   back: function (e) {
+
     e.preventDefault();
     e.stopPropagation();
     window.history.back();
   },
 
   subscribeToGlobalEvents: function () {
-    var view = this;
-    // Pass cid to `view._getGlobalEventsHandlers()` as this is memoized and
+
+    var self = this;
+
+    // Pass cid to `self._getGlobalEventsHandlers()` as this is memoized and
     // should be recomputed for each view!
-    _.each(view._getGlobalEventsHandlers(view.cid), function (ev) {
+    _.each(self._getGlobalEventsHandlers(self.cid), function (ev) {
+
       ev.src.on(ev.name, ev.fn);
       console.log('View subscribing to global event ' + ev.name);
     });
   },
 
   unsubscribeFromGlobalEvents: function () {
+
     _.each(this._getGlobalEventsHandlers(this.cid), function (ev) {
+
       ev.src.removeListener(ev.name, ev.fn);
       console.log('View unsubscribing from global event ' + ev.name);
     });
   },
 
   _getGlobalEventsHandlers: _.memoize(function () {
-    var view = this;
-    
-    return _.reduce(view.globalEvents, function (memo, v, k) {
+
+    var self = this;
+
+    return _.reduce(self.globalEvents, function (memo, v, k) {
+
       var parts = k.split(' ');
       var src = parts[0];
-      var fn = view[v];
+      var fn = self[v];
       var ev = { name: parts[1] };
-      if (!_.isFunction(fn)) { return; }
-      ev.fn = fn.bind(view);
+
+      if (!_.isFunction(fn)) {
+        return;
+      }
+
+      ev.fn = fn.bind(self);
+
       if (src === 'account') {
-        ev.src = view.app.account;
-        memo.push(ev);
-      } else if (src === 'store') {
-        ev.src = view.app.store;
-        memo.push(ev);
-      } else if (src === 'task') {
-        ev.src = view.app.task;
+        ev.src = self.app.account;
         memo.push(ev);
       }
+      else if (src === 'store') {
+        ev.src = self.app.store;
+        memo.push(ev);
+      }
+      else if (src === 'task') {
+        ev.src = self.app.task;
+        memo.push(ev);
+      }
+
       return memo;
     }, []);
   })
