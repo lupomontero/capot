@@ -114,7 +114,7 @@ internals.addDummyData = function (couch, uri, cb) {
       return cb(err);
     }
 
-    internals.addDummyUser(uri, 'testuser1', 'secret1', cb);
+    internals.addDummyUser(uri, 'testuser1@example.com', 'secret1', cb);
   });
 };
 

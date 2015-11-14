@@ -45,7 +45,7 @@ describe('capot/server/account', () => {
       server.req({
         method: 'GET',
         url: '/_users',
-        auth: { user: 'testuser1', pass: 'secret1' }
+        auth: { user: 'testuser1@example.com', pass: 'secret1' }
       }, (err, resp) => {
 
         Assert.ok(!err);
