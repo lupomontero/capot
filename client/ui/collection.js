@@ -4,6 +4,7 @@
 
 var Backbone = require('backbone');
 var Model = require('./model');
+var _ = require('lodash');
 
 
 var internals = {};
@@ -13,7 +14,6 @@ internals.remoteSync = function (collection, model, type, options) {
 
   var app = collection.app;
   var account = app.account;
-  //var userCtx = account.session.userCtx;
   var dbName = 'user/' + account.id();
   var dbUrl = '/_couch/' + encodeURIComponent(dbName);
   var key = type + (options.idStartsWith ? '/' + options.idStartsWith : '');

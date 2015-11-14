@@ -6,6 +6,8 @@
 var $ = window.jQuery || window.$;
 var Backbone = window.Backbone = require('backbone');
 
+// Set Handlebars in global scope (needed for templates)
+window.Handlebars = require('handlebars');
 
 // Backbone needs reference to glbal jQuery
 Backbone.$ = $;
