@@ -19,6 +19,7 @@ const Source = require('vinyl-source-stream');
 const Buffer = require('vinyl-buffer');
 const Karma = require('karma');
 const Pkg = require('./package.json');
+const TestServer = require('./test/server');
 
 
 const internals = {};
@@ -76,14 +77,20 @@ Gulp.task('lint', () => {
 });
 
 
-Gulp.task('test:client', ['lint'], (done) => {
+Gulp.task('test:client', (done) => {
 
-  const server = new Karma.Server({
-    configFile: __dirname + '/karma.conf.js',
-    singleRun: true
-  }, done);
+  const server = TestServer();
 
-  server.start();
+  server.start(() => {
+    const karma = new Karma.Server({
+      configFile: __dirname + '/karma.conf.js',
+      singleRun: true
+    }, () => {
+      server.stop(done);
+    });
+
+    karma.start();
+  });
 });
 
 

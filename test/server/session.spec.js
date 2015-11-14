@@ -2,22 +2,24 @@
 
 
 const Assert = require('assert');
-const Server = require('./server');
+const TestServer = require('../server');
 
 
 describe('capot/server/auth', () => {
 
+  let server;
 
   before(function (done) {
 
     this.timeout(30 * 1000);
-    Server.start(done);
+    server = TestServer();
+    server.start(done);
   });
 
 
   after((done) => {
 
-    Server.stop(done);
+    server.stop(done);
   });
 
 
@@ -25,7 +27,7 @@ describe('capot/server/auth', () => {
 
     it('should get empty session when no auth', (done) => {
 
-      Server.req({
+      server.req({
         method: 'GET',
         url: '/_session'
       }, (err, resp) => {
@@ -44,7 +46,7 @@ describe('capot/server/auth', () => {
 
     it('should require email', (done) => {
 
-      Server.req({
+      server.req({
         method: 'POST',
         url: '/_session',
         body: {}
@@ -60,7 +62,7 @@ describe('capot/server/auth', () => {
 
     it('should require valid email', (done) => {
 
-      Server.req({
+      server.req({
         method: 'POST',
         url: '/_session',
         body: { email: 'foo' }
@@ -77,7 +79,7 @@ describe('capot/server/auth', () => {
 
     it('should require password', (done) => {
 
-      Server.req({
+      server.req({
         method: 'POST',
         url: '/_session',
         body: { email: 'foo@localhost' }
@@ -93,7 +95,7 @@ describe('capot/server/auth', () => {
 
     it('should return unauthorized when unknown email', (done) => {
 
-      Server.req({
+      server.req({
         method: 'POST',
         url: '/_session',
         body: { email: 'foo@localhost', password: 'xxxxxxxx' }
@@ -109,7 +111,7 @@ describe('capot/server/auth', () => {
 
       const credentials = { email: 'test2@localhost', password: 'secret' };
 
-      Server.req({
+      server.req({
         method: 'POST',
         url: '/_users',
         body: credentials
@@ -117,7 +119,7 @@ describe('capot/server/auth', () => {
 
         credentials.password = 'xxx';
 
-        Server.req({
+        server.req({
           method: 'POST',
           url: '/_session',
           body: credentials
@@ -134,13 +136,13 @@ describe('capot/server/auth', () => {
 
       const credentials = { email: 'test3@localhost', password: 'secret' };
 
-      Server.req({
+      server.req({
         method: 'POST',
         url: '/_users',
         body: credentials
       }, (err) => {
 
-        Server.req({
+        server.req({
           method: 'POST',
           url: '/_session',
           body: credentials
@@ -161,13 +163,13 @@ describe('capot/server/auth', () => {
 
       const credentials = { email: 'test4@localhost', password: 'secret' };
 
-      Server.req({
+      server.req({
         method: 'POST',
         url: '/_users',
         body: credentials
       }, (err) => {
 
-        Server.req({
+        server.req({
           method: 'POST',
           url: '/_session',
           body: credentials
@@ -180,7 +182,7 @@ describe('capot/server/auth', () => {
           const cookie = resp.headers['set-cookie'][0];
           Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
 
-          Server.req({
+          server.req({
             method: 'GET',
             url: '/_users/' + encodeURIComponent(credentials.email),
             auth: { user: 'admin', pass: 'secret' }
@@ -193,7 +195,7 @@ describe('capot/server/auth', () => {
             userDoc.derived_key2 = userDoc.derived_key;
             userDoc.salt2 = userDoc.salt;
 
-            Server.req({
+            server.req({
               method: 'PUT',
               url: '/_users/' + encodeURIComponent(credentials.email),
               auth: { user: 'admin', pass: 'secret' },
@@ -202,7 +204,7 @@ describe('capot/server/auth', () => {
 
               Assert.ok(!err);
 
-              Server.req({
+              server.req({
                 method: 'POST',
                 url: '/_session',
                 body: credentials
@@ -215,7 +217,7 @@ describe('capot/server/auth', () => {
                 Assert.equal(resp.body.ok, true);
                 Assert.equal(resp.body.name, credentials.email);
 
-                Server.req({
+                server.req({
                   method: 'GET',
                   url: '/_users/' + encodeURIComponent(credentials.email),
                   auth: { user: 'admin', pass: 'secret' }

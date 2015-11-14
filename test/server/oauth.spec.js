@@ -2,22 +2,24 @@
 
 
 const Assert = require('assert');
-const Server = require('./server');
+const TestServer = require('../server');
 
 
 describe('capot/server/oauth', () => {
 
+  let server;
 
   before(function (done) {
 
     this.timeout(30 * 1000);
-    Server.start(done);
+    server = TestServer();
+    server.start(done);
   });
 
 
   after((done) => {
 
-    Server.stop(done);
+    server.stop(done);
   });
 
 
@@ -25,7 +27,7 @@ describe('capot/server/oauth', () => {
 
     it('should only get enabled providers', (done) => {
 
-      Server.req({
+      server.req({
         method: 'GET',
         url: '/_oauth/providers'
       }, (err, resp) => {
@@ -43,7 +45,7 @@ describe('capot/server/oauth', () => {
 
     it('should get unauthorised when not admin', (done) => {
 
-      Server.req({
+      server.req({
         method: 'GET',
         url: '/_oauth/available_providers'
       }, (err, resp) => {
@@ -56,7 +58,7 @@ describe('capot/server/oauth', () => {
 
     it('should get all available providers when admin', (done) => {
 
-      Server.req({
+      server.req({
         method: 'GET',
         url: '/_oauth/available_providers',
         auth: { user: 'admin', pass: 'secret' }
@@ -78,7 +80,7 @@ describe('capot/server/oauth', () => {
 
     it.skip('should...', (done) => {
 
-      Server.req({
+      server.req({
         method: 'GET',
         url: '/_oauth/bitbucket'
       }, (err, resp) => {
@@ -96,7 +98,7 @@ describe('capot/server/oauth', () => {
 
     it('should return 401 when missing cookie', (done) => {
 
-      Server.req({
+      server.req({
         method: 'GET',
         url: '/_oauth/session'
       }, (err, resp) => {

@@ -8,22 +8,15 @@ var Capot = require('../../client');
 
 describe('capot/client/account', function () {
 
+  var capot = Capot();
+
+  before(function (done) {
+
+    capot.start(done);
+  });
+
 
   describe('account.id()', function () {
-
-    var capot;
-
-    beforeEach(function (done) {
-
-      capot = Capot();
-      capot.start(done);
-    });
-
-    afterEach(function (done) {
-
-      //console.log('after', capot);
-      done();
-    });
 
     it('should return null when not signed in', function () {
 
@@ -51,16 +44,28 @@ describe('capot/client/account', function () {
 
   describe('account.signUp()', function () {
 
-    //var capot = Capot();
+    it('should create new user when good details', function (done) {
 
-    it('should...');
+      var acc = capot.account;
+      var email = 'foo' + Date.now() + '@example.com';
+      var pass = 'xxxxxxxx';
+
+      acc.signUp(email, pass).then(function () {
+
+        return acc.signIn(email, pass);
+      }).then(function () {
+        
+        Assert.equal(typeof acc.id(), 'string');
+        Assert.equal(acc.session.ok, true);
+        Assert.equal(acc.session.userCtx.name, email);
+        done();
+      });
+    });
 
   });
 
 
   describe('account.signIn()', function () {
-
-    //var capot = Capot();
 
     it('should...');
 
@@ -68,8 +73,6 @@ describe('capot/client/account', function () {
 
 
   describe('account.signOut()', function () {
-
-    //var capot = Capot();
 
     it('should...');
 

@@ -37,6 +37,12 @@ module.exports = function (config) {
       }
     },
 
+    urlRoot: '/__karma__/',
+
+    proxies: {
+      '/': 'http://127.0.0.1:3333'
+    },
+
     plugins: [
       'karma-browserify',
       'karma-mocha',

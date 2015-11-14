@@ -2,22 +2,24 @@
 
 
 const Assert = require('assert');
-const Server = require('./server');
+const TestServer = require('../server');
 
 
 describe('capot/server/account', () => {
 
+  let server;
 
   before(function (done) {
 
     this.timeout(30 * 1000);
-    Server.start(true, done);
+    server = TestServer();
+    server.start(true, done);
   });
 
 
   after((done) => {
 
-    Server.stop(done);
+    server.stop(done);
   });
 
 
@@ -25,7 +27,7 @@ describe('capot/server/account', () => {
 
     it('should not allow unauthenticated access', (done) => {
 
-      Server.req({
+      server.req({
         method: 'GET',
         url: '/_users'
       }, (err, resp) => {
@@ -40,7 +42,7 @@ describe('capot/server/account', () => {
 
     it('should not allow access to non admin users', (done) => {
 
-      Server.req({
+      server.req({
         method: 'GET',
         url: '/_users',
         auth: { user: 'testuser1', pass: 'secret1' }
@@ -60,7 +62,7 @@ describe('capot/server/account', () => {
 
     it('should ...', (done) => {
 
-      Server.req({
+      server.req({
         method: 'POST',
         url: '/_users',
         body: { email: 'test@localhost', password: 'secret' }
