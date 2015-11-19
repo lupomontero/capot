@@ -89,6 +89,11 @@ internals.localSync = function (method, model) {
 module.exports = Backbone.Model.extend({
 
   //
+  // Which database to `sync` with. If null, default user database will be used.
+  //
+  db: null,
+
+  //
   // Whether or not to replicate between local and remote.
   //
   replicate: true,
@@ -158,9 +163,9 @@ module.exports = Backbone.Model.extend({
 
     var success = options.success || function () {};
     var error = options.error || function () {};
-    var syncFn = (this.remote) ? internals.remoteSync : internals.localSync;
+    var fn = (this.remote || this.db) ? internals.remoteSync : internals.localSync;
 
-    syncFn(method, model).then(success, function (err) {
+    fn(method, model).then(success, function (err) {
 
       error(null, null, err);
     });

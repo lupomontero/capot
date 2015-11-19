@@ -190,6 +190,54 @@ module.exports = function (options) {
     };
 
 
+    db.getDdoc = function (cb) {
+      db.get(internals.viewsDdocId, (err, ddoc) => {
+
+        if (err && err.statusCode === 404) {
+          // not found, so we use new object.
+          return cb(null, {
+            _id: internals.viewsDdocId,
+            language: 'javascript',
+            views: {}
+          });
+        }
+        else if (err) {
+          return cb(err);
+        }
+
+        cb(null, ddoc);
+      });
+    };
+
+
+    db.setValidationFunction = function (fn, cb) {
+
+      if (!_.isFunction(fn)) {
+        return cb(new Error('db.setValidationFunction() expects first ' +
+          'argument to be a function.'));
+      }
+
+      db.getDdoc((err, ddoc) => {
+
+        if (err) {
+          return cb(err);
+        }
+
+        const serialised = fn.toString();
+        if (serialised === ddoc.validate_doc_update) {
+          return cb(null, {
+            ok: true,
+            id: ddoc._id,
+            rev: ddoc._rev
+          });
+        }
+
+        ddoc.validate_doc_update = serialised;
+        db.put(internals.viewsDdocId, ddoc, cb);
+      });
+    };
+
+
     //
     // Creates new design doc with CouchDB view on db.
     //
@@ -200,17 +248,9 @@ module.exports = function (options) {
           'contain a map function.'));
       }
 
-      db.get(internals.viewsDdocId, (err, ddoc) => {
+      db.getDdoc((err, ddoc) => {
 
-        if (err && err.statusCode === 404) {
-          // not found, so we use new object.
-          ddoc = {
-            _id: internals.viewsDdocId,
-            language: 'javascript',
-            views: {}
-          };
-        }
-        else if (err) {
+        if (err) {
           return cb(err);
         }
 

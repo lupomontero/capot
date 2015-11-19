@@ -14,7 +14,7 @@ internals.remoteSync = function (collection, model, type, options) {
 
   var app = collection.app;
   var account = app.account;
-  var dbName = 'user/' + account.id();
+  var dbName = model.db || 'user/' + account.id();
   var dbUrl = '/_couch/' + encodeURIComponent(dbName);
   var key = type + (options.idStartsWith ? '/' + options.idStartsWith : '');
   var params = {
@@ -89,9 +89,9 @@ module.exports = Backbone.Collection.extend({
       error(null, null, new Error('Sync method not supported'));
     }
 
-    var syncFn = (model.remote) ? internals.remoteSync : internals.localSync;
+    var fn = (model.remote || model.db) ? internals.remoteSync : internals.localSync;
 
-    syncFn(collection, model, type, options).then(success, function (err) {
+    fn(collection, model, type, options).then(success, function (err) {
 
       error(null, null, err);
     });

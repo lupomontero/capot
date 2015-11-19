@@ -19,6 +19,19 @@ const Routes = require('./routes');
 const internals = {};
 
 
+internals.hapiPlugins = [
+  require('h2o2'),
+  require('inert'),
+  require('./mailer'),
+  require('./session'),
+  require('./www'),
+  require('./account'),
+  require('./oauth'),
+  require('./changes'),
+  require('./rest')
+];
+
+
 internals.createLogger = function (server, cb) {
 
   server.register({
@@ -82,6 +95,7 @@ internals.loadUserland = function (server, cb) {
       if (err.code !== 'MODULE_NOT_FOUND') {
         server.log('warn', err);
       }
+      server.log('error', err);
       server.log('warn', 'Did not extend Capot Server with userland');
     }
     else {
@@ -93,17 +107,17 @@ internals.loadUserland = function (server, cb) {
 };
 
 
-internals.loadPlugins = function (server, cb) {
+internals.loadCapotPlugins = function (server, cb) {
 
   const config = server.settings.app.config;
-  // read plugins from package.json and add those to pluginsPaths...
-  const plugins = (server.settings.app.pkg.capot || {}).plugins || [];
+  // read capot plugins from package.json and add those to pluginsPaths...
+  const capotPlugins = (server.settings.app.pkg.capot || {}).plugins || [];
 
-  if (!plugins.length) {
+  if (!capotPlugins.length) {
     return cb();
   }
 
-  Async.each(plugins, (plugin, cb) => {
+  Async.each(capotPlugins, (plugin, cb) => {
 
     server.log('info', 'Initialising plugin ' + plugin);
     const abs = (plugin.charAt(0) === '.') ? Path.join(config.cwd, plugin) : plugin;
@@ -156,26 +170,14 @@ internals.createServer = function (config) {
 };
 
 
-internals.plugins = [
-  require('h2o2'),
-  require('inert'),
-  require('./mailer'),
-  require('./session'),
-  require('./www'),
-  require('./account'),
-  require('./oauth'),
-  require('./changes')
-];
-
-
 module.exports = function (argv) {
 
   const config = internals.createConfig(argv);
-  let plugins = internals.plugins.slice(0);
+  let hapiPlugins = internals.hapiPlugins.slice(0);
 
   if (config.debug) {
     require('longjohn');
-    plugins = [require('vision'), require('lout')].concat(plugins);
+    hapiPlugins = [require('vision'), require('lout')].concat(hapiPlugins);
   }
 
   const server = internals.createServer(config);
@@ -193,12 +195,12 @@ module.exports = function (argv) {
   Async.series([
     Async.apply(internals.createLogger, server),
     Async.apply(Installer, server),
-    server.register.bind(server, plugins),
+    server.register.bind(server, hapiPlugins),
     function (cb) {
 
       server.route(Routes); cb();
     },
-    Async.apply(internals.loadPlugins, server),
+    Async.apply(internals.loadCapotPlugins, server),
     Async.apply(internals.loadUserland, server),
     server.start.bind(server)
   ], (err) => {
