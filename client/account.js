@@ -86,6 +86,13 @@ module.exports = function (capot) {
 
   account.signIn = function (email, pass) {
 
+    if (!email || typeof email !== 'string') {
+      throw new TypeError('Email must be a string');
+    }
+    else if (!pass || typeof pass !== 'string') {
+      throw new TypeError('Password must be a string');
+    }
+
     return capot.request('POST', '/_session', {
       email: email,
       password: pass
@@ -107,17 +114,30 @@ module.exports = function (capot) {
 
   account.changePassword = function (pass, newPass) {
 
+    if (!pass || typeof pass !== 'string') {
+      throw new TypeError('Password must be a string');
+    }
+    else if (!newPass || typeof newPass !== 'string') {
+      throw new TypeError('New password must be a string');
+    }
+
     var email = account.session.userCtx.name;
     var url = internals.userDocUrl(email);
 
-    if (newPass.length < 8) {
+    if (!email) {
+      return new Promise(function (resolve, reject) {
+
+        reject(new Error('User is not signed in'));
+      });
+    }
+    else if (newPass.length < 8) {
       return new Promise(function (resolve, reject) {
 
         reject(new Error('Password must be at least 8 chars long'));
       });
     }
 
-    return capot.request('POST', '/_session', { name: email, password: pass })
+    return capot.request('POST', '/_session', { email: email, password: pass })
       .then(function () {
 
         return internals.couch.get(url);
@@ -269,7 +289,7 @@ module.exports = function (capot) {
   };
 
 
-	//
+  //
   // When loading we check whether we are coming back from an oauth dance.
   //
   account.on('init', function () {
