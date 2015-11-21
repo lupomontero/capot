@@ -24,7 +24,7 @@ module.exports = function (options) {
         type: method,
         url: options.url + path,
         dataType: 'json',
-        timeout: 10 * 1000,
+        timeout: 60 * 1000,
         cache: false,
         error: function (xhr) {
 

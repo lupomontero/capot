@@ -32,7 +32,7 @@ exports.register = function (server, options, next) {
 
       // NOTE TO SELF: Should each type be stored in its own database?
       console.log('registerType', options);
-    } 
+    }
   });
 
   Async.series([

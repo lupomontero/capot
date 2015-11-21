@@ -18,7 +18,7 @@
     "good": "^6.4.0",
     "good-console": "^5.2.0",
     "h2o2": "^4.0.2",
-    "handlebars": "^4.0.4",
+    "handlebars": "^4.0.5",
     "hapi": "^11.1.1",
     "hapi-auth-cookie": "^3.1.0",
     "inert": "^3.2.0",
@@ -31,12 +31,12 @@
     "oauth": "^0.9.14",
     "promise": "^7.0.4",
     "read": "^1.0.6",
-    "request": "^2.66.0",
+    "request": "^2.67.0",
     "which": "^1.2.0"
   },
   "devDependencies": {
     "browserify": "^12.0.1",
-    "eslint": "^1.9.0",
+    "eslint": "^1.10.1",
     "eslint-config-hapi": "^7.0.0",
     "eslint-plugin-hapi": "^4.0.0",
     "favicons": "^4.1.1",
@@ -62,7 +62,7 @@
     "mocha": "^2.3.4",
     "phantomjs": "^1.9.18",
     "pouchdb": "5.0.0",
-    "rimraf": "^2.4.2",
+    "rimraf": "^2.4.4",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.0.0",
     "vision": "^4.0.1"
