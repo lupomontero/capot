@@ -43,7 +43,9 @@ module.exports = function (options) {
           }
           var err = new Error(msg);
           err.statusCode = xhr.status;
-          err.reason = reason;
+          if (reason) {
+            err.reason = reason;
+          }
           reject(err);
         },
         success: resolve
