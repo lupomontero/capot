@@ -54,7 +54,7 @@ describe('capot/client/account', function () {
 
         return acc.signIn(email, pass);
       }).then(function () {
-        
+
         Assert.equal(typeof acc.id(), 'string');
         Assert.equal(acc.session.ok, true);
         Assert.equal(acc.session.userCtx.name, email);

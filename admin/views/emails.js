@@ -4,6 +4,7 @@
 
 var View = require('../../client/ui/view');
 
+
 module.exports = View.extend({
 
   className: 'container',

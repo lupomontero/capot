@@ -37,11 +37,6 @@ internals.components = {
     main: './client/ui/index.js',
     dest: 'dist/capot-ui.js'
   },
-  admin: {
-    files: 'admin/**/*.js',
-    main: './admin/main.js',
-    dest: 'admin/bundle.js'
-  },
   server: {
     files: ['bin/**/*.js', 'server/**/*.js'],
     tests: 'test/server/**/*.spec.js'
@@ -82,10 +77,12 @@ Gulp.task('test:client', (done) => {
   const server = TestServer();
 
   server.start(() => {
+
     const karma = new Karma.Server({
       configFile: __dirname + '/karma.conf.js',
       singleRun: true
     }, () => {
+
       server.stop(done);
     });
 
@@ -161,10 +158,10 @@ Gulp.task('build:ui', ['lint'], () => {
 });
 
 
-Gulp.task('build:admin', ['lint', 'hbs:admin'], () => {
+Gulp.task('build:admin', ['hbs:admin'], () => {
 
-  const bundler = Browserify(internals.components.admin.main);
-  return internals.bundle(bundler, internals.components.admin.dest);
+  const bundler = Browserify('./admin/main.js');
+  return internals.bundle(bundler, 'admin/bundle.js');
 });
 
 

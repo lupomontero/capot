@@ -14,7 +14,7 @@ module.exports = Model.extend({
     };
   },
 
-  database: 'app'
+  db: 'app'
 
 });
 

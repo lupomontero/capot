@@ -191,6 +191,7 @@ module.exports = function (options) {
 
 
     db.getDdoc = function (cb) {
+
       db.get(internals.viewsDdocId, (err, ddoc) => {
 
         if (err && err.statusCode === 404) {
