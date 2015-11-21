@@ -4,6 +4,8 @@ node_js:
   - 5
 before_script:
   - npm install -g gulp
+env:
+  - CXX=g++-4.8
 addons:
   apt:
     sources:
