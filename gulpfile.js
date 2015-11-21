@@ -81,9 +81,15 @@ Gulp.task('test:client', (done) => {
     const karma = new Karma.Server({
       configFile: __dirname + '/karma.conf.js',
       singleRun: true
-    }, () => {
+    }, (exitCode) => {
 
-      server.stop(done);
+      server.stop(() => {
+
+        if (exitCode) {
+          return done(new Error('failed karma tests'));
+        }
+        done();
+      });
     });
 
     karma.start();
