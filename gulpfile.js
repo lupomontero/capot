@@ -76,7 +76,7 @@ Gulp.task('test:client', (done) => {
 
   const server = TestServer();
 
-  server.start(() => {
+  server.start(true, () => {
 
     const karma = new Karma.Server({
       configFile: __dirname + '/karma.conf.js',
@@ -194,14 +194,14 @@ Gulp.task('watch', () => {
   Gulp.watch([
     internals.components.client.files,
     internals.components.client.tests
-  ], ['build:client']);
-
-  Gulp.watch(internals.components.ui.files, ['build:ui']);
+  ], ['test:client']);
 
   Gulp.watch([
     internals.components.server.files,
     internals.components.server.tests
   ], ['test:server']);
+
+  Gulp.watch(internals.components.ui.files, ['build:ui']);
 
   Gulp.watch([
     'admin/main.js',

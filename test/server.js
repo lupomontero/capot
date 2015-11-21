@@ -82,14 +82,12 @@ internals.removeDummyData = function (couch, cb) {
 internals.addDummyUser = function (uri, name, pass, cb) {
 
   Request({
-    method: 'PUT',
-    url: uri + '/_couch/_users/org.couchdb.user:' + name,
+    method: 'POST',
+    url: uri + '/_users',
     json: true,
     body: {
-      name: name,
-      password: pass,
-      roles: [],
-      type: 'user'
+      email: name,
+      password: pass
     }
   }, (err, resp) => {
 
