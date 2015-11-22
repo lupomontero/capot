@@ -97,7 +97,7 @@ Gulp.task('test:client', (done) => {
 });
 
 
-Gulp.task('test:server', ['lint'], () => {
+Gulp.task('test:server', () => {
 
   return Gulp.src(internals.components.server.tests, { read: false })
     .pipe(Mocha());

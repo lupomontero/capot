@@ -212,7 +212,7 @@ internals.signin = function (server, authData, userDoc, cb) {
     couch.post('/_session', {
       name: userDoc.name,
       password: tmpPass
-    }, (err, data, resp) => {
+    }, (err, body, resp) => {
 
       if (err) {
         return cb(err);

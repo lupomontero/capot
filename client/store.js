@@ -219,13 +219,13 @@ module.exports = function (capot) {
           var file = binaryAttachments[key];
           var ftype = file.type;
 
-          db.putAttachment(docId, key, rev, file, ftype, function (err, data) {
+          db.putAttachment(docId, key, rev, file, ftype, function (err, data2) {
 
             if (err) {
               return cb(err);
             }
 
-            doc._rev = data.rev;
+            doc._rev = data2.rev;
             cb();
           });
         }, function (err) {

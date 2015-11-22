@@ -8,6 +8,7 @@
     "capot": "./bin/cli.js"
   },
   "scripts": {
+    "pretest": "gulp lint",
     "test": "gulp test:server && gulp test:client"
   },
   "dependencies": {

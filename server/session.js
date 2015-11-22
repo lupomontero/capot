@@ -153,7 +153,7 @@ exports.create = {
       if (err && err.statusCode !== 401) { // `err` should be a `Boom` object.
         return reply(err);
       }
-      else if (resp && resp.statusCode === 200) {
+      else if (!err) {
         return reply(body).header('set-cookie', cookie);
       }
 

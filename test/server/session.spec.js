@@ -6,7 +6,7 @@ const Async = require('async');
 const TestServer = require('../server');
 
 
-describe('capot/server/auth', () => {
+describe('capot/server/session', () => {
 
   let server;
 
@@ -160,9 +160,12 @@ describe('capot/server/auth', () => {
       });
     });
 
-    it.only('should authenticate valid credentials after pass changed by OAuth login', (done) => {
+    it('should authenticate valid credentials after pass changed by OAuth login', (done) => {
 
-      const credentials = { email: 'test4@localhost', password: 'secret' };
+      const credentials = {
+        email: 'test' + Date.now() + '@localhost',
+        password: 'secret'
+      };
 
       Async.waterfall([
         function (cb) {
@@ -171,7 +174,7 @@ describe('capot/server/auth', () => {
             method: 'POST',
             url: '/_users',
             body: credentials
-          }, (err) => {
+          }, (err, resp) => {
 
             Assert.ok(!err);
             cb();
