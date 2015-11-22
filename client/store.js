@@ -217,8 +217,9 @@ module.exports = function (capot) {
           var docId = doc._id;
           var rev = doc._rev;
           var file = binaryAttachments[key];
-          var type = file.type;
-          db.putAttachment(docId, key, rev, file, type, function (err, data) {
+          var ftype = file.type;
+
+          db.putAttachment(docId, key, rev, file, ftype, function (err, data) {
 
             if (err) {
               return cb(err);

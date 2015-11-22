@@ -22,7 +22,7 @@ module.exports = function (length) {
     length = 7;
   }
 
-  for (var i = 0; i < length; i++) {
+  for (var i = 0; i < length; ++i) {
     var rand = Math.random() * radix;
     var char = internals.chars[Math.floor(rand)];
     id += String(char).charAt(0);

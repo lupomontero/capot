@@ -78,7 +78,7 @@ describe('capot/client/account', function () {
 
 
     it('should throw when no email provided', function () {
-    
+
       Assert.throws(function () {
 
         acc.signIn();
@@ -91,7 +91,7 @@ describe('capot/client/account', function () {
 
 
     it('should throw when no password provided', function () {
-    
+
       Assert.throws(function () {
 
         acc.signIn('foo@bar.com');
@@ -104,7 +104,7 @@ describe('capot/client/account', function () {
 
 
     it('should fail with 400 when invalid email', function (done) {
-    
+
       acc.signIn('foo', 'xxxxxx').catch(function (err) {
 
         Assert.equal(err.statusCode, 400);
@@ -114,7 +114,7 @@ describe('capot/client/account', function () {
 
 
     it('should fail with 401 when wrong credentials', function (done) {
-    
+
       acc.signIn('foo@bar.com', 'xxxxxx').catch(function (err) {
 
         Assert.equal(err.statusCode, 401);
@@ -150,7 +150,7 @@ describe('capot/client/account', function () {
 
 
     it('should throw when no password provided', function () {
-    
+
       Assert.throws(function () {
 
         acc.changePassword();
@@ -239,6 +239,27 @@ describe('capot/client/account', function () {
       });
     });
 
+
+  });
+
+
+  describe('account.changeUsername()', function () {
+
+    it('should...');
+
+  });
+
+
+  describe('account.resetPassword()', function () {
+
+    it('should...');
+
+  });
+
+
+  describe('account.destroy()', function () {
+
+    it('should...');
 
   });
 

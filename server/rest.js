@@ -28,10 +28,10 @@ exports.register = function (server, options, next) {
   const restDb = couch.db('rest');
 
   server.expose({
-    registerType: function (options) {
+    registerType: function (definition) {
 
       // NOTE TO SELF: Should each type be stored in its own database?
-      console.log('registerType', options);
+      console.log('registerType', definition);
     }
   });
 

@@ -23,7 +23,7 @@ internals.defaults = {
 };
 
 
-internals.removeDummyUsers = function (couch, cb) {
+internals.getAllUserDocs = function (couch, cb) {
 
   couch('/_users/_all_docs', {
     qs: {
@@ -41,15 +41,29 @@ internals.removeDummyUsers = function (couch, cb) {
       return cb(new Error(resp.body.error));
     }
 
-    const docs = resp.body.rows.map((row) => {
+    cb(null, resp.body.rows.map((row) => {
 
-      row.doc._deleted = true;
       return row.doc;
-    });
+    }));
+  });
+};
 
-    if (!docs.length) {
+
+internals.removeDummyUsers = function (couch, cb) {
+
+  internals.getAllUserDocs(couch, (err, docs) => {
+
+    if (err) {
+      return cb(err);
+    }
+    else if (!docs.length) {
       return cb();
     }
+
+    docs.forEach((doc) => {
+
+      doc._deleted = true;
+    });
 
     couch({
       method: 'POST',

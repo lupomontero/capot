@@ -261,7 +261,7 @@ exports.confirm = {
           context: { newPass: userDoc.password }
         }, (mailerErr, mailerResp) => {
 
-          usersDb.put(userDoc, (err, data) => {
+          usersDb.put(userDoc, (err) => {
 
             reply(arguments);
           });

@@ -20,7 +20,7 @@ internals.pad = function (n, digits, padding) {
     return str;
   }
 
-  for (var i = 0; i < diff; i++) {
+  for (var i = 0; i < diff; ++i) {
     str = padding + str;
   }
 

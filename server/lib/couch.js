@@ -242,7 +242,7 @@ module.exports = function (options) {
     //
     // Creates new design doc with CouchDB view on db.
     //
-    db.addIndex = function (name, mapReduce, cb) {
+    db.addIndex = function (index, mapReduce, cb) {
 
       if (!mapReduce || !_.isFunction(mapReduce.map)) {
         return cb(new Error('db.addIndex() expects mapReduce object to ' +
@@ -267,7 +267,7 @@ module.exports = function (options) {
         // saves work and avoids unnecessarily overwriting the
         // `_design/views` document when no actual changes have been made to
         // the view code (map/reduce).
-        if (_.isEqual(serialised, ddoc.views[name])) {
+        if (_.isEqual(serialised, ddoc.views[index])) {
           return cb(null, {
             ok: true,
             id: ddoc._id,
@@ -275,7 +275,7 @@ module.exports = function (options) {
           });
         }
 
-        ddoc.views[name] = serialised;
+        ddoc.views[index] = serialised;
         db.put(internals.viewsDdocId, ddoc, cb);
       });
     };
@@ -283,7 +283,7 @@ module.exports = function (options) {
     //
     // Removes couchdb view from db.
     //
-    db.removeIndex = function (name, cb) {
+    db.removeIndex = function (index, cb) {
 
       db.get(internals.viewsDdocId, (err, ddoc) => {
 
@@ -291,8 +291,8 @@ module.exports = function (options) {
           return cb(err);
         }
 
-        if (ddoc.views && ddoc.views[name]) {
-          delete ddoc.views[name];
+        if (ddoc.views && ddoc.views[index]) {
+          delete ddoc.views[index];
         }
 
         db.put(internals.viewsDdocId, ddoc, cb);
