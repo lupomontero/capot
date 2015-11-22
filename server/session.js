@@ -30,6 +30,94 @@ internals.proxyHandler = {
 };
 
 
+internals.createSession = function (config, email, pass, cb) {
+
+  Request.post(config.couchdb.url + '/_session', {
+    json: true,
+    body: { name: email, password: pass }
+  }, (err, resp) => {
+
+    if (err) {
+      return cb(Boom.wrap(err));
+    }
+    else if (resp.statusCode !== 200) {
+      return cb(Boom.create(resp.statusCode, resp.body.reason));
+    }
+
+    cb(null, resp.body, resp.headers['set-cookie']);
+  });
+};
+
+
+//
+// Check password against `derived_key2` and `salt2`. This is where the OAuth
+// plugin back's up credentials when it needs to change them to allow login via
+// OAuth.
+//
+internals.checkPass2 = function (config, email, pass, reply) {
+
+  const couch = Couch(config.couchdb);
+  const usersDb = couch.db('_users');
+  const encodedDocId = encodeURIComponent('org.couchdb.user:' + email);
+
+  usersDb.get(encodedDocId, (err, userDoc) => {
+
+    // on error we reply with 401 to avoid disclosing whether username/email
+    // is already registered.
+    if (err) {
+      return reply(Boom.create(401));
+    }
+
+    const key = userDoc.derived_key2;
+    const salt = userDoc.salt2;
+    const iterations = userDoc.iterations;
+
+    // if we don't have `derived_key2` and `salt2` we can not check for
+    // password automatically changed by OAuth login, so nothing else to do.
+    if (!key || !salt) {
+      return reply(Boom.create(401));
+    }
+
+    // TODO: installer should make sure password_scheme is set to pbkdf2.
+    // check pass against derived_key2 and salt2...
+    Crypto.pbkdf2(pass, salt, iterations, key.length, 'sha1', (err, hash) => {
+
+      if (err) {
+        return reply(Boom.wrap(err));
+      }
+
+      // If password doesn't match don't continue.
+      if (key !== hash.toString('hex').slice(0, key.length)) {
+        return reply(Boom.create(401));
+      }
+
+      // Now that we now this was the user's password before OAuth login
+      // programmatically changed it we change the user's password back to
+      // this and create a new CouchDB session.
+      userDoc.password = pass;
+      delete userDoc.derived_key2;
+      delete userDoc.salt2;
+
+      usersDb.put(encodedDocId, userDoc, (err) => {
+
+        if (err) {
+          return reply(Boom.create(500));
+        }
+
+        internals.createSession(config, email, pass, (err, body, cookie) => {
+
+          if (err) { // `err` should already be a `Boom` object.
+            return reply(err);
+          }
+
+          reply(body).header('set-cookie', cookie);
+        });
+      });
+    });
+  });
+};
+
+
 exports.get = {
   description: 'This endpoint is proxied directly to CouchDB\'s /_session.',
   handler: internals.proxyHandler
@@ -42,6 +130,9 @@ exports.remove = {
 };
 
 
+//
+// Create session route handler config.
+//
 exports.create = {
   description: 'Create session (cookie).',
   validate: {
@@ -54,90 +145,19 @@ exports.create = {
 
     const server = req.server;
     const config = server.settings.app.config;
-    const couch = Couch(config.couchdb);
-    const usersDb = couch.db('_users');
     const email = req.payload.email;
     const pass = req.payload.password;
 
-    Request.post(config.couchdb.url + '/_session', {
-      json: true,
-      body: { name: email, password: pass }
-    }, (err, resp) => {
+    internals.createSession(config, email, pass, (err, body, cookie) => {
 
-      if (err) {
-        return reply(Boom.wrap(err));
+      if (err && err.statusCode !== 401) { // `err` should be a `Boom` object.
+        return reply(err);
+      }
+      else if (resp && resp.statusCode === 200) {
+        return reply(body).header('set-cookie', cookie);
       }
 
-      if (resp.statusCode === 200) {
-        return reply(resp.body).header('set-cookie', resp.headers['set-cookie']);
-      }
-      else if (resp.statusCode !== 401) {
-        return reply(Boom.create(resp.statusCode, resp.body.reason));
-      }
-
-      const encodedDocId = encodeURIComponent('org.couchdb.user:' + email);
-      usersDb.get(encodedDocId, (err, userDoc) => {
-
-        // on error we reply with 401 to avoid disclosing whether username/email
-        // is already registered.
-        if (err) {
-          return reply(Boom.create(401));
-        }
-
-        const key = userDoc.derived_key2;
-        const salt = userDoc.salt2;
-        const iterations = userDoc.iterations;
-
-        // if we don't have `derived_key2` and `salt2` we can not check for
-        // password automatically changed by OAuth login, so nothing else to do.
-        if (!key || !salt) {
-          return reply(Boom.create(401));
-        }
-
-        // TODO: installer should make sure password_scheme is set to pbkdf2.
-        // check pass against derived_key2 and salt2...
-        Crypto.pbkdf2(pass, salt, iterations, key.length, 'sha1', (err, hash) => {
-
-          if (err) {
-            return reply(Boom.wrap(err));
-          }
-
-          // If password doesn't match don't continue.
-          if (key !== hash.toString('hex').slice(0, key.length)) {
-            return reply(Boom.create(401));
-          }
-
-          // Now that we now this was the user's password before OAuth login
-          // programmatically changed it we change the user's password back to
-          // this and create a new CouchDB session.
-          userDoc.password = pass;
-          delete userDoc.derived_key2;
-          delete userDoc.salt2;
-
-          usersDb.put(encodedDocId, userDoc, (err) => {
-
-            if (err) {
-              return reply(Boom.create(500));
-            }
-
-            Request.post(config.couchdb.url + '/_session', {
-              json: true,
-              body: { name: email, password: pass }
-            }, (err, resp) => {
-
-              if (err) {
-                return reply(Boom.wrap(err));
-              }
-
-              if (resp.statusCode !== 200) {
-                return reply(Boom.create(resp.statusCode, resp.body.reason));
-              }
-
-              reply(resp.body).header('set-cookie', resp.headers['set-cookie']);
-            });
-          });
-        });
-      });
+      internals.checkPass2(config, email, pass, reply);
     });
   }
 };
@@ -207,9 +227,9 @@ exports.register = function (server, options, next) {
     });
   };
 
-  server.auth.scheme('couchdb', (server, options) => {
+  server.auth.scheme('couchdb', (s, schemeOptions) => {
 
-    const validate = options.validateFunc;
+    const validate = schemeOptions.validateFunc;
 
     return {
       authenticate: function (req, reply) {

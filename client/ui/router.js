@@ -128,21 +128,21 @@ module.exports = Backbone.Router.extend({
 
   showView: function (name, opt) {
 
-    var View;
+    var Constructor;
 
     if (_.isFunction(name) && name instanceof View) {
-      View = name;
+      Constructor = name;
     }
     else if (_.isString(name)) {
-      View = internals.getProp(this.views, name);
-      if (!View) {
+      Constructor = internals.getProp(this.views, name);
+      if (!Constructor) {
         throw new Error('Unknown view: "' + name + '"');
       }
     }
 
-    //if (_.isFunction(name) && name instanceof View) {
-    var view = new View(_.extend({ app: this }, opt));
+    var view = new Constructor(_.extend({ app: this }, opt));
     this.setMainView(view);
+
     return view;
   },
 

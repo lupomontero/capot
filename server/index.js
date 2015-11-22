@@ -117,7 +117,7 @@ internals.loadCapotPlugins = function (server, cb) {
     return cb();
   }
 
-  Async.each(capotPlugins, (plugin, cb) => {
+  Async.each(capotPlugins, (plugin, eachCb) => {
 
     server.log('info', 'Initialising plugin ' + plugin);
     const abs = (plugin.charAt(0) === '.') ? Path.join(config.cwd, plugin) : plugin;
@@ -130,7 +130,7 @@ internals.loadCapotPlugins = function (server, cb) {
       else {
         server.log('info', 'Plugin ' + plugin + ' loaded!');
       }
-      cb();
+      eachCb();
     });
   }, cb);
 };

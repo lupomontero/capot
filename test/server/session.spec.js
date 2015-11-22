@@ -2,6 +2,7 @@
 
 
 const Assert = require('assert');
+const Async = require('async');
 const TestServer = require('../server');
 
 
@@ -159,28 +160,41 @@ describe('capot/server/auth', () => {
       });
     });
 
-    it('should authenticate valid credentials after pass changed by OAuth login', (done) => {
+    it.only('should authenticate valid credentials after pass changed by OAuth login', (done) => {
 
       const credentials = { email: 'test4@localhost', password: 'secret' };
 
-      server.req({
-        method: 'POST',
-        url: '/_users',
-        body: credentials
-      }, (err) => {
+      Async.waterfall([
+        function (cb) {
 
-        server.req({
-          method: 'POST',
-          url: '/_session',
-          body: credentials
-        }, (err, resp) => {
+          server.req({
+            method: 'POST',
+            url: '/_users',
+            body: credentials
+          }, (err) => {
 
-          Assert.ok(!err);
-          Assert.equal(resp.statusCode, 200);
-          Assert.equal(resp.body.ok, true);
-          Assert.equal(resp.body.name, credentials.email);
-          const cookie = resp.headers['set-cookie'][0];
-          Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
+            Assert.ok(!err);
+            cb();
+          });
+        },
+        function (cb) {
+
+          server.req({
+            method: 'POST',
+            url: '/_session',
+            body: credentials
+          }, (err, resp) => {
+
+            Assert.ok(!err);
+            Assert.equal(resp.statusCode, 200);
+            Assert.equal(resp.body.ok, true);
+            Assert.equal(resp.body.name, credentials.email);
+            const cookie = resp.headers['set-cookie'][0];
+            Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
+            cb();
+          });
+        },
+        function (cb) {
 
           server.req({
             method: 'GET',
@@ -194,48 +208,57 @@ describe('capot/server/auth', () => {
             userDoc.password = 'foo';
             userDoc.derived_key2 = userDoc.derived_key;
             userDoc.salt2 = userDoc.salt;
-
-            server.req({
-              method: 'PUT',
-              url: '/_users/' + encodeURIComponent(credentials.email),
-              auth: { user: 'admin', pass: 'secret' },
-              body: userDoc
-            }, (err, resp) => {
-
-              Assert.ok(!err);
-
-              server.req({
-                method: 'POST',
-                url: '/_session',
-                body: credentials
-              }, (err, resp) => {
-
-                Assert.ok(!err);
-                Assert.equal(resp.statusCode, 200);
-                const cookie = resp.headers['set-cookie'][0];
-                Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
-                Assert.equal(resp.body.ok, true);
-                Assert.equal(resp.body.name, credentials.email);
-
-                server.req({
-                  method: 'GET',
-                  url: '/_users/' + encodeURIComponent(credentials.email),
-                  auth: { user: 'admin', pass: 'secret' }
-                }, (err, resp) => {
-
-                  Assert.ok(!err);
-                  Assert.equal(resp.statusCode, 200);
-                  // After successfull login with password, derived_key2 and
-                  // salt2 should be gone.
-                  Assert.ok(!resp.body.derived_key2);
-                  Assert.ok(!resp.body.salt2);
-                  done();
-                });
-              });
-            });
+            cb(null, userDoc);
           });
-        });
-      });
+        },
+        function (userDoc, cb) {
+
+          server.req({
+            method: 'PUT',
+            url: '/_users/' + encodeURIComponent(credentials.email),
+            auth: { user: 'admin', pass: 'secret' },
+            body: userDoc
+          }, (err) => {
+
+            Assert.ok(!err);
+            cb();
+          });
+        },
+        function (cb) {
+
+          server.req({
+            method: 'POST',
+            url: '/_session',
+            body: credentials
+          }, (err, resp) => {
+
+            Assert.ok(!err);
+            Assert.equal(resp.statusCode, 200);
+            const cookie = resp.headers['set-cookie'][0];
+            Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
+            Assert.equal(resp.body.ok, true);
+            Assert.equal(resp.body.name, credentials.email);
+            cb();
+          });
+        },
+        function (cb) {
+
+          server.req({
+            method: 'GET',
+            url: '/_users/' + encodeURIComponent(credentials.email),
+            auth: { user: 'admin', pass: 'secret' }
+          }, (err, resp) => {
+
+            Assert.ok(!err);
+            Assert.equal(resp.statusCode, 200);
+            // After successfull login with password, derived_key2 and
+            // salt2 should be gone.
+            Assert.ok(!resp.body.derived_key2);
+            Assert.ok(!resp.body.salt2);
+            cb();
+          });
+        }
+      ], done);
     });
 
   });

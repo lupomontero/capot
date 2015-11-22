@@ -169,26 +169,20 @@ internals.ensureAdminUser = function (config, cb) {
 
   const couch = Couch({ url: config.couchdb.url });
 
-  const createAdminUser = function (config, cb) {
-
-    const url = '/_config/admins/' + encodeURIComponent(config.couchdb.user);
-    couch.put(url, config.couchdb.pass, cb);
-  };
-
   couch.isAdminParty((err, isAdminParty) => {
 
     if (err) {
-      cb(err);
+      return cb(err);
     }
     else if (isAdminParty && !config.couchdb.run) {
-      cb(new Error('Remote CouchDB is admin party!'));
+      return cb(new Error('Remote CouchDB is admin party!'));
     }
-    else if (isAdminParty) {
-      createAdminUser(config, cb);
+    else if (!isAdminParty) {
+      return cb();
     }
-    else {
-      cb();
-    }
+
+    const url = '/_config/admins/' + encodeURIComponent(config.couchdb.user);
+    couch.put(url, config.couchdb.pass, cb);
   });
 };
 
@@ -221,9 +215,9 @@ internals.ensureConfigValues = function (config, cb) {
     { key: 'couchdb/delayed_commits', val: 'false'  },
     { key: 'couch_httpd_auth/timeout', val: '1209600' },
     { key: 'couchdb/max_dbs_open', val: '1024' }
-  ], (item, cb) => {
+  ], (item, eachCb) => {
 
-    couch.config.set(item.key, item.val, cb);
+    couch.config.set(item.key, item.val, eachCb);
   }, cb);
 };
 
@@ -234,16 +228,16 @@ internals.ensureUsersDesignDoc = function (config, cb) {
   const usersDb = couch.db('_users');
 
   Async.series([
-    function (cb) {
+    function (seriesCb) {
 
       usersDb.addIndex('by_capot_id', {
         map: function (doc) {
 
           emit(doc.capotId, null);
         }
-      }, cb);
+      }, seriesCb);
     },
-    function (cb) {
+    function (seriesCb) {
 
       usersDb.addIndex('by_reset_token', {
         map: function (doc) {
@@ -252,7 +246,7 @@ internals.ensureUsersDesignDoc = function (config, cb) {
             emit(doc.$reset.token, null);
           }
         }
-      }, cb);
+      }, seriesCb);
     }
   ], cb);
 };
