@@ -369,7 +369,7 @@ internals.proxyHandler = {
 
 exports.get = {
   description: 'Get user document (by email).',
-  auth: 'admin',
+  //auth: 'user',
   validate: {
     params: {
       email: Joi.string().email().required()
@@ -381,7 +381,7 @@ exports.get = {
 
 exports.update = {
   description: 'Update user',
-  auth: 'user',
+  //auth: 'user',
   validate: {
     params: {
       email: Joi.string().email().required()

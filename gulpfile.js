@@ -78,6 +78,9 @@ Gulp.task('test:client', (done) => {
 
   server.start(true, () => {
 
+    process.env.TESTUSER_1_EMAIL = server.testUsers[0].email;
+    process.env.TESTUSER_1_PASSWORD = server.testUsers[0].password;
+
     const karma = new Karma.Server({
       configFile: __dirname + '/karma.conf.js',
       singleRun: true

@@ -22,8 +22,13 @@ module.exports = function (config) {
     ],
 
     preprocessors: {
-      'test/client/*.js': ['browserify']
+      'test/client/*.js': ['browserify', 'env']
     },
+
+    envPreprocessor: [
+      'TESTUSER_1_EMAIL',
+      'TESTUSER_1_PASSWORD'
+    ],
 
     browserify: {
       debug: true
@@ -47,7 +52,8 @@ module.exports = function (config) {
       'karma-browserify',
       'karma-mocha',
       'karma-mocha-reporter',
-      'karma-phantomjs-launcher'
+      'karma-phantomjs-launcher',
+      'karma-env-preprocessor'
     ]
 
   });

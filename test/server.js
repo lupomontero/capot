@@ -93,15 +93,40 @@ internals.removeDummyData = function (couch, cb) {
 };
 
 
-internals.addDummyUser = function (uri, name, pass, cb) {
+internals.waitForUserReady = function (uri, testUser, cb) {
+
+  Request({
+    method: 'POST',
+    url: uri + '/_session',
+    json: true,
+    body: testUser
+  }, (err, resp) => {
+
+    if (err) {
+      cb(err);
+    }
+    else if (!resp.body.roles || !resp.body.roles.length) {
+      setTimeout(() => {
+
+        internals.waitForUserReady(uri, testUser, cb);
+      }, 300);
+    }
+    else {
+      cb();
+    }
+  });
+};
+
+
+internals.addDummyUser = function (uri, testUser, cb) {
 
   Request({
     method: 'POST',
     url: uri + '/_users',
     json: true,
     body: {
-      email: name,
-      password: pass
+      email: testUser.email,
+      password: testUser.password
     }
   }, (err, resp) => {
 
@@ -113,12 +138,12 @@ internals.addDummyUser = function (uri, name, pass, cb) {
       return cb(new Error(resp.body.error));
     }
 
-    cb();
+    internals.waitForUserReady(uri, testUser, cb);
   });
 };
 
 
-internals.addDummyData = function (couch, uri, cb) {
+internals.addDummyData = function (couch, uri, testUsers, cb) {
 
   internals.removeDummyData(couch, (err) => {
 
@@ -126,7 +151,7 @@ internals.addDummyData = function (couch, uri, cb) {
       return cb(err);
     }
 
-    internals.addDummyUser(uri, 'testuser1@example.com', 'secret1', cb);
+    Async.each(testUsers, Async.apply(internals.addDummyUser, uri), cb);
   });
 };
 
@@ -149,9 +174,16 @@ module.exports = function TestServer(options) {
   });
 
   let child;
+  const testUsers = [
+    { email: 'test1-' + Date.now() + '@localhost', password: 'secret1' },
+    { email: 'test2-' + Date.now() + '@localhost', password: 'secret1' }
+  ];
 
 
   return {
+
+
+    testUsers: testUsers,
 
 
     start: function (dummyData, done) {
@@ -194,7 +226,7 @@ module.exports = function TestServer(options) {
             if (!dummyData) {
               return originalDone();
             }
-            internals.addDummyData(couch, uri, originalDone);
+            internals.addDummyData(couch, uri, testUsers, originalDone);
           }
         });
 

@@ -11,7 +11,11 @@ describe('capot/client/account', function () {
   this.timeout(5 * 1000);
 
 
-  var testUser = { email: 'testuser1@example.com', pass: 'secret1' };
+  var testUser = {
+    email: window.__env__.TESTUSER_1_EMAIL,
+    pass: window.__env__.TESTUSER_1_PASSWORD
+  };
+
   var capot = Capot();
   var acc = capot.account;
 

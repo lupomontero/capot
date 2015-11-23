@@ -221,9 +221,11 @@ describe('capot/server/session', () => {
             url: '/_users/' + encodeURIComponent(credentials.email),
             auth: { user: 'admin', pass: 'secret' },
             body: userDoc
-          }, (err) => {
+          }, (err, resp) => {
 
             Assert.ok(!err);
+            Assert.equal(resp.body.ok, true);
+            Assert.equal(resp.statusCode, 201);
             cb();
           });
         },

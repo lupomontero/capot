@@ -150,7 +150,7 @@ exports.create = {
 
     internals.createSession(config, email, pass, (err, body, cookie) => {
 
-      if (err && err.statusCode !== 401) { // `err` should be a `Boom` object.
+      if (err && err.output.statusCode !== 401) { // `err` is a `Boom` object.
         return reply(err);
       }
       else if (!err) {
