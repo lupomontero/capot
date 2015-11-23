@@ -173,95 +173,97 @@ module.exports = function TestServer(options) {
     json: true
   });
 
-  let child;
-  const testUsers = [
-    { email: 'test1-' + Date.now() + '@localhost', password: 'secret1' },
-    { email: 'test2-' + Date.now() + '@localhost', password: 'secret1' }
-  ];
 
-
-  return {
-
-
-    testUsers: testUsers,
-
-
-    start: function (dummyData, done) {
-
-      if (arguments.length === 1) {
-        done = dummyData;
-        dummyData = false;
-      }
-
-      Async.series([
-        Async.apply(Rimraf, tmpdir),
-        Async.apply(Mkdirp, tmpdir),
-        Async.apply(Fs.writeFile, Path.join(tmpdir, 'package.json'), internals.pkgJsonTmpl)
-      ], (err) => {
-
-        const out = [];
-
-        if (err) {
-          return done(err);
-        }
-
-        child = Cp.spawn(settings.bin, ['--port', settings.port, '--debug'], {
-          cwd: tmpdir,
-          env: _.extend({}, process.env, { COUCHDB_PASS: settings.pass })
-        });
-
-        child.stderr.on('data', (chunk) => {
-
-          console.error('stderr: ' + chunk);
-        });
-
-        child.stdout.on('data', (chunk) => {
-
-          // keep output, so that if server crashes we can show it.
-          out.push(chunk);
-
-          if (/capot back-end has started/i.test(chunk)) {
-            const originalDone = done;
-            done = function () {};
-            if (!dummyData) {
-              return originalDone();
-            }
-            internals.addDummyData(couch, uri, testUsers, originalDone);
-          }
-        });
-
-        child.once('close', (code, signal) => {
-
-          if (code > 0) {
-            console.error(out.join(''));
-            done(new Error('Server crashed!'));
-          }
-        });
-      });
-    },
-
-
-    stop: function (done) {
-
-      if (typeof child.exitCode === 'number') {
-        return Rimraf(tmpdir, done);
-      }
-
-      child.once('close', (code, signal) => {
-
-        Rimraf(tmpdir, done);
-      });
-
-      child.kill();
-    },
-
-
-    req: Request.defaults({
-      baseUrl: uri,
-      json: true
-    })
-
-
+  const server = {
+    settings: settings,
+    tmpdir: tmpdir,
+    uri: uri,
+    couch: couch,
+    child: null,
+    testUsers: [
+      { email: 'test1-' + Date.now() + '@localhost', password: 'secret1' },
+      { email: 'test2-' + Date.now() + '@localhost', password: 'secret1' }
+    ]
   };
+
+
+  server.start = function (dummyData, done) {
+
+    if (arguments.length === 1) {
+      done = dummyData;
+      dummyData = false;
+    }
+
+    Async.series([
+      Async.apply(Rimraf, tmpdir),
+      Async.apply(Mkdirp, tmpdir),
+      Async.apply(Fs.writeFile, Path.join(tmpdir, 'package.json'), internals.pkgJsonTmpl)
+    ], (err) => {
+
+      const out = [];
+
+      if (err) {
+        return done(err);
+      }
+
+      server.child = Cp.spawn(settings.bin, ['--port', settings.port, '--debug'], {
+        cwd: tmpdir,
+        env: _.extend({}, process.env, { COUCHDB_PASS: settings.pass })
+      });
+
+      server.child.stderr.on('data', (chunk) => {
+
+        console.error('stderr: ' + chunk);
+      });
+
+      server.child.stdout.on('data', (chunk) => {
+
+        // keep output, so that if server crashes we can show it.
+        out.push(chunk);
+
+        if (/capot back-end has started/i.test(chunk)) {
+          const originalDone = done;
+          done = function () {};
+          if (!dummyData) {
+            return originalDone();
+          }
+          internals.addDummyData(couch, uri, server.testUsers, originalDone);
+        }
+      });
+
+      server.child.once('close', (code, signal) => {
+
+        if (code > 0) {
+          console.error(out.join(''));
+          done(new Error('Server crashed!'));
+        }
+      });
+    });
+  };
+
+
+  server.stop = function (done) {
+
+    if (typeof server.child.exitCode === 'number') {
+      return Rimraf(tmpdir, done);
+    }
+
+    server.child.once('close', (code, signal) => {
+
+      Rimraf(tmpdir, done);
+    });
+
+    server.child.kill();
+  };
+
+
+  server.req = Request.defaults({
+    baseUrl: uri,
+    json: true
+  });
+
+
+  return server;
+
 };
 
