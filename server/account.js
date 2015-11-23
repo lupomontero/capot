@@ -144,16 +144,19 @@ internals.handleAccountDeletion = function (server, userDoc) {
     if (err) {
       return done(err);
     }
+
     couch.del(encodeURIComponent(dbDoc.database), (err) => {
 
       if (err) {
         return done(err);
       }
+
       appDb.remove(dbDoc, (err) => {
 
         if (err) {
           return done(err);
         }
+
         done();
       });
     });
@@ -162,12 +165,22 @@ internals.handleAccountDeletion = function (server, userDoc) {
 
 
 exports.reset = {
+  description: 'Send password reset link via email',
+  validate: {
+    params: {
+      email: Joi.string().email().required()
+    }
+  },
   handler: function (req, reply) {
 
-    const usersDb = app.couch.db('_users');
+    const server = req.server;
+    const config = server.settings.app.config;
+    const couch = Couch(config.couchdb);
+    const app = server.app;
+    const usersDb = couch.db('_users');
     const sendMail = app.sendMail;
     const baseurl = req.payload.baseurl;
-    const userDocId = 'org.couchdb.user:' + req.payload.email;
+    const docUrl = encodeURIComponent('org.couchdb.user:' + req.params.email);
 
     const sendResetLink = function (userDoc) {
 
@@ -181,18 +194,25 @@ exports.reset = {
           error: mailerErr,
           response: mailerResp
         });
-        userDoc.$reset.updatedAt = new Date();
-        usersDb.put(userDoc, (err, data) => {
 
-          if (err) {
+        userDoc.$reset.updatedAt = new Date();
+
+        usersDb.put(docUrl, userDoc, (err, data) => {
+
+          if (mailerErr) {
+            server.log('error', mailerErr);
+            return reply(mailerErr);
+          }
+          else if (err) {
             return reply(err);
           }
-          reply(mailerErr || { ok: true });
+
+          reply({ ok: true });
         });
       });
     };
 
-    usersDb.get(userDocId, (err, userDoc) => {
+    usersDb.get(docUrl, (err, userDoc) => {
 
       if (err) {
         return reply(Boom.notFound());
@@ -214,11 +234,12 @@ exports.reset = {
         attempts: []
       };
 
-      usersDb.put(userDoc, (err, data) => {
+      usersDb.put(docUrl, userDoc, (err, data) => {
 
         if (err) {
           return reply(err);
         }
+
         userDoc._rev = data.rev;
         sendResetLink(userDoc);
       });
@@ -228,19 +249,31 @@ exports.reset = {
 
 
 exports.confirm = {
+  description: 'Handle password reset link confirmation',
+  validate: {
+    params: {
+      email: Joi.string().email().required(),
+      token: Joi.string().required()
+    }
+  },
   handler: function (req, reply) {
 
-    const usersDb = app.couch.db('_users');
+    const server = req.server;
+    const config = server.settings.app.config;
+    const couch = Couch(config.couchdb);
+    const app = server.app;
+    const usersDb = couch.db('_users');
     const sendMail = app.sendMail;
     const token = req.params.token;
 
-    usersDb.query('views/by_reset_token', { key: token }, (err, data) => {
+    usersDb.query('by_reset_token', { key: token }, (err, rows) => {
 
       if (err) {
         return reply(err);
       }
 
-      const row = data.rows.shift();
+      const row = rows.shift();
+
       if (!row || !row.id) {
         return reply(Boom.notFound());
       }
@@ -393,18 +426,8 @@ exports.update = {
 
 exports.remove = {
   description: 'Delete user',
-  auth: 'user',
-  handler: {
-    proxy: {
-      passThrough: true,
-      mapUri: function (req, cb) {
-
-        console.log(req.url);
-        //const couchUrl = req.server.settings.app.config.couchdb.url;
-        //cb(null, couchUrl + '/_users', req.headers);
-      }
-    }
-  }
+  //auth: 'user',
+  handler: internals.proxyHandler
 };
 
 

@@ -463,10 +463,12 @@ exports.register = function (server, options, next) {
           if (!doc.oauth || !doc.oauth.length) {
             return;
           }
-          doc.oauth.forEach((item) => {
 
-            emit([item.provider, item.uid], doc);
-          });
+          // Note that we use `var` as this is code to ve run by CouchDB
+          for (var i = 0; i < doc.oauth.length; ++i) { //eslint-disable-line no-var
+
+            emit([doc.oauth[i].provider, doc.oauth[i].uid], doc);
+          }
         }
       }, cb);
     },

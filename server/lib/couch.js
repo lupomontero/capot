@@ -308,7 +308,7 @@ module.exports = function (options) {
         params = null;
       }
 
-      const viewUrl = '/_design/views/_view/' + index;
+      let viewUrl = '/_design/views/_view/' + index;
 
       // If params have been passed we build the query string.
       if (params) {

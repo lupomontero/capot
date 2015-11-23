@@ -1,6 +1,7 @@
 'use strict';
 
 
+const Os = require('os');
 const Async = require('async');
 const Nodemailer = require('nodemailer');
 const Handlebars = require('handlebars');
@@ -45,9 +46,9 @@ internals.templateDocs = [
 ];
 
 
-internals.createTransport = function createTransport(mailerConf) {
+internals.createTransport = function (mailerConf) {
 
-  if (!mailerConf.service) {
+  if (!mailerConf || !mailerConf.service) {
     return Nodemailer.createTransport();
   }
 
@@ -61,7 +62,7 @@ internals.createTransport = function createTransport(mailerConf) {
 };
 
 
-internals.render = function render(appDb, configDoc, msg, cb) {
+internals.render = function (appDb, configDoc, msg, cb) {
 
   const ctx = msg.context || {};
 
@@ -72,21 +73,31 @@ internals.render = function render(appDb, configDoc, msg, cb) {
     ctx.appUrl = configDoc.app.url;
   }
 
-  appDb.get('email/' + msg.template).then((templateDoc) => {
+  appDb.get(encodeURIComponent('email/' + msg.template), (err, templateDoc) => {
+
+    if (err) {
+      return cb(err);
+    }
 
     msg.subject = Handlebars.compile(templateDoc.subject)(ctx);
     msg.text = Handlebars.compile(templateDoc.text)(ctx);
     cb(null, msg);
-  }, cb);
+  });
 };
 
 
-internals.send = function send(server, configDoc, msg, cb) {
+internals.send = function (server, configDoc, msg, cb) {
 
   const transporter = internals.createTransport(configDoc.mailer);
 
   msg.subject = '[' + configDoc.app.name + '] ' + msg.subject;
-  msg.from = configDoc.mailer.from;
+
+  if (configDoc.mailer && configDoc.mailer.from) {
+    msg.from = configDoc.mailer.from;
+  }
+  else {
+    msg.from = server.settings.app.pkg.name + '@' + Os.hostname();
+  }
 
   transporter.sendMail(msg, (err, data) => {
 

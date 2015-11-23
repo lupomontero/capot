@@ -326,7 +326,76 @@ describe('capot/server/account', () => {
   describe('DELETE /_users/{email}', () => {
 
 
-    it('should...');
+    it('should fail when not authenticated', (done) => {
+
+      server.req({
+        method: 'DELETE',
+        url: '/_users/' + server.testUsers[0].email
+      }, (err, resp) => {
+
+        Assert.ok(!err);
+        Assert.equal(resp.statusCode, 404);
+        done();
+      });
+    });
+
+
+    it('should fail when rev missing', (done) => {
+
+      server.req({
+        method: 'DELETE',
+        url: '/_users/' + server.testUsers[0].email,
+        auth: {
+          user: server.testUsers[0].email,
+          pass: server.testUsers[0].password
+        }
+      }, (err, resp) => {
+
+        Assert.ok(!err);
+        Assert.equal(resp.statusCode, 409);
+        done();
+      });
+    });
+
+
+    it('should delete when all good', (done) => {
+
+      const email = server.testUsers[1].email;
+      const pass = server.testUsers[1].password;
+
+      Async.waterfall([
+        function (cb) {
+
+          server.req({
+            method: 'GET',
+            url: '/_users/' + email,
+            auth: { user: email, pass: pass }
+          }, (err, resp) => {
+
+            Assert.ok(!err);
+            Assert.equal(resp.statusCode, 200);
+            cb(null, resp.body);
+          });
+        },
+        function (userDoc, cb) {
+
+          server.req({
+            method: 'DELETE',
+            url: '/_users/' + email,
+            headers: {
+              'if-match': userDoc._rev
+            },
+            auth: { user: email, pass: pass }
+          }, (err, resp) => {
+
+            Assert.ok(!err);
+            Assert.equal(resp.statusCode, 200);
+            Assert.equal(resp.body.id, 'org.couchdb.user:' + email);
+            done();
+          });
+        }
+      ], done);
+    });
 
 
   });
@@ -335,7 +404,37 @@ describe('capot/server/account', () => {
   describe('POST /_users/{email}/_reset', () => {
 
 
-    it('should...');
+    it('should fail when bad email', (done) => {
+
+      server.req({
+        method: 'POST',
+        url: '/_users/foo/_reset',
+        body: {}
+      }, (err, resp) => {
+
+        Assert.ok(!err);
+        Assert.equal(resp.statusCode, 400);
+        Assert.equal(resp.body.validation.source, 'params');
+        Assert.deepEqual(resp.body.validation.keys, ['email']);
+        done();
+      });
+    });
+
+
+    it('should send password reset link via email', (done) => {
+
+      server.req({
+        method: 'POST',
+        url: '/_users/' + server.testUsers[0].email + '/_reset',
+        body: {}
+      }, (err, resp) => {
+
+        Assert.ok(!err);
+        Assert.equal(resp.statusCode, 200);
+        Assert.deepEqual(resp.body, { ok: true });
+        done();
+      });
+    });
 
 
   });
@@ -344,7 +443,20 @@ describe('capot/server/account', () => {
   describe('GET /_users/{email}/_reset/{token}', () => {
 
 
-    it('should...');
+    it('should fail with 404 when unknown token', (done) => {
+
+      server.req({
+        method: 'GET',
+        url: '/_users/' + server.testUsers[0].email + '/_reset/xxxx'
+      }, (err, resp) => {
+
+        Assert.ok(!err);
+        Assert.equal(resp.statusCode, 404);
+        done();
+      });
+    });
+
+    it('should reset password?');
 
 
   });
