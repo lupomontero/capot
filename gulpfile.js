@@ -147,7 +147,7 @@ Gulp.task('hbs:admin', () => {
 });
 
 
-Gulp.task('build:client', ['test:client'], () => {
+Gulp.task('build:client', () => {
 
   const bundler = Browserify(internals.components.client.main, {
     standalone: 'Capot'
@@ -157,7 +157,7 @@ Gulp.task('build:client', ['test:client'], () => {
 });
 
 
-Gulp.task('build:ui', ['lint'], () => {
+Gulp.task('build:ui', () => {
 
   const bundler = Browserify(internals.components.ui.main, {
     standalone: 'CapotUI'
