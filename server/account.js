@@ -180,14 +180,17 @@ exports.reset = {
     const usersDb = couch.db('_users');
     const sendMail = app.sendMail;
     const baseurl = req.payload.baseurl;
-    const docUrl = encodeURIComponent('org.couchdb.user:' + req.params.email);
+    const email = req.params.email;
+    const docUrl = encodeURIComponent('org.couchdb.user:' + email);
 
     const sendResetLink = function (userDoc) {
 
       sendMail({
         to: userDoc.name,
         template: 'password-reset',
-        context: { resetLink: baseurl + '/_reset/' + userDoc.$reset.token }
+        context: {
+          resetLink: baseurl + '/_users/' + email + '/_reset/' + userDoc.$reset.token
+        }
       }, (mailerErr, mailerResp) => {
 
         userDoc.$reset.attempts.push({
@@ -266,23 +269,32 @@ exports.confirm = {
     const sendMail = app.sendMail;
     const token = req.params.token;
 
-    usersDb.query('by_reset_token', { key: token }, (err, rows) => {
+    Async.waterfall([
+      // 1. Get user by reset token.
+      function (cb) {
 
-      if (err) {
-        return reply(err);
-      }
+        usersDb.query('by_reset_token', { key: token }, (err, rows) => {
 
-      const row = rows.shift();
+          if (err) {
+            return cb(err);
+          }
 
-      if (!row || !row.id) {
-        return reply(Boom.notFound());
-      }
+          const row = rows.shift();
 
-      usersDb.get(row.id, (err, userDoc) => {
+          if (!row || !row.id) {
+            return cb(Boom.notFound());
+          }
 
-        if (err) {
-          return reply(err);
-        }
+          cb(null, row);
+        });
+      },
+      // 2. Get user doc.
+      function (row, cb) {
+
+        usersDb.get(row.id, cb);
+      },
+      // 3. Generate pass and send email.
+      function (userDoc, resp, cb) {
 
         // TODO: check that token is valid (hasnt expired, ...)
         userDoc.password = Uid(10);
@@ -294,12 +306,27 @@ exports.confirm = {
           context: { newPass: userDoc.password }
         }, (mailerErr, mailerResp) => {
 
-          usersDb.put(userDoc, (err) => {
+          if (mailerErr) {
+            server.log('warn', mailerErr);
+          }
+          if (mailerResp) {
+            server.log('info', mailerResp);
+          }
 
-            reply(arguments);
-          });
+          cb(null, userDoc);
         });
-      });
+      },
+      // 4. Update user doc with new pass.
+      function (userDoc, cb) {
+
+        usersDb.put(encodeURIComponent(userDoc._id), userDoc, cb);
+      }
+    ], (err) => {
+
+      if (err) {
+        return reply(err);
+      }
+      reply({ ok: true });
     });
   }
 };

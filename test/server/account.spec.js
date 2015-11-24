@@ -456,7 +456,57 @@ describe('capot/server/account', () => {
       });
     });
 
-    it('should reset password?');
+
+    it('should reset password', (done) => {
+
+      const email = server.testUsers[0].email;
+
+      Async.waterfall([
+        // 1. Request password reset
+        function (cb) {
+
+          server.req({
+            method: 'POST',
+            url: '/_users/' + email + '/_reset',
+            body: {}
+          }, (err, resp) => {
+
+            Assert.ok(!err);
+            Assert.equal(resp.statusCode, 200);
+            Assert.deepEqual(resp.body, { ok: true });
+            cb();
+          });
+        },
+        // 2. Check reset token on db.
+        function (cb) {
+
+          const docId = 'org.couchdb.user:' + email;
+          const docUrl = '/_users/' + encodeURIComponent(docId);
+
+          server.couch(docUrl, (err, resp) => {
+
+            Assert.ok(!err);
+            Assert.equal(resp.statusCode, 200);
+            Assert.equal(typeof resp.body.$reset.token, 'string');
+            cb(null, resp.body.$reset.token);
+          });
+        },
+        // 3. Follow confirmation link...
+        function (token, cb) {
+
+          server.req({
+            method: 'GET',
+            url: '/_users/' + email + '/_reset/' + token
+          }, (err, resp) => {
+
+            Assert.ok(!err);
+            Assert.equal(resp.statusCode, 200);
+            Assert.equal(resp.body.ok, true);
+            cb();
+          });
+        }
+      ], done);
+    });
 
 
   });

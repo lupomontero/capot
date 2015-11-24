@@ -162,7 +162,7 @@ module.exports = function (capot) {
 
   account.resetPassword = function (email) {
 
-    return capot.request('POST', '/_reset', {
+    return capot.request('POST', '/_users/' + email + '/_reset', {
       email: email,
       baseurl: window.location.origin
     });
