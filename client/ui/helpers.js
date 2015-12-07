@@ -8,7 +8,8 @@ var Handlebars = window.Handlebars;
 
 Handlebars.registerHelper('log', function (value) {
 
-  console.log(value);
+  var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
+  console.log.apply(console, args);
 });
 
 
