@@ -218,7 +218,8 @@ internals.ensureConfigValues = function (config, cb) {
   Async.each([
     { key: 'couchdb/delayed_commits', val: 'false'  },
     { key: 'couch_httpd_auth/timeout', val: '1209600' },
-    { key: 'couchdb/max_dbs_open', val: '1024' }
+    { key: 'couchdb/max_dbs_open', val: '1024' },
+    { key: 'httpd/enable_cors', val: 'true' }
   ], (item, eachCb) => {
 
     couch.config.set(item.key, item.val, eachCb);
