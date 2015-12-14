@@ -3,7 +3,6 @@ language: node_js
 node_js:
   - 5
 before_script:
-  - npm install -g add-cors-to-couchdb && add-cors-to-couchdb
   - npm install -g gulp
 env:
   - CXX=g++-4.8
