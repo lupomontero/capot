@@ -196,6 +196,10 @@ internals.checkAdminCredentials = function (config, cb) {
     password: config.couchdb.pass
   }, (err, data) => {
 
+    if (err) {
+      data = {};
+    }
+
     const roles = (data || {}).roles || [];
 
     if (roles.indexOf('_admin') === -1) {

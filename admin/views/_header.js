@@ -56,7 +56,7 @@ module.exports = View.extend({
     'click [data-action="signout"]': 'signout'
   },
 
-  signout: function (e) {
+  signout: function () {
 
     var app = this.app;
 
@@ -67,6 +67,8 @@ module.exports = View.extend({
 
       console.error('signout:fail', arguments);
     });
+
+    return false;
   }
 
 });

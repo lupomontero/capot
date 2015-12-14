@@ -118,6 +118,8 @@ describe('capot/server/session', () => {
         body: credentials
       }, (err) => {
 
+        Assert.ok(!err);
+
         credentials.password = 'xxx';
 
         server.req({
@@ -142,6 +144,8 @@ describe('capot/server/session', () => {
         url: '/_users',
         body: credentials
       }, (err) => {
+
+        Assert.ok(!err);
 
         server.req({
           method: 'POST',

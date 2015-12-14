@@ -257,6 +257,10 @@ module.exports = function (capot) {
         done();
       }, function (err) {
 
+        if (err) {
+          capot.log('error', err);
+        }
+
         account.session = internals.getState() || {};
         account.session.isOnline = false;
         done();
@@ -311,6 +315,10 @@ module.exports = function (capot) {
         account.emit('oauth', session);
       });
     }, function (err) {
+
+      if (err) {
+        capot.log('error', err);
+      }
 
       if (xhr.status !== 401) {
         capot.log('error', 'Status: ' + xhr.status + '\n' + xhr.responseText);
