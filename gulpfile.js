@@ -6,7 +6,7 @@ const Gulp = require('gulp');
 const Concat = require('gulp-concat');
 const Declare = require('gulp-declare');
 const Eslint = require('gulp-eslint');
-const Favicons = require('favicons');
+const Favicons = require('gulp-favicons');
 const Handlebars = require('gulp-handlebars');
 const Mocha = require('gulp-mocha');
 const Rename = require('gulp-rename');
@@ -177,24 +177,21 @@ Gulp.task('build:admin', ['hbs:admin'], () => {
 Gulp.task('build', ['build:client', 'build:ui', 'build:admin']);
 
 
-Gulp.task('favicons', (done) => {
+Gulp.task('favicons', () => {
 
-  Favicons({
-    files: {
-      src: 'admin/icon.png',
-      dest: 'admin/favicons',
-      html: 'admin/index.html'
-    },
-    settings: {
+  return Gulp.src('admin/icon.png')
+    .pipe(Favicons({
+      html: 'admin/index.html',
       appName: Pkg.name,
       appDescription: Pkg.description,
       version: Pkg.version,
-      developer: 'Lupo Montero',
-      developerURL: 'http://lupomontero.com',
+      developerName: Pkg.author.name,
+      developerURL: Pkg.author.url,
       index: '/',
-      url: 'http://lupomontero.github.io/capot/'
-    }
-  }, done);
+      url: Pkg.homepage,
+      path: 'favicons/'
+    }))
+    .pipe(Gulp.dest('admin/favicons'));
 });
 
 
