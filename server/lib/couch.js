@@ -159,6 +159,7 @@ module.exports = function (options) {
       couch.put(encodeURIComponent(name), cb);
     };
 
+
     db.createIfNotExists = function (cb) {
 
       db.exists((err, exists) => {
@@ -172,6 +173,7 @@ module.exports = function (options) {
         db.create(cb);
       });
     };
+
 
     db.changes = function (params, cb) {
 
