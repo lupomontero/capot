@@ -7,6 +7,14 @@
 //
 var Extend = require('extend');
 var Async = require('async');
+var PouchDB = require('pouchdb');
+
+
+var Request = require('./request');
+var Uid = require('./uid');
+var Log = require('./log');
+var Account = require('./account');
+var Store = require('./store');
 
 
 var internals = {};
@@ -33,18 +41,18 @@ module.exports = function Capot(options) {
 
   var capot = {
     settings: settings,
-    request: require('./request')({ url: window.location.origin }),
-    uid: require('./uid'),
-    log: require('./log')(settings)
+    request: Request({ url: window.location.origin }),
+    uid: Uid,
+    log: Log(settings)
   };
 
 
-  var account = capot.account = require('./account')(capot);
-  var store = capot.store = require('./store')(capot);
+  var account = capot.account = Account(capot);
+  var store = capot.store = Store(capot);
 
 
   capot.log('debug', 'Dependencies: jQuery ' + jQuery.fn.jquery + ', PouchDB ' +
-    require('pouchdb').version);
+    PouchDB.version);
 
 
   capot.start = function (cb) {
