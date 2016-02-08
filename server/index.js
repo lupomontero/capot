@@ -27,8 +27,7 @@ internals.hapiPlugins = [
   require('./www'),
   require('./account'),
   require('./oauth'),
-  require('./changes'),
-  require('./rest')
+  require('./changes')
 ];
 
 
