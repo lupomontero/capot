@@ -256,6 +256,16 @@ exports.register = function (server, options, next) {
             return reply(Boom.unauthorized());
           }
 
+          const roles = (credentials.userCtx || {}).roles || [];
+          credentials.isAdmin = roles.indexOf('_admin') >= 0 || roles.indexOf('admin') >= 0;
+          credentials.uid = roles.reduce((memo, role) => {
+
+            const matches = /^capot:read:user\/([a-z0-9]+)$/.exec(role);
+            if (matches && matches.length > 1) {
+              return matches[1];
+            }
+            return memo;
+          }, null);
           reply.continue({ credentials: credentials });
         });
       }
