@@ -119,13 +119,11 @@ Gulp.task('hbs:admin', () => {
   const partials = Gulp.src('admin/templates/_*.hbs')
     .pipe(Handlebars({ handlebars: require('handlebars') }))
     .pipe(Wrap(partialsWrapper, {}, {
-      imports: {
-        processPartialName: function (fileName) {
+      processPartialName: function (fileName) {
 
-          // Strip the extension and the underscore
-          // Escape the output with JSON.stringify
-          return JSON.stringify(Path.basename(fileName, '.js').substr(1));
-        }
+        // Strip the extension and the underscore
+        // Escape the output with JSON.stringify
+        return JSON.stringify(Path.basename(fileName, '.js').substr(1));
       }
     }));
 
