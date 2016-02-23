@@ -60,6 +60,10 @@ module.exports = function (options) {
       data = data[0];
     }
 
+    if (typeof window.console === 'undefined' || typeof window.console.log !== 'function') {
+      return;
+    }
+
     console.log(internals.formatDate(new Date()), tags, data);
   };
 
