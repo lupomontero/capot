@@ -178,8 +178,8 @@ internals.listen = function (couch, feed) {
 
 exports.register = function (server, options, next) {
 
-  const config = server.settings.app.config;
-  const couch = Couch(config.couchdb);
+  const settings = server.settings.app;
+  const couch = Couch(settings.couchdb);
   const changesDb = couch.db('changes');
   const feed = server.app.changes = new Events.EventEmitter();
 

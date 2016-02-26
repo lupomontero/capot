@@ -13,6 +13,8 @@ const _ = require('lodash');
 const Good = require('good');
 const GoodConsole = require('good-console');
 const Installer = require('./lib/installer');
+const Settings = require('./lib/settings');
+const Couch = require('./lib/couch');
 const Routes = require('./routes');
 
 
@@ -33,6 +35,12 @@ internals.hapiPlugins = [
 
 internals.createLogger = function (server, cb) {
 
+  const settings = server.settings.app;
+
+  if (!settings.debug) {
+    return cb();
+  }
+
   server.register({
     register: Good,
     options: {
@@ -45,24 +53,6 @@ internals.createLogger = function (server, cb) {
       }]
     }
   }, cb);
-};
-
-
-internals.createConfig = function (argv) {
-
-  const env = process.env;
-
-  return _.extend({}, {
-    debug: argv.debug === true,
-    port: 3001,
-    cwd: process.cwd(),
-    data: Path.join(process.cwd(), 'data'),
-    couchdb: {
-      url: env.COUCHDB_URL,
-      user: env.COUCHDB_USER || 'admin',
-      pass: env.COUCHDB_PASS
-    }
-  }, _.omit(argv, ['_']));
 };
 
 
@@ -86,9 +76,9 @@ internals.requireExtension = function (server, path, cb) {
 
 internals.loadUserland = function (server, cb) {
 
-  const config = server.settings.app.config;
+  const settings = server.settings.app;
 
-  internals.requireExtension(server, config.cwd, (err) => {
+  internals.requireExtension(server, settings.cwd, (err) => {
 
     if (err) {
       if (err.code !== 'MODULE_NOT_FOUND') {
@@ -108,7 +98,7 @@ internals.loadUserland = function (server, cb) {
 
 internals.loadCapotPlugins = function (server, cb) {
 
-  const config = server.settings.app.config;
+  const settings = server.settings.app;
   // read capot plugins from package.json and add those to pluginsPaths...
   const capotPlugins = (server.settings.app.pkg.capot || {}).plugins || [];
 
@@ -119,7 +109,7 @@ internals.loadCapotPlugins = function (server, cb) {
   Async.each(capotPlugins, (plugin, eachCb) => {
 
     server.log('info', 'Initialising plugin ' + plugin);
-    const abs = (plugin.charAt(0) === '.') ? Path.join(config.cwd, plugin) : plugin;
+    const abs = (plugin.charAt(0) === '.') ? Path.join(settings.cwd, plugin) : plugin;
     internals.requireExtension(server, abs, (err) => {
 
       if (err) {
@@ -135,9 +125,8 @@ internals.loadCapotPlugins = function (server, cb) {
 };
 
 
-internals.createServer = function (config) {
+internals.createServer = function (settings) {
 
-  const Pkg = require(Path.join(config.cwd, 'package.json'));
   const server = new Hapi.Server({
     //debug: {
     //  log: [ 'info', 'warn', 'error' ],
@@ -149,7 +138,7 @@ internals.createServer = function (config) {
           maxBytes: 1048576 * 5 // 5Mb
         },
         files: {
-          relativeTo: Path.join(config.cwd, config.www || 'www')
+          relativeTo: Path.join(settings.cwd, settings.www || 'www')
         }
       }
     },
@@ -157,39 +146,26 @@ internals.createServer = function (config) {
     // server.settings.app. Note the difference between server.settings.app
     // which is used to store static configuration values and server.app which
     // is meant for storing run-time state
-    app: {
-      config: config,
-      pkg: Pkg
-    }
+    app: settings
   });
 
-  server.connection({ port: config.port });
+  server.connection({ port: settings.port });
 
   return server;
 };
 
 
-module.exports = function (argv) {
+module.exports = function (options, done) {
 
-  const config = internals.createConfig(argv);
+  const settings = Settings(options);
   let hapiPlugins = internals.hapiPlugins.slice(0);
 
-  if (config.debug) {
+  if (settings.debug) {
     require('longjohn');
     hapiPlugins = [require('vision'), require('lout')].concat(hapiPlugins);
   }
 
-  const server = internals.createServer(config);
-
-  const onError = function (err) {
-
-    server.log('error', err);
-    process.exit(1);
-  };
-
-  // TODO: We should use cluser module to spin one instance per cpu and then
-  // manage killing and spinning children properly.
-  process.on('uncaughtException', onError);
+  const server = internals.createServer(settings);
 
   Async.series([
     Async.apply(internals.createLogger, server),
@@ -200,18 +176,52 @@ module.exports = function (argv) {
       server.route(Routes); cb();
     },
     Async.apply(internals.loadCapotPlugins, server),
-    Async.apply(internals.loadUserland, server),
-    server.start.bind(server)
+    Async.apply(internals.loadUserland, server)
   ], (err) => {
+
+    if (err) {
+      return done(err);
+    }
+
+    server.app.couch = Couch(server.settings.app.couchdb);
+    done(null, server);
+  });
+
+  return server;
+};
+
+
+//
+// If script is run directly (not loaded as module) we invoke the module.
+//
+if (require.main === module) {
+  const onError = function (err) {
+
+    console.error(err);
+    process.exit(1);
+  };
+
+  // TODO: We should use cluser module to spin one instance per cpu and then
+  // manage killing and spinning children properly.
+  process.on('uncaughtException', onError);
+
+  module.exports({}, (err, server) => {
 
     if (err) {
       return onError(err);
     }
 
-    server.app.changes.start();
-    server.log(['info'], 'Web server started on port ' + config.port);
-    server.log(['info'], 'Capot back-end has started ;-)');
-  });
+    server.start((err) => {
 
-};
+      if (err) {
+        return onError(err);
+      }
+
+      server.app.changes.start();
+
+      server.log(['info'], 'Web server started on port ' + server.info.port);
+      server.log(['info'], 'Capot back-end has started ;-)');
+    });
+  });
+}
 

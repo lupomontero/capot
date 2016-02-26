@@ -66,9 +66,9 @@ internals.roles = function (uid) {
 
 internals.handleSignUp = function (server, userDoc) {
 
-  const config = server.settings.app.config;
+  const settings = server.settings.app;
   const app = server.app;
-  const couch = Couch(config.couchdb);
+  const couch = Couch(settings.couchdb);
   const userDb = couch.db(userDoc.database);
   const usersDb = couch.db('_users');
   const appDb = couch.db('app');
@@ -126,9 +126,9 @@ internals.handleSignUp = function (server, userDoc) {
 
 internals.handleAccountDeletion = function (server, userDoc) {
 
-  const config = server.settings.app.config;
+  const settings = server.settings.app;
   const app = server.app;
-  const couch = Couch(config.couchdb);
+  const couch = Couch(settings.couchdb);
   const appDb = couch.db('app');
 
   const done = function (err) {
@@ -174,8 +174,8 @@ exports.reset = {
   handler: function (req, reply) {
 
     const server = req.server;
-    const config = server.settings.app.config;
-    const couch = Couch(config.couchdb);
+    const settings = server.settings.app;
+    const couch = Couch(settings.couchdb);
     const app = server.app;
     const usersDb = couch.db('_users');
     const sendMail = app.sendMail;
@@ -262,8 +262,8 @@ exports.confirm = {
   handler: function (req, reply) {
 
     const server = req.server;
-    const config = server.settings.app.config;
-    const couch = Couch(config.couchdb);
+    const settings = server.settings.app;
+    const couch = Couch(settings.couchdb);
     const app = server.app;
     const usersDb = couch.db('_users');
     const sendMail = app.sendMail;
@@ -352,8 +352,8 @@ exports.add = {
     const email = req.payload.email;
     const pass = req.payload.password;
     const uid = Uid();
-    const config = req.server.settings.app.config;
-    const userDocUrl = config.couchdb.url + '/_users/org.couchdb.user:' +
+    const settings = req.server.settings.app;
+    const userDocUrl = settings.couchdb.url + '/_users/org.couchdb.user:' +
       encodeURIComponent(email);
 
     Request({
@@ -392,8 +392,8 @@ exports.all = {
   auth: 'admin',
   handler: function (req, reply) {
 
-    const config = req.server.settings.app.config;
-    const couch = Couch(config.couchdb);
+    const settings = req.server.settings.app;
+    const couch = Couch(settings.couchdb);
 
     couch.db('_users').get('/_all_docs', {
       startkey: 'org.couchdb.user:',
@@ -418,7 +418,7 @@ internals.proxyHandler = {
     passThrough: true,
     mapUri: function (req, cb) {
 
-      const couchUrl = req.server.settings.app.config.couchdb.url;
+      const couchUrl = req.server.settings.app.couchdb.url;
       const pathParts = req.url.path.split('/');
       pathParts[2] = 'org.couchdb.user:' + pathParts[2];
       cb(null, couchUrl + pathParts.join('/'), req.headers);
@@ -460,9 +460,9 @@ exports.remove = {
 
 exports.register = function (server, options, next) {
 
-  const config = server.settings.app.config;
+  const settings = server.settings.app;
   const app = server.app;
-  const couch = Couch(config.couchdb);
+  const couch = Couch(settings.couchdb);
   const account = app.account = new EventEmitter();
   const usersDb = couch.db('_users');
   const changes = usersDb.changes({ feed: 'continuous', include_docs: true });

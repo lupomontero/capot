@@ -2,7 +2,7 @@
 // Installer
 //
 // * ensures there is a usable CouchDB we can access as admin.
-// * modifies `server.settings.app.config.couchdb` when starting local CouchDB.
+// * modifies `server.settings.app.couchdb` when starting local CouchDB.
 // * initialises databases (ensure existence, security doc, views, ...).
 //
 
@@ -23,28 +23,28 @@ const Couch = require('./couch');
 const internals = {};
 
 
-internals.ensureDataDir = function (config, cb) {
+internals.ensureDataDir = function (settings, cb) {
 
-  Fs.exists(config.data, (exists) => {
+  Fs.exists(settings.data, (exists) => {
 
     if (exists) {
       return cb();
     }
 
-    Fs.mkdir(config.data, cb);
+    Fs.mkdir(settings.data, cb);
   });
 };
 
 
-internals.startCouchDBServer = function (server, config, cb) {
+internals.startCouchDBServer = function (server, settings, cb) {
 
-  const port = config.port + 1;
+  const port = settings.port + 1;
   const couchUrl = 'http://127.0.0.1:' + port;
   const couch = Couch({ url: couchUrl });
   const bin = Which.sync('couchdb');
   const couchServer = new MultiCouch({
     port: port,
-    prefix: config.data,
+    prefix: settings.data,
     couchdb_path: bin
   });
 
@@ -70,7 +70,7 @@ internals.startCouchDBServer = function (server, config, cb) {
       }
 
       server.log('info', 'CouchDB Server ' + data.version + ' started on port ' + port);
-      config.couchdb.url = couchUrl;
+      settings.couchdb.url = couchUrl;
       cb();
     });
   };
@@ -104,19 +104,19 @@ internals.startCouchDBServer = function (server, config, cb) {
 };
 
 
-internals.ensureAdminCredentials = function (server, config, cb) {
+internals.ensureAdminCredentials = function (server, settings, cb) {
 
-  const credentialsPath = Path.join(config.data, 'capot.json');
+  const credentialsPath = Path.join(settings.data, 'capot.json');
 
   const setCredentials = function (credentials) {
 
-    _.extend(config.couchdb, _.pick(credentials, ['user', 'pass']));
+    _.extend(settings.couchdb, _.pick(credentials, ['user', 'pass']));
     cb();
   };
 
   const saveCredentials = function () {
 
-    const credentials = _.pick(config.couchdb, ['user', 'pass']);
+    const credentials = _.pick(settings.couchdb, ['user', 'pass']);
     const json = JSON.stringify(credentials, null, 2);
 
     Fs.writeFile(credentialsPath, json, (err) => {
@@ -140,14 +140,14 @@ internals.ensureAdminCredentials = function (server, config, cb) {
         return cb(err);
       }
 
-      config.couchdb.pass = answer;
+      settings.couchdb.pass = answer;
       saveCredentials();
     });
   };
 
   const getCredentials = function () {
 
-    if (!config.couchdb.pass) {
+    if (!settings.couchdb.pass) {
       return prompt();
     }
 
@@ -165,35 +165,35 @@ internals.ensureAdminCredentials = function (server, config, cb) {
 };
 
 
-internals.ensureAdminUser = function (config, cb) {
+internals.ensureAdminUser = function (settings, cb) {
 
-  const couch = Couch({ url: config.couchdb.url });
+  const couch = Couch({ url: settings.couchdb.url });
 
   couch.isAdminParty((err, isAdminParty) => {
 
     if (err) {
       return cb(err);
     }
-    else if (isAdminParty && !config.couchdb.run) {
+    else if (isAdminParty && !settings.couchdb.run) {
       return cb(new Error('Remote CouchDB is admin party!'));
     }
     else if (!isAdminParty) {
       return cb();
     }
 
-    const url = '/_config/admins/' + encodeURIComponent(config.couchdb.user);
-    couch.put(url, config.couchdb.pass, cb);
+    const url = '/_config/admins/' + encodeURIComponent(settings.couchdb.user);
+    couch.put(url, settings.couchdb.pass, cb);
   });
 };
 
 
-internals.checkAdminCredentials = function (config, cb) {
+internals.checkAdminCredentials = function (settings, cb) {
 
-  const couch = Couch({ url: config.couchdb.url });
+  const couch = Couch({ url: settings.couchdb.url });
 
   couch.post('/_session', {
-    name: config.couchdb.user,
-    password: config.couchdb.pass
+    name: settings.couchdb.user,
+    password: settings.couchdb.pass
   }, (err, data) => {
 
     if (err) {
@@ -203,7 +203,7 @@ internals.checkAdminCredentials = function (config, cb) {
     const roles = (data || {}).roles || [];
 
     if (roles.indexOf('_admin') === -1) {
-      return cb(new Error('Could not authenticate capot user on ' + config.couchdb.url));
+      return cb(new Error('Could not authenticate capot user on ' + settings.couchdb.url));
     }
 
     cb();
@@ -211,9 +211,9 @@ internals.checkAdminCredentials = function (config, cb) {
 };
 
 
-internals.ensureConfigValues = function (config, cb) {
+internals.ensureConfigValues = function (settings, cb) {
 
-  const couch = Couch(config.couchdb);
+  const couch = Couch(settings.couchdb);
 
   Async.each([
     { key: 'couchdb/delayed_commits', val: 'false'  },
@@ -227,9 +227,9 @@ internals.ensureConfigValues = function (config, cb) {
 };
 
 
-internals.ensureUsersDesignDoc = function (config, cb) {
+internals.ensureUsersDesignDoc = function (settings, cb) {
 
-  const couch = Couch(config.couchdb);
+  const couch = Couch(settings.couchdb);
   const usersDb = couch.db('_users');
 
   Async.series([
@@ -257,9 +257,9 @@ internals.ensureUsersDesignDoc = function (config, cb) {
 };
 
 
-internals.ensureAppDb = function (config, cb) {
+internals.ensureAppDb = function (settings, cb) {
 
-  const couch = Couch(config.couchdb);
+  const couch = Couch(settings.couchdb);
   couch.get('app', (err) => {
 
     if (err && err.statusCode !== 404) {
@@ -274,9 +274,9 @@ internals.ensureAppDb = function (config, cb) {
 };
 
 
-internals.ensureAppDbSecurity = function (config, cb) {
+internals.ensureAppDbSecurity = function (settings, cb) {
 
-  const couch = Couch(config.couchdb);
+  const couch = Couch(settings.couchdb);
   const db = couch.db('app');
   const securityDoc = {
     admins: { roles: ['_admin'] },
@@ -287,10 +287,10 @@ internals.ensureAppDbSecurity = function (config, cb) {
 };
 
 
-internals.ensureAppConfigDoc = function (config, cb) {
+internals.ensureAppConfigDoc = function (settings, cb) {
 
-  const pkg = require(Path.join(config.cwd, 'package.json'));
-  const couch = Couch(config.couchdb);
+  const pkg = require(Path.join(settings.cwd, 'package.json'));
+  const couch = Couch(settings.couchdb);
   const db = couch.db('app');
 
   db.get('config', (err) => {
@@ -306,7 +306,7 @@ internals.ensureAppConfigDoc = function (config, cb) {
       _id: 'config',
       app: {
         name: pkg.name,
-        url: 'http://' + Os.hostname() + ':' + config.port
+        url: 'http://' + Os.hostname() + ':' + settings.port
       }
     }, cb);
   });
@@ -315,18 +315,18 @@ internals.ensureAppConfigDoc = function (config, cb) {
 
 module.exports = function (server, cb) {
 
-  const config = server.settings.app.config;
+  const settings = server.settings.app;
   const tasks = [];
 
-  if (!config.couchdb.url) {
+  if (!settings.couchdb.url) {
     server.log('info', 'No CouchDB url in env, starting local CouchDB...');
-    config.couchdb.run = true;
+    settings.couchdb.run = true;
     tasks.push(internals.ensureDataDir);
     tasks.push(internals.startCouchDBServer.bind(null, server));
     tasks.push(internals.ensureAdminCredentials.bind(null, server));
   }
   else {
-    server.log('info', 'Using remote CouchDB: ' + config.couchdb.url);
+    server.log('info', 'Using remote CouchDB: ' + settings.couchdb.url);
   }
 
   tasks.push(internals.ensureAdminUser);
@@ -337,7 +337,7 @@ module.exports = function (server, cb) {
   tasks.push(internals.ensureAppDbSecurity);
   tasks.push(internals.ensureAppConfigDoc);
 
-  Async.applyEachSeries(tasks, config, cb);
+  Async.applyEachSeries(tasks, settings, cb);
 
 };
 

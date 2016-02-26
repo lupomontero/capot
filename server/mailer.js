@@ -113,7 +113,7 @@ internals.send = function (server, configDoc, msg, cb) {
 
 exports.register = function (server, options, next) {
 
-  const couch = Couch(server.settings.app.config.couchdb);
+  const couch = Couch(server.settings.app.couchdb);
   const appDb = couch.db('app');
 
   server.log('info', 'Initialising mailer...');

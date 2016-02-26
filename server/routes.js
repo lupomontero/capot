@@ -16,7 +16,7 @@ internals.couch = {
       passThrough: true,
       mapUri: function (req, cb) {
 
-        const couchUrl = req.server.settings.app.config.couchdb.url;
+        const couchUrl = req.server.settings.app.couchdb.url;
         cb(null, couchUrl + req.url.path.substr(7), req.headers);
       }
     }

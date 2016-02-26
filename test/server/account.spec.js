@@ -13,14 +13,16 @@ describe('capot/server/account', () => {
   before(function (done) {
 
     this.timeout(30 * 1000);
-    server = TestServer();
-    server.start(true, done);
-  });
 
+    TestServer({ dummyData: true }, (err, s) => {
 
-  after((done) => {
+      if (err) {
+        return done(err);
+      }
 
-    server.stop(done);
+      server = s;
+      done();
+    });
   });
 
 
@@ -29,15 +31,14 @@ describe('capot/server/account', () => {
 
     it('should not allow unauthenticated access', (done) => {
 
-      server.req({
+      server.inject({
         method: 'GET',
         url: '/_users'
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 401);
-        Assert.equal(resp.body.statusCode, 401);
-        Assert.equal(resp.body.error, 'Unauthorized');
+        Assert.equal(resp.result.statusCode, 401);
+        Assert.equal(resp.result.error, 'Unauthorized');
         done();
       });
     });
@@ -45,19 +46,21 @@ describe('capot/server/account', () => {
 
     it('should not allow access to non admin users', (done) => {
 
-      server.req({
+      const name = server.testUsers[0].email;
+      const pass = server.testUsers[0].password;
+      const auth = (new Buffer(name + ':' + pass)).toString('base64');
+
+      server.inject({
         method: 'GET',
         url: '/_users',
-        auth: {
-          user: server.testUsers[0].email,
-          pass: server.testUsers[0].password
+        headers: {
+          authorization: 'Basic ' + auth
         }
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 401);
-        Assert.equal(resp.body.statusCode, 401);
-        Assert.equal(resp.body.error, 'Unauthorized');
+        Assert.equal(resp.result.statusCode, 401);
+        Assert.equal(resp.result.error, 'Unauthorized');
         done();
       });
     });
@@ -65,15 +68,18 @@ describe('capot/server/account', () => {
 
     it('should allow access to admin', (done) => {
 
-      server.req({
+      const auth = (new Buffer('admin:secret')).toString('base64');
+
+      server.inject({
         method: 'GET',
         url: '/_users',
-        auth: { user: 'admin', pass: 'secret' }
-      }, (err, resp) => {
+        headers: {
+          authorization: 'Basic ' + auth
+        },
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 200);
-        Assert.ok(resp.body && typeof resp.body.length === 'number');
+        Assert.ok(resp.result && typeof resp.result.length === 'number');
         done();
       });
     });
@@ -87,16 +93,15 @@ describe('capot/server/account', () => {
 
     it('should fail when email missing', (done) => {
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_users',
-        body: { password: 'secret' }
-      }, (err, resp) => {
+        payload: { password: 'secret' }
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 400);
-        Assert.equal(resp.body.validation.source, 'payload');
-        Assert.deepEqual(resp.body.validation.keys, ['email']);
+        Assert.equal(resp.result.validation.source, 'payload');
+        Assert.deepEqual(resp.result.validation.keys, ['email']);
         done();
       });
     });
@@ -104,17 +109,16 @@ describe('capot/server/account', () => {
 
     it('should fail when invalid email', (done) => {
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_users',
-        body: { email: 'foo' }
-      }, (err, resp) => {
+        payload: { email: 'foo' }
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 400);
-        Assert.equal(resp.body.validation.source, 'payload');
-        Assert.deepEqual(resp.body.validation.keys, ['email']);
-        Assert.ok(/valid email/i.test(resp.body.message));
+        Assert.equal(resp.result.validation.source, 'payload');
+        Assert.deepEqual(resp.result.validation.keys, ['email']);
+        Assert.ok(/valid email/i.test(resp.result.message));
         done();
       });
     });
@@ -122,16 +126,15 @@ describe('capot/server/account', () => {
 
     it('should fail when password missing', (done) => {
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_users',
-        body: { email: 'test@localhost' }
-      }, (err, resp) => {
+        payload: { email: 'test@localhost' }
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 400);
-        Assert.equal(resp.body.validation.source, 'payload');
-        Assert.deepEqual(resp.body.validation.keys, ['password']);
+        Assert.equal(resp.result.validation.source, 'payload');
+        Assert.deepEqual(resp.result.validation.keys, ['password']);
         done();
       });
     });
@@ -139,16 +142,17 @@ describe('capot/server/account', () => {
 
     it('should create user when credentials ok', (done) => {
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_users',
-        body: { email: 'test@localhost', password: 'secret' }
-      }, (err, resp) => {
+        payload: { email: 'test@localhost', password: 'secret' }
+      }, (resp) => {
 
-        Assert.ok(!err);
-        Assert.equal(resp.body.ok, true);
-        Assert.equal(resp.body.email, 'test@localhost');
-        Assert.equal(typeof resp.body.uid, 'string');
+        const result = JSON.parse(resp.payload);
+
+        Assert.equal(result.ok, true);
+        Assert.equal(result.email, 'test@localhost');
+        Assert.equal(typeof result.uid, 'string');
         done();
       });
     });
@@ -162,12 +166,11 @@ describe('capot/server/account', () => {
 
     it('should fail with 404 when unauthenticated??', (done) => {
 
-      server.req({
+      server.inject({
         method: 'GET',
         url: '/_users/' + server.testUsers[0].email
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 404);
         done();
       });
@@ -181,19 +184,18 @@ describe('capot/server/account', () => {
 
       const email = server.testUsers[1].email;
       const pass = server.testUsers[1].password;
+      const auth = (new Buffer(email + ':' + pass)).toString('base64');
 
-      server.req({
+      server.inject({
         method: 'GET',
         url: '/_users/' + email,
-        auth: {
-          user: email,
-          pass: pass
+        headers: {
+          authorization: 'Basic ' + auth
         }
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 200);
-        Assert.equal(resp.body.name, email);
+        Assert.equal(JSON.parse(resp.result).name, email);
         done();
       });
     });
@@ -201,25 +203,30 @@ describe('capot/server/account', () => {
 
     it('should allow admin to get any user doc', (done) => {
 
-      server.req({
+      const auth = (new Buffer('admin:secret')).toString('base64');
+
+      server.inject({
         method: 'GET',
         url: '/_users/' + server.testUsers[0].email,
-        auth: { user: 'admin', pass: 'secret' }
-      }, (err, resp) => {
+        headers: { authorization: 'Basic ' + auth }
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 200);
-        Assert.equal(typeof resp.body._id, 'string');
-        Assert.equal(typeof resp.body._rev, 'string');
-        Assert.equal(typeof resp.body.password_scheme, 'string');
-        Assert.equal(typeof resp.body.iterations, 'number');
-        Assert.equal(resp.body.name, server.testUsers[0].email);
-        Assert.ok(resp.body.roles && typeof resp.body.roles.length === 'number');
-        Assert.equal(resp.body.type, 'user');
-        Assert.equal(typeof resp.body.uid, 'string');
-        Assert.equal(resp.body.database, 'user/' + resp.body.uid);
-        Assert.equal(typeof resp.body.derived_key, 'string');
-        Assert.equal(typeof resp.body.salt, 'string');
+
+        const doc = JSON.parse(resp.payload);
+
+        Assert.equal(typeof doc._id, 'string');
+        Assert.equal(typeof doc._rev, 'string');
+        Assert.equal(typeof doc.password_scheme, 'string');
+        Assert.equal(typeof doc.iterations, 'number');
+        Assert.equal(doc.name, server.testUsers[0].email);
+        Assert.ok(doc.roles && typeof doc.roles.length === 'number');
+        Assert.equal(doc.type, 'user');
+        Assert.equal(typeof doc.uid, 'string');
+        Assert.equal(doc.database, 'user/' + doc.uid);
+        Assert.equal(typeof doc.derived_key, 'string');
+        Assert.equal(typeof doc.salt, 'string');
+
         done();
       });
     });
@@ -235,16 +242,15 @@ describe('capot/server/account', () => {
 
     it('should fail with 400 when bad email', (done) => {
 
-      server.req({
+      server.inject({
         method: 'PUT',
         url: '/_users/foo',
-        body: {}
-      }, (err, resp) => {
+        payload: {}
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 400);
-        Assert.equal(resp.body.validation.source, 'params');
-        Assert.deepEqual(resp.body.validation.keys, ['email']);
+        Assert.equal(resp.result.validation.source, 'params');
+        Assert.deepEqual(resp.result.validation.keys, ['email']);
         done();
       });
     });
@@ -252,24 +258,26 @@ describe('capot/server/account', () => {
 
     it('should not allow changes if _rev missing (409)', (done) => {
 
-      server.req({
+      const name = server.testUsers[0].email;
+      const pass = server.testUsers[0].password;
+      const auth = (new Buffer(name + ':' + pass)).toString('base64');
+
+      server.inject({
         method: 'PUT',
         url: '/_users/' + server.testUsers[0].email,
-        body: {
+        payload: {
           name: server.testUsers[0].email,
           roles: [],
           type: 'user',
           password: 'secret2'
         },
-        auth: {
-          user: server.testUsers[0].email,
-          pass: server.testUsers[0].password
+        headers: {
+          authorization: 'Basic ' + auth
         }
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 409);
-        Assert.equal(resp.body.error, 'conflict');
+        Assert.equal(JSON.parse(resp.payload).error, 'conflict');
         done();
       });
     });
@@ -282,38 +290,42 @@ describe('capot/server/account', () => {
         user: email,
         pass: server.testUsers[0].password
       };
+      const auth = (new Buffer(credentials.user + ':' + credentials.pass)).toString('base64');
 
       Async.waterfall([
         function (cb) {
 
-          server.req({
+          server.inject({
             method: 'GET',
             url: '/_users/' + email,
-            auth: credentials
-          }, (err, resp) => {
+            headers: {
+              authorization: 'Basic ' + auth
+            }
+          }, (resp) => {
 
-            Assert.ok(!err);
             Assert.equal(resp.statusCode, 200);
-            cb(null, resp.body);
+            cb(null, JSON.parse(resp.payload));
           });
         },
         function (userDoc, cb) {
 
           userDoc.password = 'secret2';
 
-          server.req({
+          server.inject({
             method: 'PUT',
             url: '/_users/' + email,
-            body: userDoc,
-            auth: credentials
-          }, (err, resp) => {
+            payload: userDoc,
+            headers: {
+              authorization: 'Basic ' + auth
+            }
+          }, (resp) => {
 
-            Assert.ok(!err);
             Assert.equal(resp.statusCode, 201);
-            Assert.equal(resp.body.ok, true);
-            Assert.equal(resp.body.id, 'org.couchdb.user:' + email);
+            const result = JSON.parse(resp.payload);
+            Assert.equal(result.ok, true);
+            Assert.equal(result.id, 'org.couchdb.user:' + email);
             server.testUsers[0].password = 'secret2';
-            done();
+            cb();
           });
         }
       ], done);
@@ -328,12 +340,11 @@ describe('capot/server/account', () => {
 
     it('should fail when not authenticated', (done) => {
 
-      server.req({
+      server.inject({
         method: 'DELETE',
         url: '/_users/' + server.testUsers[0].email
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 404);
         done();
       });
@@ -342,16 +353,18 @@ describe('capot/server/account', () => {
 
     it('should fail when rev missing', (done) => {
 
-      server.req({
+      const name = server.testUsers[0].email;
+      const pass = server.testUsers[0].password;
+      const auth = (new Buffer(name + ':' + pass)).toString('base64');
+
+      server.inject({
         method: 'DELETE',
         url: '/_users/' + server.testUsers[0].email,
-        auth: {
-          user: server.testUsers[0].email,
-          pass: server.testUsers[0].password
+        headers: {
+          authorization: 'Basic ' + auth
         }
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 409);
         done();
       });
@@ -362,35 +375,34 @@ describe('capot/server/account', () => {
 
       const email = server.testUsers[1].email;
       const pass = server.testUsers[1].password;
+      const auth = (new Buffer(email + ':' + pass)).toString('base64');
 
       Async.waterfall([
         function (cb) {
 
-          server.req({
+          server.inject({
             method: 'GET',
             url: '/_users/' + email,
-            auth: { user: email, pass: pass }
-          }, (err, resp) => {
+            headers: { authorization: 'Basic ' + auth }
+          }, (resp) => {
 
-            Assert.ok(!err);
             Assert.equal(resp.statusCode, 200);
-            cb(null, resp.body);
+            cb(null, JSON.parse(resp.payload));
           });
         },
         function (userDoc, cb) {
 
-          server.req({
+          server.inject({
             method: 'DELETE',
             url: '/_users/' + email,
             headers: {
+              authorization: 'Basic ' + auth,
               'if-match': userDoc._rev
-            },
-            auth: { user: email, pass: pass }
-          }, (err, resp) => {
+            }
+          }, (resp) => {
 
-            Assert.ok(!err);
             Assert.equal(resp.statusCode, 200);
-            Assert.equal(resp.body.id, 'org.couchdb.user:' + email);
+            Assert.equal(JSON.parse(resp.payload).id, 'org.couchdb.user:' + email);
             done();
           });
         }
@@ -406,16 +418,15 @@ describe('capot/server/account', () => {
 
     it('should fail when bad email', (done) => {
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_users/foo/_reset',
-        body: {}
-      }, (err, resp) => {
+        payload: {}
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 400);
-        Assert.equal(resp.body.validation.source, 'params');
-        Assert.deepEqual(resp.body.validation.keys, ['email']);
+        Assert.equal(resp.result.validation.source, 'params');
+        Assert.deepEqual(resp.result.validation.keys, ['email']);
         done();
       });
     });
@@ -423,15 +434,14 @@ describe('capot/server/account', () => {
 
     it('should send password reset link via email', (done) => {
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_users/' + server.testUsers[0].email + '/_reset',
-        body: {}
-      }, (err, resp) => {
+        payload: {}
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 200);
-        Assert.deepEqual(resp.body, { ok: true });
+        Assert.deepEqual(JSON.parse(resp.payload), { ok: true });
         done();
       });
     });
@@ -445,12 +455,11 @@ describe('capot/server/account', () => {
 
     it('should fail with 404 when unknown token', (done) => {
 
-      server.req({
+      server.inject({
         method: 'GET',
         url: '/_users/' + server.testUsers[0].email + '/_reset/xxxx'
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 404);
         done();
       });
@@ -465,15 +474,14 @@ describe('capot/server/account', () => {
         // 1. Request password reset
         function (cb) {
 
-          server.req({
+          server.inject({
             method: 'POST',
             url: '/_users/' + email + '/_reset',
-            body: {}
-          }, (err, resp) => {
+            payload: {}
+          }, (resp) => {
 
-            Assert.ok(!err);
             Assert.equal(resp.statusCode, 200);
-            Assert.deepEqual(resp.body, { ok: true });
+            Assert.deepEqual(JSON.parse(resp.payload), { ok: true });
             cb();
           });
         },
@@ -483,25 +491,23 @@ describe('capot/server/account', () => {
           const docId = 'org.couchdb.user:' + email;
           const docUrl = '/_users/' + encodeURIComponent(docId);
 
-          server.couch(docUrl, (err, resp) => {
+          server.app.couch.get(docUrl, (err, resp) => {
 
             Assert.ok(!err);
-            Assert.equal(resp.statusCode, 200);
-            Assert.equal(typeof resp.body.$reset.token, 'string');
-            cb(null, resp.body.$reset.token);
+            Assert.equal(typeof resp.$reset.token, 'string');
+            cb(null, resp.$reset.token);
           });
         },
         // 3. Follow confirmation link...
         function (token, cb) {
 
-          server.req({
+          server.inject({
             method: 'GET',
             url: '/_users/' + email + '/_reset/' + token
-          }, (err, resp) => {
+          }, (resp) => {
 
-            Assert.ok(!err);
             Assert.equal(resp.statusCode, 200);
-            Assert.equal(resp.body.ok, true);
+            Assert.equal(resp.result.ok, true);
             cb();
           });
         }

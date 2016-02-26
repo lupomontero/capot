@@ -11,13 +11,13 @@ const Mkdirp = require('mkdirp');
 const Rimraf = require('rimraf');
 const Request = require('request');
 const Pkg = require('../package.json');
+const Server = require('../server');
 
 
 const internals = {};
 
 
 internals.defaults = {
-  bin: Path.join(__dirname, '../bin/cli.js'),
   port: 3333,
   pass: 'secret'
 };
@@ -49,7 +49,7 @@ internals.getAllUserDocs = function (couch, cb) {
 };
 
 
-internals.removeDummyUsers = function (couch, cb) {
+internals.removeDummyUsers = function (server, couch, cb) {
 
   internals.getAllUserDocs(couch, (err, docs) => {
 
@@ -85,30 +85,29 @@ internals.removeDummyUsers = function (couch, cb) {
 };
 
 
-internals.removeDummyData = function (couch, cb) {
+internals.removeDummyData = function (server, couch, cb) {
 
   Async.parallel([
-    Async.apply(internals.removeDummyUsers, couch)
+    Async.apply(internals.removeDummyUsers, server, couch)
   ], cb);
 };
 
 
-internals.waitForUserReady = function (uri, testUser, cb) {
+internals.waitForUserReady = function (server, uri, testUser, cb) {
 
-  Request({
+  server.inject({
     method: 'POST',
     url: uri + '/_session',
-    json: true,
-    body: testUser
-  }, (err, resp) => {
+    payload: testUser
+  }, (resp) => {
 
-    if (err) {
+    if (resp.statusCode !== 200) {
       cb(err);
     }
-    else if (!resp.body.roles || !resp.body.roles.length) {
+    else if (!resp.result.roles || !resp.result.roles.length) {
       setTimeout(() => {
 
-        internals.waitForUserReady(uri, testUser, cb);
+        internals.waitForUserReady(server, uri, testUser, cb);
       }, 300);
     }
     else {
@@ -118,40 +117,35 @@ internals.waitForUserReady = function (uri, testUser, cb) {
 };
 
 
-internals.addDummyUser = function (uri, testUser, cb) {
+internals.addDummyUser = function (server, uri, testUser, cb) {
 
-  Request({
+  server.inject({
     method: 'POST',
     url: uri + '/_users',
-    json: true,
-    body: {
+    payload: {
       email: testUser.email,
       password: testUser.password
     }
-  }, (err, resp) => {
+  }, (resp) => {
 
-    if (err) {
-      return cb(err);
+    if (!resp || !resp.statusCode || resp.statusCode > 201) {
+      return cb(new Error('Error adding dummy user'));
     }
 
-    if (resp.statusCode > 201) {
-      return cb(new Error(resp.body.error));
-    }
-
-    internals.waitForUserReady(uri, testUser, cb);
+    internals.waitForUserReady(server, uri, testUser, cb);
   });
 };
 
 
-internals.addDummyData = function (couch, uri, testUsers, cb) {
+internals.addDummyData = function (server, couch, uri, testUsers, cb) {
 
-  internals.removeDummyData(couch, (err) => {
+  internals.removeDummyData(server, couch, (err) => {
 
     if (err) {
       return cb(err);
     }
 
-    Async.each(testUsers, Async.apply(internals.addDummyUser, uri), cb);
+    Async.each(testUsers, Async.apply(internals.addDummyUser, server, uri), cb);
   });
 };
 
@@ -162,18 +156,64 @@ internals.pkgJsonTmpl = JSON.stringify({
 }, null, 2);
 
 
-module.exports = function TestServer(options) {
+module.exports = function TestServer(options, cb) {
 
-  const settings = _.extend({}, internals.defaults, options);
+  if (arguments.length === 1) {
+    cb = options;
+    options = {};
+  }
+
+  const port = 3333;
+  const couchdbPass = 'secret';
   const tmpdir = Path.join(Os.tmpdir(), Pkg.name + '-test-' + Date.now());
-  const uri = 'http://127.0.0.1:' + settings.port;
+  const uri = 'http://127.0.0.1:' + port;
   const couch = Request.defaults({
-    baseUrl: uri + '/_couch',
-    auth: { user: 'admin', pass: settings.pass },
+    baseUrl: 'http://127.0.0.1:' + (port + 1),
+    auth: { user: 'admin', pass: couchdbPass },
     json: true
   });
 
 
+  Async.series([
+    Async.apply(Rimraf, tmpdir),
+    Async.apply(Mkdirp, tmpdir),
+    Async.apply(Fs.writeFile, Path.join(tmpdir, 'package.json'), internals.pkgJsonTmpl)
+  ], (err) => {
+
+    if (err) {
+      return cb(err);
+    }
+
+    Server({
+      port: 3333,
+      cwd: tmpdir,
+      couchdb: {
+        pass: 'secret'
+      }
+    }, (err, server) => {
+
+      if (err) {
+        return cb(err);
+      }
+
+      server.testUsers  = [
+        { email: 'test1-' + Date.now() + '@localhost', password: 'secret1' },
+        { email: 'test2-' + Date.now() + '@localhost', password: 'secret1' }
+      ];
+
+      internals.addDummyData(server, couch, uri, server.testUsers, (err) => {
+
+        if (err) {
+          return cb(err);
+        }
+
+        cb(null, server);
+      });
+    });
+  });
+
+
+  /*
   const server = {
     settings: settings,
     tmpdir: tmpdir,
@@ -264,6 +304,7 @@ module.exports = function TestServer(options) {
 
 
   return server;
+  */
 
 };
 

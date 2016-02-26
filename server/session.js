@@ -23,16 +23,16 @@ internals.proxyHandler = {
     passThrough: true,
     mapUri: (req, cb) => {
 
-      const couchUrl = req.server.settings.app.config.couchdb.url;
+      const couchUrl = req.server.settings.app.couchdb.url;
       cb(null, couchUrl + '/_session', req.headers);
     }
   }
 };
 
 
-internals.createSession = function (config, email, pass, cb) {
+internals.createSession = function (settings, email, pass, cb) {
 
-  Request.post(config.couchdb.url + '/_session', {
+  Request.post(settings.couchdb.url + '/_session', {
     json: true,
     body: { name: email, password: pass }
   }, (err, resp) => {
@@ -54,9 +54,9 @@ internals.createSession = function (config, email, pass, cb) {
 // plugin back's up credentials when it needs to change them to allow login via
 // OAuth.
 //
-internals.checkPass2 = function (config, email, pass, reply) {
+internals.checkPass2 = function (settings, email, pass, reply) {
 
-  const couch = Couch(config.couchdb);
+  const couch = Couch(settings.couchdb);
   const usersDb = couch.db('_users');
   const encodedDocId = encodeURIComponent('org.couchdb.user:' + email);
 
@@ -104,7 +104,7 @@ internals.checkPass2 = function (config, email, pass, reply) {
           return reply(Boom.create(500));
         }
 
-        internals.createSession(config, email, pass, (err, body, cookie) => {
+        internals.createSession(settings, email, pass, (err, body, cookie) => {
 
           if (err) { // `err` should already be a `Boom` object.
             return reply(err);
@@ -144,11 +144,11 @@ exports.create = {
   handler: (req, reply) => {
 
     const server = req.server;
-    const config = server.settings.app.config;
+    const settings = server.settings.app;
     const email = req.payload.email;
     const pass = req.payload.password;
 
-    internals.createSession(config, email, pass, (err, body, cookie) => {
+    internals.createSession(settings, email, pass, (err, body, cookie) => {
 
       if (err && err.output.statusCode !== 401) { // `err` is a `Boom` object.
         return reply(err);
@@ -157,7 +157,7 @@ exports.create = {
         return reply(body).header('set-cookie', cookie);
       }
 
-      internals.checkPass2(config, email, pass, reply);
+      internals.checkPass2(settings, email, pass, reply);
     });
   }
 };
@@ -165,10 +165,10 @@ exports.create = {
 
 exports.register = function (server, options, next) {
 
-  const config = server.settings.app.config;
+  const settings = server.settings.app;
   const couch = Request.defaults({
     json: true,
-    baseUrl: config.couchdb.url
+    baseUrl: settings.couchdb.url
   });
 
   const validateCookie = function (cookie, cb) {

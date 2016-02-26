@@ -2,24 +2,21 @@
 
 
 const Assert = require('assert');
-const TestServer = require('../server');
+const Server = require('../../server');
 
 
 describe('capot/server/www', () => {
 
   let server;
 
-  before(function (done) {
+  before((done) => {
 
-    this.timeout(30 * 1000);
-    server = TestServer();
-    server.start(done);
-  });
-
-
-  after((done) => {
-
-    server.stop(done);
+    server = Server({
+      couchdb: {
+        user: 'admin',
+        pass: 'secret'
+      }
+    }, done);
   });
 
 
@@ -27,11 +24,10 @@ describe('capot/server/www', () => {
 
     it('should proxy to couchdb', (done) => {
 
-      server.req('/_couch', (err, resp) => {
+      server.inject('/_couch', (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 200);
-        Assert.equal(resp.body.couchdb, 'Welcome');
+        Assert.equal(JSON.parse(resp.payload).couchdb, 'Welcome');
         done();
       });
     });

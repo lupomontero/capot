@@ -44,8 +44,8 @@ internals.getAvailableProviders = function () {
 
 internals.getAppConfig = function (server, cb) {
 
-  const config = server.settings.app.config;
-  const couch = Couch(config.couchdb);
+  const settings = server.settings.app;
+  const couch = Couch(settings.couchdb);
 
   const oauthDefaults = {
     cookie: {
@@ -118,13 +118,13 @@ internals.getProviderApi = function (server, name, cb) {
 internals.handleAuthorised = function (req, authData, cb) {
 
   const server = req.server;
-  const config = server.settings.app.config;
-  const couch = Couch(config.couchdb);
+  const settings = server.settings.app;
+  const couch = Couch(settings.couchdb);
   const usersDb = couch.db('_users');
   const cookie = req.headers.cookie;
 
   // Validate cookie to see if user is signed in.
-  Request.get(config.couchdb.url + '/_session', {
+  Request.get(settings.couchdb.url + '/_session', {
     headers: { cookie: cookie },
     json: true
   }, (err, resp) => {
@@ -184,8 +184,8 @@ internals.signup = function (server, authData, cb) {
 
 internals.signin = function (server, authData, userDoc, cb) {
 
-  const config = server.settings.app.config;
-  const couch = Couch(config.couchdb);
+  const settings = server.settings.app;
+  const couch = Couch(settings.couchdb);
   const usersDb = couch.db('_users');
   const tmpPass = internals.random(10);
   const userDocUrl = encodeURIComponent(userDoc._id);
@@ -227,8 +227,8 @@ internals.signin = function (server, authData, userDoc, cb) {
 
 internals.connect = function (server, authData, authSession, cb) {
 
-  const config = server.settings.app.config;
-  const couch = Couch(config.couchdb);
+  const settings = server.settings.app;
+  const couch = Couch(settings.couchdb);
   const usersDb = couch.db('_users');
   const docId = encodeURIComponent('org.couchdb.user:' + authSession.userCtx.name);
 
@@ -250,8 +250,8 @@ internals.reconnect = function (server, authData, authSession, userDoc, cb) {
 
 internals.saveAuth = function (server, authData, userDoc, cb) {
 
-  const config = server.settings.app.config;
-  const couch = Couch(config.couchdb);
+  const settings = server.settings.app;
+  const couch = Couch(settings.couchdb);
   const usersDb = couch.db('_users');
   const provider = authData.provider;
 
@@ -450,8 +450,8 @@ exports.session = {
 //
 exports.register = function (server, options, next) {
 
-  const config = server.settings.app.config;
-  const couch = Couch(config.couchdb);
+  const settings = server.settings.app;
+  const couch = Couch(settings.couchdb);
   const usersDb = couch.db('_users');
 
   Async.auto({
