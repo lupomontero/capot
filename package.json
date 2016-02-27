@@ -69,6 +69,7 @@
     "mocha": "^2.3.4",
     "phantomjs-prebuilt": "^2.1.4",
     "rimraf": "^2.5.2",
+    "sinon": "^1.17.3",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.0.0",
     "vision": "^4.0.1",

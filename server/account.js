@@ -204,7 +204,7 @@ exports.reset = {
 
           if (mailerErr) {
             server.log('error', mailerErr);
-            return reply(mailerErr);
+            return reply(Boom.wrap(mailerErr.errors[0], 400));
           }
           else if (err) {
             return reply(err);
@@ -504,4 +504,3 @@ exports.register.attributes = {
   name: 'account',
   version: '1.0.0'
 };
-

@@ -74,28 +74,38 @@ Gulp.task('lint', () => {
 
 Gulp.task('test:client', (done) => {
 
-  const server = TestServer();
+  TestServer({}, (err, server) => {
 
-  server.start(true, () => {
+    if (err) {
+      return done(err);
+    }
 
-    process.env.TESTUSER_1_EMAIL = server.testUsers[0].email;
-    process.env.TESTUSER_1_PASSWORD = server.testUsers[0].password;
+    server.start((err) => {
 
-    const karma = new Karma.Server({
-      configFile: __dirname + '/karma.conf.js',
-      singleRun: true
-    }, (exitCode) => {
+      if (err) {
+        return done(err);
+      }
 
-      server.stop(() => {
+      process.env.TESTUSER_1_EMAIL = server.testUsers[0].email;
+      process.env.TESTUSER_1_PASSWORD = server.testUsers[0].password;
 
-        if (exitCode) {
-          return done(new Error('failed karma tests'));
-        }
-        done();
+      const karma = new Karma.Server({
+        configFile: __dirname + '/karma.conf.js',
+        singleRun: true
+      }, (exitCode) => {
+
+        server.stop(() => {
+
+          if (exitCode) {
+            process.exit(exitCode);
+          }
+
+          process.exit(0);
+        });
       });
-    });
 
-    karma.start();
+      karma.start();
+    });
   });
 });
 
@@ -103,7 +113,11 @@ Gulp.task('test:client', (done) => {
 Gulp.task('test:server', () => {
 
   return Gulp.src(internals.components.server.tests, { read: false })
-    .pipe(Mocha());
+    .pipe(Mocha())
+    .once('end', () => {
+
+      process.exit();
+    });
 });
 
 
@@ -219,4 +233,3 @@ Gulp.task('watch', () => {
 
 
 Gulp.task('default', ['build']);
-

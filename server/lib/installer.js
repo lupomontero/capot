@@ -83,8 +83,12 @@ internals.startCouchDBServer = function (server, settings, cb) {
 
   const stop = function (code) {
 
-    server.log('info', 'Stopping CouchDB Server...');
-    process.removeListener('exit', stop);
+    console.log('info', 'Stopping CouchDB Server...');
+
+    ['exit', 'SIGINT', 'SIGTERM'].forEach((eventName) => {
+
+      process.removeListener(eventName, stop);
+    });
 
     couchServer.once('stop', () => {
 
@@ -97,7 +101,7 @@ internals.startCouchDBServer = function (server, settings, cb) {
 
   ['exit', 'SIGINT', 'SIGTERM'].forEach((eventName) => {
 
-    process.once(eventName, stop);
+    process.on(eventName, stop);
   });
 
   couchServer.start();
@@ -340,4 +344,3 @@ module.exports = function (server, cb) {
   Async.applyEachSeries(tasks, settings, cb);
 
 };
-

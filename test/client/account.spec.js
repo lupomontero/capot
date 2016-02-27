@@ -269,4 +269,3 @@ describe('capot/client/account', function () {
 
 
 });
-

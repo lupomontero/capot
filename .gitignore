@@ -2,5 +2,6 @@
 *.swp
 admin/bundle.js
 admin/templates.js
+data/
 dist/
 node_modules/

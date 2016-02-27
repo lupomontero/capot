@@ -2,6 +2,7 @@
 
 
 const Assert = require('assert');
+const Sinon = require('sinon');
 const Async = require('async');
 const TestServer = require('../server');
 
@@ -75,7 +76,7 @@ describe('capot/server/account', () => {
         url: '/_users',
         headers: {
           authorization: 'Basic ' + auth
-        },
+        }
       }, (resp) => {
 
         Assert.equal(resp.statusCode, 200);
@@ -434,14 +435,29 @@ describe('capot/server/account', () => {
 
     it('should send password reset link via email', (done) => {
 
+      const email = server.testUsers[0].email;
+
+      Sinon.stub(server.app, 'sendMail').callsArgWith(1, null, {});
+
       server.inject({
         method: 'POST',
-        url: '/_users/' + server.testUsers[0].email + '/_reset',
+        url: '/_users/' + email + '/_reset',
         payload: {}
       }, (resp) => {
 
         Assert.equal(resp.statusCode, 200);
-        Assert.deepEqual(JSON.parse(resp.payload), { ok: true });
+        Assert.deepEqual(resp.result, { ok: true });
+
+        Assert.equal(server.app.sendMail.callCount, 1);
+        const call = server.app.sendMail.getCall(0);
+        Assert.equal(call.args.length, 2);
+        Assert.equal(call.args[0].to, email);
+        Assert.equal(call.args[0].template, 'password-reset');
+        Assert.equal(typeof call.args[0].context.resetLink, 'string');
+        Assert.equal(typeof call.args[1], 'function');
+
+        server.app.sendMail.restore();
+
         done();
       });
     });
@@ -466,13 +482,17 @@ describe('capot/server/account', () => {
     });
 
 
-    it('should reset password', (done) => {
+    it('should reset password', function (done) {
+
+      this.timeout(10 * 1000);
 
       const email = server.testUsers[0].email;
 
       Async.waterfall([
         // 1. Request password reset
         function (cb) {
+
+          Sinon.stub(server.app, 'sendMail').callsArgWith(1, null, {});
 
           server.inject({
             method: 'POST',
@@ -482,6 +502,17 @@ describe('capot/server/account', () => {
 
             Assert.equal(resp.statusCode, 200);
             Assert.deepEqual(JSON.parse(resp.payload), { ok: true });
+
+            Assert.equal(server.app.sendMail.callCount, 1);
+            const call = server.app.sendMail.getCall(0);
+            Assert.equal(call.args.length, 2);
+            Assert.equal(call.args[0].to, email);
+            Assert.equal(call.args[0].template, 'password-reset');
+            Assert.equal(typeof call.args[0].context.resetLink, 'string');
+            Assert.equal(typeof call.args[1], 'function');
+
+            server.app.sendMail.restore();
+
             cb();
           });
         },
@@ -518,4 +549,3 @@ describe('capot/server/account', () => {
   });
 
 });
-

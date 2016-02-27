@@ -13,14 +13,16 @@ describe('capot/server/session', () => {
   before(function (done) {
 
     this.timeout(30 * 1000);
-    server = TestServer();
-    server.start(done);
-  });
 
+    TestServer({ dummyData: false }, (err, s) => {
 
-  after((done) => {
+      if (err) {
+        return done(err);
+      }
 
-    server.stop(done);
+      server = s;
+      done();
+    });
   });
 
 
@@ -28,15 +30,15 @@ describe('capot/server/session', () => {
 
     it('should get empty session when no auth', (done) => {
 
-      server.req({
+      server.inject({
         method: 'GET',
         url: '/_session'
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
-        Assert.equal(resp.body.ok, true);
-        Assert.equal(resp.body.userCtx.name, null);
-        Assert.deepEqual(resp.body.userCtx.roles, []);
+        const result = JSON.parse(resp.payload);
+        Assert.equal(result.ok, true);
+        Assert.equal(result.userCtx.name, null);
+        Assert.deepEqual(result.userCtx.roles, []);
         done();
       });
     });
@@ -47,62 +49,58 @@ describe('capot/server/session', () => {
 
     it('should require email', (done) => {
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_session',
-        body: {}
-      }, (err, resp) => {
+        payload: {}
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 400);
-        Assert.equal(resp.body.validation.source, 'payload');
-        Assert.equal(resp.body.validation.keys[0], 'email');
+        Assert.equal(resp.result.validation.source, 'payload');
+        Assert.equal(resp.result.validation.keys[0], 'email');
         done();
       });
     });
 
     it('should require valid email', (done) => {
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_session',
-        body: { email: 'foo' }
-      }, (err, resp) => {
+        payload: { email: 'foo' }
+      }, (resp) => {
 
-        Assert.ok(!err);
-        Assert.ok(/valid email/i.test(resp.body.message));
         Assert.equal(resp.statusCode, 400);
-        Assert.equal(resp.body.validation.source, 'payload');
-        Assert.equal(resp.body.validation.keys[0], 'email');
+        Assert.ok(/valid email/i.test(resp.result.message));
+        Assert.equal(resp.result.validation.source, 'payload');
+        Assert.equal(resp.result.validation.keys[0], 'email');
         done();
       });
     });
 
     it('should require password', (done) => {
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_session',
-        body: { email: 'foo@localhost' }
-      }, (err, resp) => {
+        payload: { email: 'foo@localhost' }
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 400);
-        Assert.equal(resp.body.validation.source, 'payload');
-        Assert.equal(resp.body.validation.keys[0], 'password');
+        Assert.equal(resp.result.validation.source, 'payload');
+        Assert.equal(resp.result.validation.keys[0], 'password');
         done();
       });
     });
 
     it('should return unauthorized when unknown email', (done) => {
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_session',
-        body: { email: 'foo@localhost', password: 'xxxxxxxx' }
-      }, (err, resp) => {
+        payload: { email: 'foo@localhost', password: 'xxxxxxxx' }
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 401);
         done();
       });
@@ -112,24 +110,23 @@ describe('capot/server/session', () => {
 
       const credentials = { email: 'test2@localhost', password: 'secret' };
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_users',
-        body: credentials
-      }, (err) => {
+        payload: credentials
+      }, (resp) => {
 
-        Assert.ok(!err);
+        Assert.equal(resp.statusCode, 200);
 
         credentials.password = 'xxx';
 
-        server.req({
+        server.inject({
           method: 'POST',
           url: '/_session',
-          body: credentials
-        }, (err, resp) => {
+          payload: credentials
+        }, (resp2) => {
 
-          Assert.ok(!err);
-          Assert.equal(resp.statusCode, 401);
+          Assert.equal(resp2.statusCode, 401);
           done();
         });
       });
@@ -139,25 +136,27 @@ describe('capot/server/session', () => {
 
       const credentials = { email: 'test3@localhost', password: 'secret' };
 
-      server.req({
+      server.inject({
         method: 'POST',
         url: '/_users',
-        body: credentials
-      }, (err) => {
+        payload: credentials
+      }, (resp) => {
 
-        Assert.ok(!err);
+        Assert.equal(resp.statusCode, 200);
 
-        server.req({
+        server.inject({
           method: 'POST',
           url: '/_session',
-          body: credentials
-        }, (err, resp) => {
+          payload: credentials
+        }, (resp2) => {
 
-          Assert.ok(!err);
-          Assert.equal(resp.statusCode, 200);
-          Assert.equal(resp.body.ok, true);
-          Assert.equal(resp.body.name, credentials.email);
-          const cookie = resp.headers['set-cookie'][0];
+          Assert.equal(resp2.statusCode, 200);
+
+          const result = JSON.parse(resp2.payload);
+          Assert.equal(result.ok, true);
+          Assert.equal(result.name, credentials.email);
+
+          const cookie = resp2.headers['set-cookie'][0];
           Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
           done();
         });
@@ -166,6 +165,7 @@ describe('capot/server/session', () => {
 
     it('should authenticate valid credentials after pass changed by OAuth login', (done) => {
 
+      const adminAuth = (new Buffer('admin:secret')).toString('base64');
       const credentials = {
         email: 'test' + Date.now() + '@localhost',
         password: 'secret'
@@ -174,28 +174,30 @@ describe('capot/server/session', () => {
       Async.waterfall([
         function (cb) {
 
-          server.req({
+          server.inject({
             method: 'POST',
             url: '/_users',
-            body: credentials
-          }, (err, resp) => {
+            payload: credentials
+          }, (resp) => {
 
-            Assert.ok(!err);
+            Assert.equal(resp.statusCode, 200);
             cb();
           });
         },
         function (cb) {
 
-          server.req({
+          server.inject({
             method: 'POST',
             url: '/_session',
-            body: credentials
-          }, (err, resp) => {
+            payload: credentials
+          }, (resp) => {
 
-            Assert.ok(!err);
             Assert.equal(resp.statusCode, 200);
-            Assert.equal(resp.body.ok, true);
-            Assert.equal(resp.body.name, credentials.email);
+
+            const result = JSON.parse(resp.payload);
+            Assert.equal(result.ok, true);
+            Assert.equal(result.name, credentials.email);
+
             const cookie = resp.headers['set-cookie'][0];
             Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
             cb();
@@ -203,15 +205,15 @@ describe('capot/server/session', () => {
         },
         function (cb) {
 
-          server.req({
+          server.inject({
             method: 'GET',
             url: '/_users/' + encodeURIComponent(credentials.email),
-            auth: { user: 'admin', pass: 'secret' }
-          }, (err, resp, userDoc) => {
+            headers: { authorization: 'Basic ' + adminAuth }
+          }, (resp) => {
 
-            Assert.ok(!err);
             Assert.equal(resp.statusCode, 200);
 
+            const userDoc = JSON.parse(resp.payload);
             userDoc.password = 'foo';
             userDoc.derived_key2 = userDoc.derived_key;
             userDoc.salt2 = userDoc.salt;
@@ -220,50 +222,50 @@ describe('capot/server/session', () => {
         },
         function (userDoc, cb) {
 
-          server.req({
+          server.inject({
             method: 'PUT',
             url: '/_users/' + encodeURIComponent(credentials.email),
-            auth: { user: 'admin', pass: 'secret' },
-            body: userDoc
-          }, (err, resp) => {
+            headers: { authorization: 'Basic ' + adminAuth },
+            payload: userDoc
+          }, (resp) => {
 
-            Assert.ok(!err);
-            Assert.equal(resp.body.ok, true);
             Assert.equal(resp.statusCode, 201);
+            Assert.equal(JSON.parse(resp.payload).ok, true);
             cb();
           });
         },
         function (cb) {
 
-          server.req({
+          server.inject({
             method: 'POST',
             url: '/_session',
-            body: credentials
-          }, (err, resp) => {
+            payload: credentials
+          }, (resp) => {
 
-            Assert.ok(!err);
             Assert.equal(resp.statusCode, 200);
             const cookie = resp.headers['set-cookie'][0];
             Assert.ok(/^AuthSession=[^;]+;/.test(cookie));
-            Assert.equal(resp.body.ok, true);
-            Assert.equal(resp.body.name, credentials.email);
+
+            const result = JSON.parse(resp.payload);
+            Assert.equal(result.ok, true);
+            Assert.equal(result.name, credentials.email);
             cb();
           });
         },
         function (cb) {
 
-          server.req({
+          server.inject({
             method: 'GET',
             url: '/_users/' + encodeURIComponent(credentials.email),
-            auth: { user: 'admin', pass: 'secret' }
-          }, (err, resp) => {
+            headers: { authorization: 'Basic ' + adminAuth }
+          }, (resp) => {
 
-            Assert.ok(!err);
             Assert.equal(resp.statusCode, 200);
             // After successfull login with password, derived_key2 and
             // salt2 should be gone.
-            Assert.ok(!resp.body.derived_key2);
-            Assert.ok(!resp.body.salt2);
+            const result = JSON.parse(resp.payload);
+            Assert.ok(!result.derived_key2);
+            Assert.ok(!result.salt2);
             cb();
           });
         }
@@ -273,4 +275,3 @@ describe('capot/server/session', () => {
   });
 
 });
-

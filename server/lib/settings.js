@@ -10,7 +10,6 @@ module.exports = function (options) {
 
   const env = process.env;
   const cwd = options.cwd || env.CWD || process.cwd();
-  const log = options.log || {};
   const couchdb = options.couchdb || {};
 
   return {
@@ -26,4 +25,3 @@ module.exports = function (options) {
     pkg: require(Path.join(cwd, 'package.json'))
   };
 };
-

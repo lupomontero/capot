@@ -12,14 +12,16 @@ describe('capot/server/oauth', () => {
   before(function (done) {
 
     this.timeout(30 * 1000);
-    server = TestServer();
-    server.start(done);
-  });
 
+    TestServer({ dummyData: false }, (err, s) => {
 
-  after((done) => {
+      if (err) {
+        return done(err);
+      }
 
-    server.stop(done);
+      server = s;
+      done();
+    });
   });
 
 
@@ -27,14 +29,13 @@ describe('capot/server/oauth', () => {
 
     it('should only get enabled providers', (done) => {
 
-      server.req({
+      server.inject({
         method: 'GET',
         url: '/_oauth/providers'
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 200);
-        Assert.deepEqual(resp.body, []);
+        Assert.deepEqual(JSON.parse(resp.payload), []);
         done();
       });
     });
@@ -45,12 +46,11 @@ describe('capot/server/oauth', () => {
 
     it('should get unauthorised when not admin', (done) => {
 
-      server.req({
+      server.inject({
         method: 'GET',
         url: '/_oauth/available_providers'
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 401);
         done();
       });
@@ -58,15 +58,16 @@ describe('capot/server/oauth', () => {
 
     it('should get all available providers when admin', (done) => {
 
-      server.req({
+      const auth = (new Buffer('admin:secret')).toString('base64');
+
+      server.inject({
         method: 'GET',
         url: '/_oauth/available_providers',
-        auth: { user: 'admin', pass: 'secret' }
-      }, (err, resp) => {
+        headers: { authorization: 'Basic ' + auth }
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 200);
-        Assert.deepEqual(resp.body, [
+        Assert.deepEqual(JSON.parse(resp.payload), [
           'github',
           'twitter'
         ]);
@@ -80,14 +81,13 @@ describe('capot/server/oauth', () => {
 
     it.skip('should...', (done) => {
 
-      server.req({
+      server.inject({
         method: 'GET',
         url: '/_oauth/bitbucket'
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         //Assert.equal(resp.statusCode, 401);
-        console.log(resp.body);
+        console.log(resp.result);
         done();
       });
     });
@@ -98,15 +98,14 @@ describe('capot/server/oauth', () => {
 
     it('should return 401 when missing cookie', (done) => {
 
-      server.req({
+      server.inject({
         method: 'GET',
         url: '/_oauth/session'
-      }, (err, resp) => {
+      }, (resp) => {
 
-        Assert.ok(!err);
         Assert.equal(resp.statusCode, 401);
-        Assert.equal(resp.body.statusCode, 401);
-        Assert.equal(resp.body.message, 'Missing authentication');
+        Assert.equal(resp.result.statusCode, 401);
+        Assert.equal(resp.result.message, 'Missing authentication');
         done();
       });
     });
@@ -114,4 +113,3 @@ describe('capot/server/oauth', () => {
   });
 
 });
-

@@ -9,7 +9,6 @@
 const Path = require('path');
 const Hapi = require('hapi');
 const Async = require('async');
-const _ = require('lodash');
 const Good = require('good');
 const GoodConsole = require('good-console');
 const Installer = require('./lib/installer');
@@ -224,4 +223,3 @@ if (require.main === module) {
     });
   });
 }
-

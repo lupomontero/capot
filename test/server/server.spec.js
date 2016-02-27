@@ -9,8 +9,10 @@ const Server = require('../../server');
 describe('Server', () => {
 
   it('should have default settings', (done) => {
-  
+
     const server = Server({}, (err, s) => {
+
+      Assert.ok(!err);
 
       const settings = server.settings.app;
       Assert.equal(settings.debug, false);
