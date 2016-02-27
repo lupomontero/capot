@@ -8,9 +8,6 @@
   "license": "MIT",
   "repository": "lupomontero/capot",
   "homepage": "https://github.com/lupomontero/capot",
-  "bin": {
-    "capot": "./bin/cli.js"
-  },
   "scripts": {
     "pretest": "gulp lint",
     "test": "gulp test:server && gulp test:client"
