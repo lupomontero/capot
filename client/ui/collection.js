@@ -29,11 +29,12 @@ internals.remoteSync = function (collection, model, type, options) {
       params[param] = options[param];
     }
   });
-
+  
   return app.request('GET', dbUrl + '/_all_docs', params).then(function (data) {
 
-    return _.pluck(data.rows, 'doc').map(function (doc) {
+    return _.map(data.rows, function (row) {
 
+      var doc = row.doc;
       var idParts = doc._id.split('/');
       doc.id = idParts.slice(1).join('/');
       delete doc._id;

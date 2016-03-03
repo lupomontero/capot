@@ -83,7 +83,7 @@ internals.startCouchDBServer = function (server, settings, cb) {
 
   const stop = function (code) {
 
-    console.log('info', 'Stopping CouchDB Server...');
+    server.log('info', 'Stopping CouchDB Server...');
 
     ['exit', 'SIGINT', 'SIGTERM'].forEach((eventName) => {
 
