@@ -10,7 +10,7 @@ describe('Server', () => {
 
   it('should have default settings', function (done) {
 
-    this.timeout(5 * 1000);
+    this.timeout(10 * 1000);
 
     const server = Server({}, (err, s) => {
 
