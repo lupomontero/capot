@@ -29,7 +29,7 @@ internals.remoteSync = function (collection, model, type, options) {
       params[param] = options[param];
     }
   });
-  
+
   return app.request('GET', dbUrl + '/_all_docs', params).then(function (data) {
 
     return _.map(data.rows, function (row) {

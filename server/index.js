@@ -174,8 +174,7 @@ module.exports = function (options, done) {
 
       server.route(Routes); cb();
     },
-    Async.apply(internals.loadCapotPlugins, server),
-    //Async.apply(internals.loadUserland, server)
+    Async.apply(internals.loadCapotPlugins, server)
   ], (err) => {
 
     if (err) {

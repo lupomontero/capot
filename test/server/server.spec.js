@@ -8,7 +8,9 @@ const Server = require('../../server');
 
 describe('Server', () => {
 
-  it('should have default settings', (done) => {
+  it('should have default settings', function (done) {
+
+    this.timeout(5 * 1000);
 
     const server = Server({}, (err, s) => {
 
