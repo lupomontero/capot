@@ -16,6 +16,7 @@ module.exports = function (options) {
     debug: options.debug === true || env.DEBUG === 'true',
     port: options.port || env.PORT || 3001,
     cwd: cwd,
+    www: options.www || env.WWW || 'www',
     data: Path.join(cwd, 'data'),
     couchdb: {
       url: couchdb.url || env.COUCHDB_URL,

@@ -137,7 +137,7 @@ internals.createServer = function (settings) {
           maxBytes: 1048576 * 5 // 5Mb
         },
         files: {
-          relativeTo: Path.join(settings.cwd, settings.www || 'www')
+          relativeTo: Path.join(settings.cwd, settings.www)
         }
       }
     },
