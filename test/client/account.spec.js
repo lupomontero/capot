@@ -263,7 +263,7 @@ describe('capot/client/account', function () {
   describe('account.destroy()', function () {
 
 
-    it('should fail when not logged in', function (done) {
+    it('should fail when not authenticated', function (done) {
 
       acc.destroy().catch(function (err) {
 
@@ -273,7 +273,7 @@ describe('capot/client/account', function () {
     });
 
 
-    it('should destroy test user', function (done) {
+    it('should destroy user when authenticated', function (done) {
 
       var email = 'foo@localhost';
       var pass = 'xxxxxxxx';
