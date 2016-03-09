@@ -275,7 +275,10 @@ describe('capot/client/account', function () {
 
     it('should destroy test user', function (done) {
 
-      acc.signIn(testUser.email, testUser.pass).then(function () {
+      var email = 'foo@localhost';
+      var pass = 'xxxxxxxx';
+
+      acc.signUp(email, pass).then(function () {
 
         Assert.equal(acc.isSignedIn(), true);
 
@@ -283,7 +286,7 @@ describe('capot/client/account', function () {
 
           Assert.equal(acc.isSignedIn(), false);
 
-          acc.signIn(testUser.email, testUser.pass).catch(function (err) {
+          acc.signIn(email, pass).catch(function (err) {
           
             Assert.equal(err.statusCode, 401);
             done();
