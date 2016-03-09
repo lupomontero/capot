@@ -73,28 +73,6 @@ internals.requireExtension = function (server, path, cb) {
 };
 
 
-internals.loadUserland = function (server, cb) {
-
-  const settings = server.settings.app;
-
-  internals.requireExtension(server, settings.cwd, (err) => {
-
-    if (err) {
-      if (err.code !== 'MODULE_NOT_FOUND') {
-        server.log('warn', err);
-      }
-      server.log('error', err);
-      server.log('warn', 'Did not extend Capot Server with userland');
-    }
-    else {
-      server.log('info', 'Extended Capot Server with userland');
-    }
-
-    cb();
-  });
-};
-
-
 internals.loadCapotPlugins = function (server, cb) {
 
   const settings = server.settings.app;
