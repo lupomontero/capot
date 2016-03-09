@@ -74,7 +74,6 @@ describe('capot/client/account', function () {
       });
     });
 
-
   });
 
 
@@ -263,7 +262,35 @@ describe('capot/client/account', function () {
 
   describe('account.destroy()', function () {
 
-    it('should...');
+
+    it('should fail when not logged in', function (done) {
+
+      acc.destroy().catch(function (err) {
+
+        Assert.equal(err.statusCode, 400);
+        done();
+      });
+    });
+
+
+    it('should destroy test user', function (done) {
+
+      acc.signIn(testUser.email, testUser.pass).then(function () {
+
+        Assert.equal(acc.isSignedIn(), true);
+
+        acc.destroy().then(function () {
+
+          Assert.equal(acc.isSignedIn(), false);
+
+          acc.signIn(testUser.email, testUser.pass).catch(function (err) {
+          
+            Assert.equal(err.statusCode, 401);
+            done();
+          });
+        });
+      });
+    });
 
   });
 

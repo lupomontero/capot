@@ -14,7 +14,7 @@ internals.couch = require('./couch')('/_couch');
 
 internals.userDocUrl = function (email) {
 
-  return '/_users/' + encodeURIComponent(email);
+  return '/_users/' + encodeURIComponent('org.couchdb.user:' + email);
 };
 
 
@@ -172,11 +172,9 @@ module.exports = function (capot) {
   account.destroy = function () {
 
     var email = account.session.userCtx.name;
-    var url = internals.userDocUrl(email);
+    var url = '/_users/' + encodeURIComponent(email);
 
     return capot.request('GET', url).then(function (userDoc) {
-
-      console.log(userDoc);
 
       return capot.request('DELETE', url + '?rev=' + userDoc._rev);
     }).then(function () {
