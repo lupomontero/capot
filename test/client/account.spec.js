@@ -275,8 +275,12 @@ describe('capot/client/account', function () {
 
     it('should destroy user when authenticated', function (done) {
 
-      var email = 'foo@localhost';
+      this.timeout(10 * 1000);
+
+      var email = 'foo' + Date.now() + '@example.com';
       var pass = 'xxxxxxxx';
+
+      Assert.equal(acc.isSignedIn(), false);
 
       acc.signUp(email, pass).then(function () {
 
@@ -287,7 +291,7 @@ describe('capot/client/account', function () {
           Assert.equal(acc.isSignedIn(), false);
 
           acc.signIn(email, pass).catch(function (err) {
-          
+
             Assert.equal(err.statusCode, 401);
             done();
           });
