@@ -65,11 +65,11 @@ internals.requireExtension = function (server, path, cb) {
     return cb(ex);
   }
 
-  if (typeof ext !== 'function') {
+  if (!ext || typeof ext.register !== 'function') {
     return setTimeout(cb.bind(null, new Error('Could not load ' + path)), 10);
   }
 
-  ext(server, cb);
+  server.register(ext, cb);
 };
 
 
@@ -86,11 +86,19 @@ internals.loadCapotPlugins = function (server, cb) {
   Async.each(capotPlugins, (plugin, eachCb) => {
 
     server.log('info', 'Initialising plugin ' + plugin);
-    const abs = (plugin.charAt(0) === '.') ? Path.join(settings.cwd, plugin) : plugin;
+    let abs = '';
+
+    if (plugin.charAt(0) === '.') {
+      abs = Path.join(settings.cwd, plugin);
+    }
+    else {
+      abs = Path.join(settings.cwd, 'node_modules', plugin);
+    }
+
     internals.requireExtension(server, abs, (err) => {
 
       if (err) {
-        server.log('warn', err);
+        server.log('warn', err.message);
         server.log('warn', 'Plugin ' + plugin + ' not loaded');
       }
       else {
@@ -150,6 +158,7 @@ module.exports = function (options, done) {
     server.register.bind(server, hapiPlugins),
     function (cb) {
 
+      server.app.couch = Couch(server.settings.app.couchdb);
       server.route(Routes); cb();
     },
     Async.apply(internals.loadCapotPlugins, server)
@@ -159,7 +168,6 @@ module.exports = function (options, done) {
       return done(err);
     }
 
-    server.app.couch = Couch(server.settings.app.couchdb);
     done(null, server);
   });
 
