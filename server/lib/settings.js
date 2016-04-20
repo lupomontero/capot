@@ -17,7 +17,7 @@ module.exports = function (options) {
     port: options.port || env.PORT || 3001,
     cwd: cwd,
     www: options.www || env.WWW || 'www',
-    data: Path.join(cwd, 'data'),
+    data: options.data || env.DATA || Path.join(cwd, 'data'),
     couchdb: {
       url: couchdb.url || env.COUCHDB_URL,
       user: couchdb.user || env.COUCHDB_USER || 'admin',
