@@ -473,8 +473,11 @@ exports.register = function (server, options, next) {
       }, cb);
     },
     cookiePlugin: server.register.bind(server, HapiAuthCookie),
-    appConfig: ['cookiePlugin', internals.getAppConfig.bind(null, server)],
-    foo: ['appConfig', (cb, results) => {
+    appConfig: ['cookiePlugin', (results, cb) => {
+
+      internals.getAppConfig(server, cb);
+    }],
+    foo: ['appConfig', (results, cb) => {
 
       server.auth.strategy('oauth-session', 'cookie', {
         password: results.appConfig.oauth.cookie.secret,
