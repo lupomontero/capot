@@ -10,7 +10,6 @@ const Path = require('path');
 const Hapi = require('hapi');
 const Async = require('async');
 const Good = require('good');
-const GoodConsole = require('good-console');
 const Installer = require('./lib/installer');
 const Settings = require('./lib/settings');
 const Couch = require('./lib/couch');
@@ -40,17 +39,20 @@ internals.createLogger = function (server, cb) {
     return cb();
   }
 
+  const options = {
+    ops: {
+      interval: 10 * 1000
+    },
+    reporters: {
+      console: [{
+        module: 'good-console',
+      }, 'stdout']
+    }
+  };
+
   server.register({
     register: Good,
-    options: {
-      reporters: [{
-        reporter: GoodConsole,
-        events: {
-          response: '*',
-          log: '*'
-        }
-      }]
-    }
+    options: options
   }, cb);
 };
 
