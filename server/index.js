@@ -45,7 +45,7 @@ internals.createLogger = function (server, cb) {
     },
     reporters: {
       console: [{
-        module: 'good-console',
+        module: 'good-console'
       }, 'stdout']
     }
   };

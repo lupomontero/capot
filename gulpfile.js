@@ -66,7 +66,11 @@ internals.bundle = function (bundler, dest) {
 Gulp.task('lint', () => {
 
   return Gulp.src(['**/*.js'])
-    .pipe(Eslint())
+    .pipe(Eslint({
+      rules: {
+        'object-shorthand': 0
+      }
+    }))
     .pipe(Eslint.format())
     .pipe(Eslint.failAfterError());
 });
