@@ -26,6 +26,10 @@ module.exports = function (options) {
     pkg: require(Path.join(cwd, 'package.json'))
   };
 
+  if (typeof settings.port === 'string') {
+    settings.port = parseInt(settings.port, 10);
+  }
+
   Object.keys(options).forEach((key) => {
 
     if (!settings.hasOwnProperty(key)) {
