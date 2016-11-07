@@ -34,21 +34,28 @@ internals.hapiPlugins = [
 internals.createLogger = function (server, cb) {
 
   const settings = server.settings.app;
-
-  if (!settings.debug) {
-    return cb();
-  }
-
   const options = {
     ops: {
-      interval: 10 * 1000
+      interval: 60 * 1000
     },
     reporters: {
-      console: [{
-        module: 'good-console'
-      }, 'stdout']
+      console: [
+        {
+          module: 'good-squeeze',
+          name: 'Squeeze',
+          args: [{ log: '*', response: '*' }]
+        },
+        {
+          module: 'good-console'
+        },
+        'stdout'
+      ]
     }
   };
+
+  //if (settings.debug) {
+  //
+  //}
 
   server.register({
     register: Good,
