@@ -43,7 +43,7 @@ internals.createLogger = function (server, cb) {
         {
           module: 'good-squeeze',
           name: 'Squeeze',
-          args: [{ log: '*', response: '*' }]
+          args: [{ ops: '*', response: '*', log: '*', error: '*' }]
         },
         {
           module: 'good-console'
@@ -53,9 +53,10 @@ internals.createLogger = function (server, cb) {
     }
   };
 
-  //if (settings.debug) {
-  //
-  //}
+
+  if (settings.debug) {
+    options.reporters.console[0].args[0].request = '*';
+  }
 
   server.register({
     register: Good,
