@@ -12,6 +12,7 @@ describe('capot/server/www', () => {
   before((done) => {
 
     server = Server({
+      quiet: true,
       couchdb: {
         user: 'admin',
         pass: 'secret'
