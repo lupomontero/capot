@@ -9,7 +9,7 @@ const Mkdirp = require('mkdirp');
 const Rimraf = require('rimraf');
 const Request = require('request');
 const Pkg = require('../package.json');
-const Server = require('../server');
+const Server = require('../');
 
 
 const internals = {};
@@ -60,7 +60,7 @@ internals.removeDummyUsers = function (server, couch, cb) {
     couch({
       method: 'POST',
       url: '/_users/_bulk_docs',
-      body: { docs: docs }
+      body: { docs }
     }, (err, resp) => {
 
       if (err) {
@@ -176,7 +176,8 @@ module.exports = function TestServer(options, cb) {
     }
 
     Server({
-      port: port,
+      port,
+      quiet: true,
       cwd: tmpdir,
       couchdb: {
         pass: 'secret'

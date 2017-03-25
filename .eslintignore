@@ -1,6 +1,1 @@
-admin/bundle.js
-admin/bundle.min.js
-admin/templates.js
-dist/
 node_modules/
-test/client/vendor/
