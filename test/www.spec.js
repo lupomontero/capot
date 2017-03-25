@@ -2,22 +2,26 @@
 
 
 const Assert = require('assert');
-const Server = require('../');
+const TestServer = require('./server');
 
 
 describe('capot/server/www', () => {
 
   let server;
 
-  before((done) => {
+  before(function (done) {
 
-    server = Server({
-      quiet: true,
-      couchdb: {
-        user: 'admin',
-        pass: 'secret'
+    this.timeout(30 * 1000);
+
+    TestServer({ dummyData: false }, (err, s) => {
+
+      if (err) {
+        return done(err);
       }
-    }, done);
+
+      server = s;
+      done();
+    });
   });
 
 
