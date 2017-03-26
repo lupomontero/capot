@@ -151,19 +151,12 @@ internals.createServer = function (settings) {
 module.exports = function (options, done) {
 
   const settings = Settings(options);
-  let hapiPlugins = internals.hapiPlugins.slice(0);
-
-  if (settings.debug) {
-    require('longjohn');
-    hapiPlugins = [require('vision'), require('lout')].concat(hapiPlugins);
-  }
-
   const server = internals.createServer(settings);
 
   Async.series([
     Async.apply(internals.createLogger, server),
     Async.apply(Installer, server),
-    server.register.bind(server, hapiPlugins),
+    server.register.bind(server, internals.hapiPlugins),
     function (cb) {
 
       server.app.couch = Couch(server.settings.app.couchdb);
@@ -181,38 +174,3 @@ module.exports = function (options, done) {
 
   return server;
 };
-
-
-//
-// If script is run directly (not loaded as module) we invoke the module.
-//
-if (require.main === module) {
-  const onError = function (err) {
-
-    console.error(err);
-    process.exit(1);
-  };
-
-  // TODO: We should use cluser module to spin one instance per cpu and then
-  // manage killing and spinning children properly.
-  process.on('uncaughtException', onError);
-
-  module.exports({}, (err, server) => {
-
-    if (err) {
-      return onError(err);
-    }
-
-    server.start((err) => {
-
-      if (err) {
-        return onError(err);
-      }
-
-      server.app.changes.start();
-
-      server.log(['info'], 'Web server started on port ' + server.info.port);
-      server.log(['info'], 'Capot back-end has started ;-)');
-    });
-  });
-}

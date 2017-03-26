@@ -6,8 +6,13 @@
 
 [ JUST AN EXPERIMENT, FOR THE TIME BEING ]
 
-* [Capot](./client/): The front-end client.
-* [CapotUI](./client/ui/): Front-end UI framework.
-* [Server](./server/): The `node.js` back-end server.
-* [Admin](./admin/): The admin interface.
+## Environmant vars
 
+* `CWD`: App working directory. Default: `process.cwd()`.
+* `PORT`: Port to start server on.
+* `WWW`: Path to directory to be served by the web server.
+* `DATA`: Path to data directory (if using built-in CouchDB server)
+* `DEBUG`: Switch on long stack traces.
+* `COUCHDB_URL`: ...
+* `COUCHDB_USER`: ...
+* `COUCHDB_PASS`: ...
