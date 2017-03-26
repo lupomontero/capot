@@ -10,7 +10,7 @@
     "test": "mocha test"
   },
   "dependencies": {
-    "async": "^2.1.5",
+    "async": "^2.2.0",
     "boom": "^4.3.0",
     "follow": "^0.12.1",
     "good": "^7.1.0",
