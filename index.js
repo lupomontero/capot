@@ -21,11 +21,9 @@ const internals = {};
 
 internals.hapiPlugins = [
   require('h2o2'),
-  require('inert'),
   require('nes'),
   require('./lib/mailer'),
   require('./lib/session'),
-  require('./lib/www'),
   require('./lib/account'),
   require('./lib/oauth')
 ];
@@ -128,9 +126,6 @@ internals.createServer = function (settings) {
       routes: {
         payload: {
           maxBytes: 1048576 * 5 // 5Mb
-        },
-        files: {
-          relativeTo: Path.join(settings.cwd, settings.www)
         }
       }
     },

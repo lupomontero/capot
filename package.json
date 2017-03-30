@@ -20,7 +20,6 @@
     "handlebars": "^4.0.6",
     "hapi": "^16.1.0",
     "hapi-auth-cookie": "^6.1.1",
-    "inert": "^4.1.0",
     "joi": "^10.3.0",
     "lodash": "^4.17.4",
     "moment": "^2.18.1",
