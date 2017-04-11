@@ -129,7 +129,13 @@ internals.addDummyUser = function (server, testUser, cb) {
 };
 
 
-internals.addDummyData = function (server, couch, testUsers, cb) {
+internals.addDummyData = function (server, testUsers, cb) {
+
+  const couch = Request.defaults({
+    baseUrl: 'http://127.0.0.1:' + (server.settings.app.port + 1),
+    auth: { user: 'admin', pass: server.settings.app.couchdb.pass },
+    json: true
+  });
 
   internals.removeDummyData(server, couch, (err) => {
 
@@ -148,60 +154,69 @@ internals.pkgJsonTmpl = JSON.stringify({
 }, null, 2);
 
 
-module.exports = function TestServer(options, cb) {
+internals.defaults = () => {
 
-  if (arguments.length === 1) {
-    cb = options;
-    options = {};
-  }
-
-  const port = 3333;
-  const couchdbPass = 'secret';
-  const tmpdir = Path.join(Os.tmpdir(), Pkg.name + '-test-' + Date.now());
-  const couch = Request.defaults({
-    baseUrl: 'http://127.0.0.1:' + (port + 1),
-    auth: { user: 'admin', pass: couchdbPass },
-    json: true
-  });
-
-
-  Async.series([
-    Async.apply(Rimraf, tmpdir),
-    Async.apply(Mkdirp, tmpdir),
-    Async.apply(Fs.writeFile, Path.join(tmpdir, 'package.json'), internals.pkgJsonTmpl)
-  ], (err) => {
-
-    if (err) {
-      return cb(err);
+  return {
+    port: 3333,
+    quiet: true,
+    cwd: Path.join(Os.tmpdir(), Pkg.name + '-test-' + Date.now()),
+    couchdb: {
+      pass: 'secret'
     }
+  };
+};
 
-    Server({
-      port,
-      quiet: true,
-      cwd: tmpdir,
-      couchdb: {
-        pass: 'secret'
-      }
-    }, (err, server) => {
 
-      if (err) {
-        return cb(err);
-      }
+module.exports = (options) => {
 
-      server.testUsers  = [
-        { email: 'test1-' + Date.now() + '@localhost', password: 'secret1' },
-        { email: 'test2-' + Date.now() + '@localhost', password: 'secret1' }
-      ];
+  options = Object.assign({}, internals.defaults(), (options || {}));
 
-      internals.addDummyData(server, couch, server.testUsers, (err) => {
+  const testServer = {
+    testUsers: [
+      { email: 'test1-' + Date.now() + '@localhost', password: 'secret1' },
+      { email: 'test2-' + Date.now() + '@localhost', password: 'secret1' }
+    ],
+    start: function (done) {
+
+      Async.series([
+        Async.apply(Rimraf, options.cwd),
+        Async.apply(Mkdirp, options.cwd),
+        Async.apply(Fs.writeFile, Path.join(options.cwd, 'package.json'), internals.pkgJsonTmpl)
+      ], (err) => {
 
         if (err) {
-          return cb(err);
+          return done(err);
         }
 
-        cb(null, server);
-      });
-    });
-  });
+        Server(options, (err, s) => {
 
+          if (err) {
+            return done(err);
+          }
+
+          testServer.app = s.app;
+          testServer.inject = s.inject.bind(s);
+
+          if (!options.dummyData) {
+            return done();
+          }
+
+          internals.addDummyData(s, testServer.testUsers, (err) => {
+
+            if (err) {
+              return done(err);
+            }
+
+            done();
+          });
+        });
+      });
+    },
+    stop: function () {
+
+      //...
+    }
+  };
+
+  return testServer;
 };

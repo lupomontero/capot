@@ -9,23 +9,9 @@ const TestServer = require('./server');
 
 describe('capot/server/account', () => {
 
-  let server;
+  const server = TestServer({ dummyData: true });
 
-  before(function (done) {
-
-    this.timeout(30 * 1000);
-
-    TestServer({ dummyData: true }, (err, s) => {
-
-      if (err) {
-        return done(err);
-      }
-
-      server = s;
-      done();
-    });
-  });
-
+  before(server.start);
 
   describe('GET /_users', () => {
 

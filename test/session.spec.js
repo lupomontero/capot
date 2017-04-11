@@ -8,23 +8,9 @@ const TestServer = require('./server');
 
 describe('capot/server/session', () => {
 
-  let server;
+  const server = TestServer({ dummyData: false });
 
-  before(function (done) {
-
-    this.timeout(30 * 1000);
-
-    TestServer({ dummyData: false }, (err, s) => {
-
-      if (err) {
-        return done(err);
-      }
-
-      server = s;
-      done();
-    });
-  });
-
+  before(server.start);
 
   describe('GET /_session', () => {
 
