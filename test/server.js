@@ -178,7 +178,7 @@ module.exports = (options) => {
     ],
     start: function (done) {
 
-      this.timeout(5 * 1000);
+      this.timeout(30 * 1000);
 
       console.log('Creating test server cwd and package.json');
 
