@@ -180,6 +180,8 @@ module.exports = (options) => {
 
       this.timeout(5 * 1000);
 
+      console.log('Creating test server cwd and package.json');
+
       Async.series([
         Async.apply(Rimraf, options.cwd),
         Async.apply(Mkdirp, options.cwd),
@@ -190,11 +192,16 @@ module.exports = (options) => {
           return done(err);
         }
 
+        console.log('Test cwd and package.json created!');
+        console.log('Creating test server...');
+
         Server(options, (err, s) => {
 
           if (err) {
             return done(err);
           }
+
+          console.log('Test server created!');
 
           testServer.app = s.app;
           testServer.inject = s.inject.bind(s);
@@ -203,11 +210,15 @@ module.exports = (options) => {
             return done();
           }
 
+          console.log('Adding dummy data...');
+
           internals.addDummyData(s, testServer.testUsers, (err) => {
 
             if (err) {
               return done(err);
             }
+
+            console.log('Added dummy data!');
 
             done();
           });
