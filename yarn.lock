@@ -753,9 +753,9 @@ good-squeeze@^5.0.2:
     fast-safe-stringify "1.1.x"
     hoek "4.x.x"
 
-good@^7.1.0:
-  version "7.1.0"
-  resolved "https://registry.yarnpkg.com/good/-/good-7.1.0.tgz#9e05ad24c58a11b71cf5081700f3778db0b22c1c"
+good@^7.2.0:
+  version "7.2.0"
+  resolved "https://registry.yarnpkg.com/good/-/good-7.2.0.tgz#c94daa44bfb96388f28f6ce8ac8bfd468c2df704"
   dependencies:
     hoek "4.x.x"
     joi "10.x.x"
@@ -1052,7 +1052,7 @@ jodid25519@^1.0.0:
   dependencies:
     jsbn "~0.1.0"
 
-joi@10.x.x, joi@^10.4.2:
+joi@10.x.x:
   version "10.4.2"
   resolved "https://registry.yarnpkg.com/joi/-/joi-10.4.2.tgz#bc934aed34f8d0d0c84365c8e52fb6178ceb926a"
   dependencies:
@@ -1078,6 +1078,15 @@ joi@9.X.X:
     isemail "2.x.x"
     items "2.x.x"
     moment "2.x.x"
+    topo "2.x.x"
+
+joi@^10.5.0:
+  version "10.5.0"
+  resolved "https://registry.yarnpkg.com/joi/-/joi-10.5.0.tgz#4e3172a199c993b36aabe5a987b00b1b541c3059"
+  dependencies:
+    hoek "4.x.x"
+    isemail "2.x.x"
+    items "2.x.x"
     topo "2.x.x"
 
 js-tokens@^3.0.0:
