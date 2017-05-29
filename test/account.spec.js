@@ -78,7 +78,7 @@ describe('capot/server/account', () => {
   describe('POST /_users', () => {
 
 
-    it('should fail when email missing', (done) => {
+    it('should fail with 400 when email missing', (done) => {
 
       server.inject({
         method: 'POST',
@@ -94,7 +94,7 @@ describe('capot/server/account', () => {
     });
 
 
-    it('should fail when invalid email', (done) => {
+    it('should fail with 400 when invalid email', (done) => {
 
       server.inject({
         method: 'POST',
@@ -111,7 +111,7 @@ describe('capot/server/account', () => {
     });
 
 
-    it('should fail when password missing', (done) => {
+    it('should fail with 400 when password missing', (done) => {
 
       server.inject({
         method: 'POST',
@@ -122,6 +122,23 @@ describe('capot/server/account', () => {
         Assert.equal(resp.statusCode, 400);
         Assert.equal(resp.result.validation.source, 'payload');
         Assert.deepEqual(resp.result.validation.keys, ['password']);
+        done();
+      });
+    });
+
+
+    it('should fail with 409 when email already registered', (done) => {
+
+      server.inject({
+        method: 'POST',
+        url: '/_users',
+        payload: { email: server.testUsers[0].email, password: 'secret' }
+      }, (resp) => {
+
+        Assert.equal(resp.statusCode, 409);
+        Assert.equal(resp.result.statusCode, 409);
+        Assert.equal(resp.result.error, 'Conflict');
+        Assert.equal(resp.result.message, 'Conflict');
         done();
       });
     });
