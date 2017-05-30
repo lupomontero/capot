@@ -152,11 +152,10 @@ describe('capot/server/account', () => {
         payload: { email: 'test@localhost', password: 'secret' }
       }, (resp) => {
 
-        const result = JSON.parse(resp.payload);
-
-        Assert.equal(result.ok, true);
-        Assert.equal(result.email, 'test@localhost');
-        Assert.equal(typeof result.uid, 'string');
+        Assert.equal(resp.statusCode, 200);
+        Assert.equal(resp.result.ok, true);
+        Assert.equal(resp.result.email, 'test@localhost');
+        Assert.equal(typeof resp.result.uid, 'string');
         done();
       });
     });

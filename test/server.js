@@ -205,6 +205,7 @@ module.exports = (options) => {
 
           testServer.app = s.app;
           testServer.inject = s.inject.bind(s);
+          testServer.on = s.on.bind(s);
 
           if (!options.dummyData) {
             return done();
