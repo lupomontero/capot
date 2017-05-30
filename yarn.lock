@@ -185,7 +185,7 @@ boom@4.x.x:
   dependencies:
     hoek "4.x.x"
 
-boom@^5.1.0:
+boom@5.x.x, boom@^5.1.0:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/boom/-/boom-5.1.0.tgz#0308fa8e924cd6d42d9c3bf4883bdc98f0e71df8"
   dependencies:
@@ -819,13 +819,13 @@ hapi-scope-start@2.x.x:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/hapi-scope-start/-/hapi-scope-start-2.1.1.tgz#7495a726fe72b7bca8de2cdcc1d87cd8ce6ab4f2"
 
-hapi@^16.1.1:
-  version "16.1.1"
-  resolved "https://registry.yarnpkg.com/hapi/-/hapi-16.1.1.tgz#0466db0703ba15cd00f07175ccf394d9cb56b1e0"
+hapi@^16.2.0:
+  version "16.2.0"
+  resolved "https://registry.yarnpkg.com/hapi/-/hapi-16.2.0.tgz#de58fd1544f9af1928b6fa20462dcecc2d1d6ee2"
   dependencies:
     accept "2.x.x"
     ammo "2.x.x"
-    boom "4.x.x"
+    boom "5.x.x"
     call "4.x.x"
     catbox "7.x.x"
     catbox-memory "2.x.x"
@@ -1086,9 +1086,9 @@ joi@9.X.X:
     moment "2.x.x"
     topo "2.x.x"
 
-joi@^10.5.1:
-  version "10.5.1"
-  resolved "https://registry.yarnpkg.com/joi/-/joi-10.5.1.tgz#22c608d106c1f7fe18c6f1bf38a228fdf2daab7f"
+joi@^10.5.2:
+  version "10.5.2"
+  resolved "https://registry.yarnpkg.com/joi/-/joi-10.5.2.tgz#64f6853b080e9df0cf4cc9e204fa12cc8f792c48"
   dependencies:
     hoek "4.x.x"
     isemail "2.x.x"
