@@ -10,7 +10,7 @@
     "test": "mocha test"
   },
   "dependencies": {
-    "async": "^2.4.1",
+    "async": "^2.5.0",
     "boom": "^5.1.0",
     "follow": "^0.12.1",
     "good": "^7.2.0",
@@ -20,7 +20,7 @@
     "handlebars": "^4.0.10",
     "hapi": "^16.4.3",
     "hapi-auth-cookie": "^7.0.0",
-    "joi": "^10.5.2",
+    "joi": "^10.6.0",
     "lodash": "^4.17.4",
     "moment": "^2.18.1",
     "multicouch": "^0.8.2",
@@ -32,12 +32,12 @@
     "which": "^1.2.14"
   },
   "devDependencies": {
-    "eslint": "^4.0.0",
+    "eslint": "^4.1.1",
     "eslint-config-hapi": "^10.0.0",
     "eslint-plugin-hapi": "^4.0.0",
     "mkdirp": "^0.5.1",
     "mocha": "^3.4.2",
     "rimraf": "^2.6.1",
-    "sinon": "^2.3.4"
+    "sinon": "^2.3.6"
   }
 }
